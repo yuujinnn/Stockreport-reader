@@ -1,0 +1,1 @@
+# Stockreport-reader
