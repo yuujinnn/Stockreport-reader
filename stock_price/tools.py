@@ -9,6 +9,7 @@ import os
 import re
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import openai
 
 from .kiwoom import (
     fn_ka10079, fn_ka10080, fn_ka10081, 
@@ -44,85 +45,93 @@ class ChartValidationInput(BaseModel):
     chart_type: str = Field(description="차트 유형 (tick/minute/day/week/month/year)")
 
 
+# LLM 기반 날짜 파싱 함수
+def _parse_date_with_llm(query_text: str) -> str:
+    """LLM을 사용하여 자연어 날짜를 YYYYMMDD 형식으로 파싱"""
+    try:
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        if not openai_api_key:
+            raise ValueError("OpenAI API 키가 설정되지 않았습니다.")
+        
+        client = openai.OpenAI(api_key=openai_api_key)
+        today = datetime.now()
+        
+        prompt = f"""
+현재 날짜: {today.strftime('%Y년 %m월 %d일 (%A)')}
+
+다음 자연어 날짜 표현을 분석하여 시작일과 종료일을 YYYYMMDD 형식으로 변환해주세요.
+
+입력: "{query_text}"
+
+규칙:
+1. 명확한 날짜/기간이 있으면 "YYYYMMDD,YYYYMMDD" 형식으로 반환
+2. 역대/전체/모든 히스토리 데이터를 요구하면 "ALL" 반환
+3. 날짜 언급이 아예 없으면 "NONE" 반환
+4. 단일 날짜(어제, 오늘, 내일 등)는 시작일과 종료일이 같음
+5. 기간 표현(지난 3개월, 최근 1분기 등)은 시작일과 종료일 계산
+
+예시:
+- "어제" → "20250119,20250119"
+- "지난 3개월" → "20241020,20250120"
+- "2024년" → "20240101,20241231"
+- "2024년 전체 데이터" → "20240101,20241231"
+- "역대 모든 데이터" → "ALL"
+- "전체 히스토리 보여줘" → "ALL"
+- "주가 확인" → "NONE"
+- "차트 분석해줘" → "NONE"
+
+답변:
+"""
+        
+        response = client.chat.completions.create(
+            model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
+            messages=[
+                {"role": "system", "content": "당신은 날짜 파싱 전문가입니다. 정확한 YYYYMMDD,YYYYMMDD 형식으로만 응답하세요."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0,
+            max_tokens=50
+        )
+        
+        result = response.choices[0].message.content.strip()
+        
+        # 결과 검증
+        if result in ["ALL", "NONE"]:
+            return result
+        elif ',' in result and len(result.split(',')) == 2:
+            start_date, end_date = result.split(',')
+            # YYYYMMDD 형식 검증
+            datetime.strptime(start_date, '%Y%m%d')
+            datetime.strptime(end_date, '%Y%m%d')
+            return result
+        else:
+            raise ValueError(f"잘못된 LLM 응답 형식: {result}")
+            
+    except Exception as e:
+        print(f"LLM 날짜 파싱 실패: {e}")
+        return None
+
+
 # 새로운 툴 클래스들
 class DateRecognitionTool(BaseTool):
     name = "parse_date_range"
-    description = "자연어로 표현된 날짜를 YYYYMMDD 형식의 시작일과 종료일로 변환합니다."
+    description = "자연어 날짜를 YYYYMMDD,YYYYMMDD/ALL/NONE으로 변환. ALL=역대전체, NONE=날짜언급없음"
     args_schema = DateRecognitionInput
 
     def _run(self, query_text: str) -> str:
         try:
-            today = datetime.now()
-            result = {"start_date": "", "end_date": "", "parsed_text": query_text}
+            # LLM으로 날짜 파싱 시도
+            llm_result = _parse_date_with_llm(query_text)
             
-            # 현재 날짜 기본값
-            end_date = today
-            start_date = today
+            if llm_result:
+                return llm_result
             
-            # 패턴 매칭
-            if "지난" in query_text or "최근" in query_text:
-                # 분기 패턴
-                if "분기" in query_text:
-                    # 현재 분기 계산
-                    current_quarter = (today.month - 1) // 3 + 1
-                    if current_quarter == 1:
-                        start_date = datetime(today.year - 1, 10, 1)
-                        end_date = datetime(today.year - 1, 12, 31)
-                    elif current_quarter == 2:
-                        start_date = datetime(today.year, 1, 1)
-                        end_date = datetime(today.year, 3, 31)
-                    elif current_quarter == 3:
-                        start_date = datetime(today.year, 4, 1)
-                        end_date = datetime(today.year, 6, 30)
-                    else:
-                        start_date = datetime(today.year, 7, 1)
-                        end_date = datetime(today.year, 9, 30)
-                
-                # 개월 패턴
-                elif "개월" in query_text:
-                    months_match = re.search(r'(\d+)개월', query_text)
-                    if months_match:
-                        months = int(months_match.group(1))
-                        start_date = today - timedelta(days=months * 30)
-                        end_date = today
-                
-                # 주 패턴
-                elif "주" in query_text:
-                    weeks_match = re.search(r'(\d+)주', query_text)
-                    if weeks_match:
-                        weeks = int(weeks_match.group(1))
-                        start_date = today - timedelta(weeks=weeks)
-                        end_date = today
-                
-                # 일 패턴
-                elif "일" in query_text:
-                    days_match = re.search(r'(\d+)일', query_text)
-                    if days_match:
-                        days = int(days_match.group(1))
-                        start_date = today - timedelta(days=days)
-                        end_date = today
-            
-            # 연도 패턴 (예: 2024년, 2023년부터 2024년까지)
-            elif "년" in query_text:
-                year_matches = re.findall(r'(\d{4})년', query_text)
-                if len(year_matches) == 1:
-                    year = int(year_matches[0])
-                    start_date = datetime(year, 1, 1)
-                    end_date = datetime(year, 12, 31)
-                elif len(year_matches) == 2:
-                    start_year = int(year_matches[0])
-                    end_year = int(year_matches[1])
-                    start_date = datetime(start_year, 1, 1)
-                    end_date = datetime(end_year, 12, 31)
-            
-            # 결과 포맷팅
-            result["start_date"] = start_date.strftime("%Y%m%d")
-            result["end_date"] = end_date.strftime("%Y%m%d")
-            
-            return json.dumps(result, ensure_ascii=False)
+            # LLM 실패 시 기본값으로 NONE 반환
+            return "NONE"
             
         except Exception as e:
-            return json.dumps({"error": f"날짜 파싱 오류: {str(e)}"}, ensure_ascii=False)
+            # 에러 발생 시에도 NONE 반환
+            return "NONE"
 
 
 class ChartValidationTool(BaseTool):
