@@ -209,3 +209,6 @@ __marimo__/
 # Secrets
 #   Kiwoom Rest API
 secrets/
+
+# Datas
+agents/stock_price_agent/data/*
