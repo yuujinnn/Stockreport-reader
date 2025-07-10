@@ -2,10 +2,10 @@
 주식 차트 데이터 조회 에이전트 FastAPI 서버
 """
 import os
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import uvicorn
 from dotenv import load_dotenv
 
@@ -51,11 +51,32 @@ class QueryRequest(BaseModel):
     openai_api_key: Optional[str] = None
 
 
+class DataRequest(BaseModel):
+    """오케스트레이터로부터의 데이터 요청 모델"""
+    tickers: List[str] = Field(description="종목 코드 리스트 (예: ['377300.KS', '005930.KS'])")
+    from_date: str = Field(alias="from", description="시작 날짜 (YYYYMMDD, ALL, NONE)")
+    to_date: str = Field(alias="to", description="종료 날짜 (YYYYMMDD, ALL, NONE)")
+    interval: str = Field(description="차트 간격 (AUTO, D, W, M, Y, 1, 5, 15, 30, 60)")
+    openai_api_key: Optional[str] = None
+
+
 class QueryResponse(BaseModel):
     """질의 응답 모델"""
     success: bool
     output: str
     intermediate_steps: Optional[list] = None
+    error: Optional[str] = None
+    run_name: Optional[str] = None
+    langsmith_url: Optional[str] = None
+
+
+class DataResponse(BaseModel):
+    """데이터 응답 모델"""
+    success: bool
+    data: Optional[Dict] = None
+    tickers_processed: Optional[List[str]] = None
+    chart_type: Optional[str] = None
+    date_range: Optional[Dict] = None
     error: Optional[str] = None
     run_name: Optional[str] = None
     langsmith_url: Optional[str] = None
@@ -96,9 +117,11 @@ async def root():
         "message": app_description,
         "version": app_version,
         "endpoints": {
-            "POST /query": "주식 데이터 조회",
+            "POST /data": "오케스트레이터로부터 구조화된 데이터 요청 처리",
+            "POST /query": "자연어 질의 처리 (호환성용)",
             "POST /clear": "대화 메모리 초기화",
-            "GET /health": "서버 상태 확인"
+            "GET /health": "서버 상태 확인",
+            "GET /examples": "사용 예시"
         }
     }
 
@@ -114,6 +137,85 @@ async def health_check():
         "langsmith_enabled": os.getenv('LANGCHAIN_API_KEY') is not None,
         "langsmith_project": langsmith_project if os.getenv('LANGCHAIN_API_KEY') else None
     }
+
+
+@app.post("/data", response_model=DataResponse)
+async def collect_chart_data(request: DataRequest):
+    """
+    오케스트레이터로부터 구조화된 데이터 요청을 받아 차트 데이터 수집
+    
+    Args:
+        request: 데이터 요청 (tickers, from, to, interval)
+        
+    Returns:
+        DataResponse: 수집된 데이터
+    """
+    global agent
+    
+    try:
+        # 에이전트가 초기화되지 않았거나 API 키가 제공된 경우
+        if not agent or request.openai_api_key:
+            api_key = request.openai_api_key or os.getenv('OPENAI_API_KEY')
+            if not api_key:
+                raise HTTPException(
+                    status_code=400,
+                    detail="OpenAI API 키가 필요합니다. 환경변수 OPENAI_API_KEY를 설정하거나 요청에 포함하세요."
+                )
+            agent = create_stock_agent(api_key)
+        
+        # 요청을 자연어로 변환하여 에이전트에 전달
+        query_text = f"""
+다음 구조화된 데이터 요청을 처리해주세요:
+
+종목: {', '.join(request.tickers)}
+시작일: {request.from_date}
+종료일: {request.to_date}
+차트 간격: {request.interval}
+
+모든 종목에 대해 지정된 기간과 간격에 맞는 차트 데이터를 수집하고,
+완전한 JSON 형식으로 반환해주세요.
+"""
+        
+        # 에이전트 실행
+        result = agent.query(query_text)
+        
+        # LangSmith URL 생성
+        langsmith_url = None
+        langsmith_project = os.getenv('LANGSMITH_PROJECT', 'stock-price-agent')
+        langsmith_base_url = os.getenv('LANGSMITH_BASE_URL', 'https://smith.langchain.com/public')
+        
+        if result.get("run_name") and os.getenv('LANGCHAIN_API_KEY'):
+            langsmith_url = f"{langsmith_base_url}/{langsmith_project}/r"
+        
+        # 성공 응답
+        if result["success"]:
+            # 티커를 키움 API 형식으로 변환
+            from .utils import get_ticker_manager
+            ticker_manager = get_ticker_manager()
+            processed_tickers = ticker_manager.convert_multiple_tickers(request.tickers)
+            
+            return DataResponse(
+                success=True,
+                data={"chart_data": result["output"]},
+                tickers_processed=processed_tickers,
+                chart_type=request.interval,
+                date_range={
+                    "from": request.from_date,
+                    "to": request.to_date
+                },
+                run_name=result.get("run_name"),
+                langsmith_url=langsmith_url
+            )
+        else:
+            return DataResponse(
+                success=False,
+                error=result.get("error", "데이터 수집 실패"),
+                run_name=result.get("run_name"),
+                langsmith_url=langsmith_url
+            )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/query", response_model=QueryResponse)
@@ -180,42 +282,84 @@ async def clear_memory():
 async def get_examples():
     """사용 예시 반환"""
     return {
-        "examples": [
+        "data_request_examples": [
             {
-                "description": "삼성전자 2024년 주봉 데이터 조회",
-                "query": "2024년 1년간 삼성전자의 주봉 데이터를 알려주세요"
+                "description": "삼성전자 2024년 일봉 데이터 자동 선택",
+                "request": {
+                    "tickers": ["005930.KS"],
+                    "from": "20240101",
+                    "to": "20241231",
+                    "interval": "AUTO"
+                }
             },
             {
-                "description": "SK하이닉스 최근 3개월 일봉 데이터 조회",
-                "query": "SK하이닉스 최근 3개월 일봉 차트 데이터를 가져와주세요"
+                "description": "카카오와 네이버 최근 1개월 주봉 데이터",
+                "request": {
+                    "tickers": ["035720.KS", "035420.KS"],
+                    "from": "20241201",
+                    "to": "20250120",
+                    "interval": "W"
+                }
             },
             {
-                "description": "NAVER 1분봉 데이터 조회",
-                "query": "네이버 1분봉 차트 데이터를 조회해주세요"
+                "description": "SK하이닉스 역대 전체 월봉 데이터",
+                "request": {
+                    "tickers": ["000660.KS"],
+                    "from": "ALL",
+                    "to": "ALL",
+                    "interval": "M"
+                }
             },
             {
-                "description": "카카오 월봉 데이터 조회",
-                "query": "카카오 2023년부터 지금까지 월봉 데이터를 받아주세요"
+                "description": "현대차 최근 데이터 5분봉",
+                "request": {
+                    "tickers": ["005380.KS"],
+                    "from": "NONE",
+                    "to": "NONE",
+                    "interval": "5"
+                }
             }
         ],
-        "supported_stocks": {
-            "삼성전자": "005930",
-            "SK하이닉스": "000660",
-            "NAVER": "035420",
-            "카카오": "035720",
-            "LG화학": "051910",
-            "현대차": "005380",
-            "기아": "000270",
-            "포스코홀딩스": "005490"
+        "legacy_query_examples": [
+            {
+                "description": "자연어 질의 (호환성용)",
+                "query": "2024년 1년간 삼성전자의 주봉 데이터를 알려주세요"
+            }
+        ],
+        "supported_intervals": {
+            "AUTO": "기간에 맞는 최적 차트 자동 선택",
+            "D": "일봉",
+            "W": "주봉",
+            "M": "월봉",
+            "Y": "년봉",
+            "1": "1분봉",
+            "5": "5분봉",
+            "15": "15분봉",
+            "30": "30분봉",
+            "60": "60분봉"
         },
-        "chart_types": [
-            "틱차트 (초단위)",
-            "분봉차트 (1, 3, 5, 10, 15, 30, 45, 60분)",
-            "일봉차트",
-            "주봉차트",
-            "월봉차트",
-            "년봉차트"
-        ]
+        "date_formats": {
+            "YYYYMMDD": "명확한 날짜 (예: 20240101)",
+            "ALL": "역대 전체 데이터",
+            "NONE": "최근 데이터만 (약 300개 레코드)"
+        },
+        "ticker_formats": {
+            "KS": "코스피 종목 (예: 005930.KS)",
+            "KQ": "코스닥 종목 (예: 377300.KQ)",
+            "note": "거래소 접미사(.KS, .KQ)는 자동으로 제거됩니다"
+        },
+        "supported_stocks": {
+            "삼성전자": "005930.KS",
+            "SK하이닉스": "000660.KS",
+            "NAVER": "035420.KS",
+            "카카오": "035720.KS",
+            "LG화학": "051910.KS",
+            "현대차": "005380.KS",
+            "기아": "000270.KS",
+            "포스코홀딩스": "005490.KS",
+            "카카오게임즈": "293490.KQ",
+            "셀트리온헬스케어": "091990.KS"
+        }
     }
 
 

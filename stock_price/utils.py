@@ -1,11 +1,8 @@
-"""
-키움 REST API OAuth 토큰 관리 유틸리티
-"""
 import requests
 import json
 import os
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 class TokenManager:
     def __init__(self):
@@ -153,6 +150,146 @@ class TokenManager:
             print(f"API 요청 오류: {e}")
             return False
 
+
+class TickerManager:
+    """
+    티커 변환 및 관리 클래스
+    """
+    
+    def __init__(self):
+        """
+        티커 매니저 초기화
+        """
+        # 거래소별 매핑 규칙
+        self.exchange_mapping = {
+            'KS': '',        # 코스피 (KRX) - 접미사 없음
+            'KQ': '_AL',     # 코스닥 (SOR) - _AL 접미사
+            'NX': '_NX',     # 코넥스 (KONEX) - _NX 접미사
+        }
+        
+        # 지원하는 거래소 목록
+        self.supported_exchanges = set(self.exchange_mapping.keys())
+    
+    def convert_to_kiwoom_format(self, ticker: str) -> str:
+        """
+        티커를 키움 API 형식의 종목코드로 변환합니다.
+        
+        Args:
+            ticker: 티커 코드 (예: "377300.KS", "000660.KQ", "039490.NX", "005930")
+            
+        Returns:
+            str: 키움 API 형식 종목코드
+            
+        Examples:
+            - "005930.KS" → "005930" (코스피)
+            - "000660.KQ" → "000660_AL" (코스닥)  
+            - "039490.NX" → "039490_NX" (코넥스)
+            - "005930" → "005930" (기본 KRX)
+        """
+        if '.' not in ticker:
+            # 거래소 접미사가 없으면 기본 KRX 형식
+            return ticker
+        
+        stock_code, exchange = ticker.split('.', 1)
+        
+        # 거래소 코드 매핑
+        suffix = self.exchange_mapping.get(exchange.upper(), '')
+        return f"{stock_code}{suffix}"
+    
+    def convert_multiple_tickers(self, tickers: List[str]) -> List[str]:
+        """
+        여러 티커를 키움 API 형식으로 변환합니다.
+        
+        Args:
+            tickers: 티커 리스트 (예: ["005930.KS", "000660.KQ"])
+            
+        Returns:
+            List[str]: 변환된 종목코드 리스트 (예: ["005930", "000660_AL"])
+        """
+        return [self.convert_to_kiwoom_format(ticker) for ticker in tickers]
+    
+    def get_exchange_info(self, ticker: str) -> Dict[str, str]:
+        """
+        티커에서 거래소 정보를 추출합니다.
+        
+        Args:
+            ticker: 티커 코드 (예: "005930.KS")
+            
+        Returns:
+            Dict: 거래소 정보 (exchange, exchange_name, kiwoom_format)
+        """
+        if '.' not in ticker:
+            return {
+                'exchange': 'KRX',
+                'exchange_name': '한국거래소 (기본)',
+                'kiwoom_format': ticker
+            }
+        
+        stock_code, exchange = ticker.split('.', 1)
+        exchange_upper = exchange.upper()
+        
+        exchange_names = {
+            'KS': '코스피 (KOSPI)',
+            'KQ': '코스닥 (KOSDAQ)', 
+            'NX': '코넥스 (KONEX)'
+        }
+        
+        return {
+            'exchange': exchange_upper,
+            'exchange_name': exchange_names.get(exchange_upper, f'알 수 없는 거래소 ({exchange})'),
+            'kiwoom_format': self.convert_to_kiwoom_format(ticker)
+        }
+    
+    def validate_ticker_format(self, ticker: str) -> bool:
+        """
+        티커 형식이 유효한지 검증합니다.
+        
+        Args:
+            ticker: 티커 코드
+            
+        Returns:
+            bool: 유효 여부
+        """
+        if not ticker:
+            return False
+        
+        # 거래소 접미사가 없는 경우 (기본 KRX)
+        if '.' not in ticker:
+            return ticker.isdigit() and len(ticker) == 6
+        
+        # 거래소 접미사가 있는 경우
+        parts = ticker.split('.')
+        if len(parts) != 2:
+            return False
+        
+        stock_code, exchange = parts
+        
+        # 종목코드는 6자리 숫자
+        if not (stock_code.isdigit() and len(stock_code) == 6):
+            return False
+        
+        # 지원하는 거래소인지 확인
+        return exchange.upper() in self.supported_exchanges
+    
+    def get_supported_exchanges(self) -> Dict[str, str]:
+        """
+        지원하는 거래소 목록을 반환합니다.
+        
+        Returns:
+            Dict: 거래소 코드와 이름 매핑
+        """
+        return {
+            'KS': '코스피 (KOSPI)',
+            'KQ': '코스닥 (KOSDAQ)',
+            'NX': '코넥스 (KONEX)'
+        }
+
+
 def get_token_manager() -> TokenManager:
     """토큰 매니저 인스턴스를 반환합니다"""
-    return TokenManager() 
+    return TokenManager()
+
+
+def get_ticker_manager() -> TickerManager:
+    """티커 매니저 인스턴스를 반환합니다"""
+    return TickerManager() 
