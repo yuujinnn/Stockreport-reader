@@ -8,7 +8,7 @@
 
 키움증권 REST API를 사용하여 차트 데이터를 조회합니다.
 
-```
+```mermaid
 sequenceDiagram
     participant U as 사용자
     participant A as StockPriceAgent
