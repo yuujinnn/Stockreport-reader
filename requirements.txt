@@ -1,0 +1,36 @@
+# Core LangChain packages (v0.3 stable)
+langchain>=0.3.23,<0.4
+langchain-core>=0.3.52,<0.4
+langchain-openai>=0.2.0,<0.3
+langchain-community>=0.3.0,<0.4
+
+# OpenAI and LangSmith
+openai>=1.51.0,<2.0
+langsmith>=0.1.17,<0.2
+
+# Web framework
+fastapi>=0.104.1,<0.106
+uvicorn[standard]>=0.24.0,<0.32
+
+# Data validation and utilities
+pydantic>=2.5.0,<3.0
+requests>=2.31.0,<3.0
+python-dotenv>=1.0.0,<2.0
+
+# Optional dependencies for better performance
+tenacity>=8.1.0,<9.0
+aiohttp>=3.8.3,<4.0
+
+# Testing and development
+httpx>=0.24.0,<0.28
+pytest>=7.4.0,<8.0
+pytest-asyncio>=0.21.0,<0.24
+swagger-ui-bundle>=1.1.0,<2.0
+
+# Additional FastAPI utilities
+python-multipart>=0.0.6,<0.1  # For form data support
+Jinja2>=3.1.2,<4.0  # For HTML templates
+
+# LangGraph and Multi-Agent Support
+langgraph>=0.2.50,<0.3  # LangGraph for multi-agent workflows
+langchain-experimental>=0.3.0,<0.4  # Experimental LangChain features 

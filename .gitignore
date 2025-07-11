@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Secrets
+#   Kiwoom Rest API
+secrets/
+
+# Datas
+agents/stock_price_agent/data/*
