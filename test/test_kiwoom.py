@@ -29,7 +29,7 @@ def fn_ka10094(token, data, cont_yn='N', next_key=''):
 # 실행 구간
 if __name__ == '__main__':
 	# 1. 토큰 설정
-	MY_ACCESS_TOKEN = 'pQoUYrjoKVlFsqSopUasgu1eNGT66Qxt2pcqym8UryDdmH5uiTV4NC2FzTzdY_ehjbxtkOc1t9XjcMaOBWIcjQ' # 접근토큰
+	MY_ACCESS_TOKEN = '여기에 토큰을 넣기' # 접근토큰
 
 	# 2. 요청 데이터
 	params = {
