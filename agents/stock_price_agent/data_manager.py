@@ -54,9 +54,6 @@ class StockDataManager:
                     "open_pric",         # 시가
                     "high_pric",         # 고가
                     "low_pric",          # 저가
-                    "pred_close_pric",   # 전일종가
-                    "upd_stkpc_tp",      # 수정주가구분
-                    "upd_rt",            # 수정비율
                 },
                 "date_field": "cntr_tm"  # 체결시간
             },
@@ -70,9 +67,6 @@ class StockDataManager:
                     "open_pric",         # 시가
                     "high_pric",         # 고가
                     "low_pric",          # 저가
-                    "pred_close_pric",   # 전일종가
-                    "upd_stkpc_tp",      # 수정주가구분
-                    "upd_rt",            # 수정비율
                 },
                 "date_field": "cntr_tm"  # 체결시간
             },
@@ -87,9 +81,6 @@ class StockDataManager:
                     "open_pric",         # 시가
                     "high_pric",         # 고가
                     "low_pric",          # 저가
-                    "upd_stkpc_tp",      # 수정주가구분
-                    "upd_rt",            # 수정비율
-                    "pred_close_pric",   # 전일종가
                 },
                 "date_field": "dt"  # 일자
             },
@@ -104,9 +95,6 @@ class StockDataManager:
                     "open_pric",         # 시가
                     "high_pric",         # 고가
                     "low_pric",          # 저가
-                    "upd_stkpc_tp",      # 수정주가구분
-                    "upd_rt",            # 수정비율
-                    "pred_close_pric",   # 전일종가
                 },
                 "date_field": "dt"  # 일자
             },
@@ -121,9 +109,6 @@ class StockDataManager:
                     "open_pric",         # 시가
                     "high_pric",         # 고가
                     "low_pric",          # 저가
-                    "upd_stkpc_tp",      # 수정주가구분
-                    "upd_rt",            # 수정비율
-                    "pred_close_pric",   # 전일종가
                 },
                 "date_field": "dt"  # 일자
             },
@@ -138,9 +123,6 @@ class StockDataManager:
                     "open_pric",         # 시가
                     "high_pric",         # 고가
                     "low_pric",          # 저가
-                    "upd_stkpc_tp",      # 수정주가구분
-                    "upd_rt",            # 수정비율
-                    "pred_close_pric",   # 전일종가
                 },
                 "date_field": "dt"  # 일자
             }
