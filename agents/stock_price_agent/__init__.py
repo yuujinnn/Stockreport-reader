@@ -9,7 +9,7 @@ from .tools import get_stock_price_tools
 from .data_manager import StockDataManager, get_data_manager
 from .kiwoom_api import (
     KiwoomTokenManager, get_token_manager, get_today_date,
-    fn_ka10079, fn_ka10080, fn_ka10081, 
+    fn_ka10080, fn_ka10081, 
     fn_ka10082, fn_ka10083, fn_ka10094
 )
 
@@ -23,6 +23,6 @@ __all__ = [
     "KiwoomTokenManager",
     "get_token_manager",
     "get_today_date",
-    "fn_ka10079", "fn_ka10080", "fn_ka10081", 
+    "fn_ka10080", "fn_ka10081", 
     "fn_ka10082", "fn_ka10083", "fn_ka10094"
 ] 

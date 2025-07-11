@@ -1,6 +1,6 @@
 """
 Stock Price Agent 툴 구현
-키움 API 함수들을 LangChain 툴로 래핑
+키움 API 함수들을 LangChain 툴로 래핑 (틱 차트 제거)
 """
 from typing import Dict, Optional, List, Tuple, Any
 from langchain.tools import BaseTool
@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 
 # 자체 구현한 키움 API 모듈 import
 from .kiwoom_api import (
-    fn_ka10079, fn_ka10080, fn_ka10081, 
+    fn_ka10080, fn_ka10081, 
     fn_ka10082, fn_ka10083, fn_ka10094,
     get_token_manager, get_today_date
 )
@@ -22,8 +22,6 @@ from .prompt import QUERY_ANALYSIS_PROMPT
 
 # 환경변수 로드
 load_dotenv("secrets/.env")
-
-
 
 
 def log_tool_execution(tool_name: str, stock_code: str, params: Dict) -> str:
@@ -38,21 +36,20 @@ def log_tool_execution(tool_name: str, stock_code: str, params: Dict) -> str:
     return log_msg
 
 
-
-def _process_api_response(raw_data: Dict, stock_code: str, chart_type: str, chart_params: str = None, expected_start_date: str = None, expected_end_date: str = None) -> str:
+def _process_api_response(raw_data: Dict, stock_code: str, chart_type: str, base_date: str = None, expected_start_date: str = None, expected_end_date: str = None) -> str:
     """
-    키움 API 응답을 처리하고 필터링된 데이터를 반환 (기간 검증 통합)
+    키움 API 응답을 처리하고 결과를 반환 (새로운 로직)
     
     Args:
         raw_data: 키움 API 원본 응답
         stock_code: 종목코드  
         chart_type: 차트 유형
-        chart_params: 차트 파라미터 (틱/분봉: scope, 일/주/월/년봉: None)
+        base_date: 기준일자
         expected_start_date: 예상 시작일 (YYYYMMDD, 선택적)
         expected_end_date: 예상 종료일 (YYYYMMDD, 선택적)
         
     Returns:
-        str: 필터링된 데이터 + 검증 결과 JSON 문자열
+        str: 처리 결과 JSON 문자열
     """
     try:
         # 데이터 매니저 import (순환 import 방지)
@@ -64,19 +61,22 @@ def _process_api_response(raw_data: Dict, stock_code: str, chart_type: str, char
         else:
             print(f"ℹ️  기간 검증 생략 (기간 정보 없음)")
         
-        # 데이터 처리 (저장 + 필터링 + 검증 통합)
+        # 데이터 처리 (새로운 로직)
         data_manager = get_data_manager()
-        filtered_data = data_manager.process_api_response(
-            raw_data, stock_code, chart_type, chart_params, expected_start_date, expected_end_date
+        result = data_manager.process_api_response(
+            raw_data, stock_code, chart_type, base_date, expected_start_date, expected_end_date
         )
         
-        return json.dumps(filtered_data, ensure_ascii=False)
+        return json.dumps(result, ensure_ascii=False)
         
     except Exception as e:
         print(f"❌ 데이터 처리 오류: {e}")
-        # 오류 시 원본 데이터 반환 (토큰 문제 발생 가능하지만 시스템 중단 방지)
-        return json.dumps(raw_data, ensure_ascii=False)
-
+        # 오류 시 원본 데이터 반환
+        return json.dumps({
+            "status": "error",
+            "message": f"데이터 처리 오류: {str(e)}",
+            "data": raw_data
+        }, ensure_ascii=False)
 
 
 class QueryAnalysisInput(BaseModel):
@@ -213,14 +213,6 @@ class QueryAnalysisTool(BaseTool):
             }, ensure_ascii=False)
 
 
-
-class TickChartInput(BaseModel):
-    stock_code: str = Field(description="6자리 종목코드 (예: 005930)")
-    tick_scope: str = Field(description="틱범위 (1, 3, 5, 10, 30)")
-    expected_start_date: Optional[str] = Field(None, description="검증용 시작일 (YYYYMMDD, 선택적)")
-    expected_end_date: Optional[str] = Field(None, description="검증용 종료일 (YYYYMMDD, 선택적)")
-
-
 class MinuteChartInput(BaseModel):
     stock_code: str = Field(description="6자리 종목코드 (예: 005930)")
     minute_scope: str = Field(description="분봉범위 (1, 3, 5, 10, 15, 30, 45, 60)")
@@ -256,36 +248,6 @@ class YearChartInput(BaseModel):
     expected_end_date: Optional[str] = Field(None, description="검증용 종료일 (YYYYMMDD, 선택적)")
 
 
-
-
-class TickChartTool(BaseTool):
-    name: str = "get_tick_chart"
-    description: str = "주식 틱차트 조회 (1, 3, 5, 10, 30틱 범위). 초단기 실시간 분석용으로 몇 시간 이내의 매우 세밀한 데이터가 필요할 때 사용."
-    args_schema: type = TickChartInput
-
-    def _run(self, stock_code: str, tick_scope: str, expected_start_date: str = None, expected_end_date: str = None) -> str:
-        try:
-            token_manager = get_token_manager()
-            token = token_manager.get_access_token()
-            
-            if not token:
-                return "토큰 발급 실패"
-            
-            result = fn_ka10079(
-                token=token,
-                stk_cd=stock_code,
-                tic_scope=tick_scope
-            )
-            
-            if result:
-                return _process_api_response(result, stock_code, "tick", tick_scope, expected_start_date, expected_end_date)
-            else:
-                return "틱 차트 데이터 조회 실패"
-                
-        except Exception as e:
-            return f"오류 발생: {str(e)}"
-
-
 class MinuteChartTool(BaseTool):
     name: str = "get_minute_chart"
     description: str = "주식 분봉차트 조회 (1, 3, 5, 10, 15, 30, 45, 60분 범위). 단기 트레이딩 및 일중 패턴 분석용으로 1일~1주일 기간에 적합."
@@ -306,7 +268,7 @@ class MinuteChartTool(BaseTool):
             )
             
             if result:
-                return _process_api_response(result, stock_code, "minute", minute_scope, expected_start_date, expected_end_date)
+                return _process_api_response(result, stock_code, "minute", None, expected_start_date, expected_end_date)
             else:
                 return "분봉 차트 데이터 조회 실패"
                 
@@ -334,7 +296,7 @@ class DayChartTool(BaseTool):
             )
             
             if result:
-                return _process_api_response(result, stock_code, "day", None, expected_start_date, expected_end_date)
+                return _process_api_response(result, stock_code, "day", base_date, expected_start_date, expected_end_date)
             else:
                 return "일봉 차트 데이터 조회 실패"
                 
@@ -366,15 +328,16 @@ class WeekChartTool(BaseTool):
             )
             
             if result:
-                filtered_result = _process_api_response(result, stock_code, "week", None, expected_start_date, expected_end_date)
+                filtered_result = _process_api_response(result, stock_code, "week", base_date, expected_start_date, expected_end_date)
                 
                 # 데이터 건수 정보 추가 (LangSmith에서 확인 가능)
                 if os.getenv('LANGSMITH_API_KEY'):
                     try:
                         data = json.loads(filtered_result)
-                        data_count = data.get('data_count', 0)
-                        period_info = f" (기간: {expected_start_date}~{expected_end_date})" if expected_start_date else ""
-                        print(f"LangSmith: 주봉 데이터 {data_count}건 조회 성공{period_info}")
+                        if data.get("status") == "success":
+                            data_count = len(data.get('data', []))
+                            period_info = f" (기간: {expected_start_date}~{expected_end_date})" if expected_start_date else ""
+                            print(f"LangSmith: 주봉 데이터 {data_count}건 조회 성공{period_info}")
                     except:
                         pass
                 
@@ -409,7 +372,7 @@ class MonthChartTool(BaseTool):
             )
             
             if result:
-                return _process_api_response(result, stock_code, "month", None, expected_start_date, expected_end_date)
+                return _process_api_response(result, stock_code, "month", base_date, expected_start_date, expected_end_date)
             else:
                 return "월봉 차트 데이터 조회 실패"
                 
@@ -437,7 +400,7 @@ class YearChartTool(BaseTool):
             )
             
             if result:
-                return _process_api_response(result, stock_code, "year", None, expected_start_date, expected_end_date)
+                return _process_api_response(result, stock_code, "year", base_date, expected_start_date, expected_end_date)
             else:
                 return "년봉 차트 데이터 조회 실패"
                 
@@ -447,15 +410,14 @@ class YearChartTool(BaseTool):
 
 def get_stock_price_tools() -> List[BaseTool]:
     """
-    Stock Price Agent에서 사용할 툴 리스트를 반환합니다.
+    Stock Price Agent에서 사용할 툴 리스트를 반환합니다. (틱 차트 제거)
     쿼리 분석 툴이 추가되어 더 정확한 종목과 날짜 범위 분석이 가능합니다.
     
     Returns:
-        List[BaseTool]: 쿼리 분석 + 키움증권 API 툴들
+        List[BaseTool]: 쿼리 분석 + 키움증권 API 툴들 (틱 차트 제외)
     """
     return [
         QueryAnalysisTool(),      # 쿼리 분석 툴 (날짜 계산 포함)
-        TickChartTool(),
         MinuteChartTool(),
         DayChartTool(),
         WeekChartTool(),

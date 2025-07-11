@@ -247,36 +247,11 @@ def _make_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
         return None
 
 
-# ========== 주식 차트 조회 함수들 (legacy 코드 기반) ==========
-
-def fn_ka10079(token: str, stk_cd: str, tic_scope: str) -> Optional[Dict]:
-    """
-    주식틱차트조회요청 (ka10079) - legacy 코드 기반
-    
-    Args:
-        token (str): 접근토큰
-        stk_cd (str): 종목코드
-        tic_scope (str): 틱범위 (1:1틱, 3:3틱, 5:5틱, 10:10틱, 30:30틱)
-    
-    Returns:
-        Dict: API 응답 데이터
-    """
-    # 틱범위 값 검증
-    valid_tic_scopes = ['1', '3', '5', '10', '30']
-    if tic_scope not in valid_tic_scopes:
-        raise ValueError(f"tic_scope는 {valid_tic_scopes} 중 하나여야 합니다. 입력값: {tic_scope}")
-    
-    # ka10079 전용 body 파라미터 (API 가이드 스펙 준수)
-    data = {
-        'stk_cd': stk_cd,          # 종목코드
-        'tic_scope': tic_scope,    # 틱범위 (1, 3, 5, 10, 30)
-        'upd_stkpc_tp': '1'        # 수정주가 고정
-    }
-    return _make_request(token, 'ka10079', data)
+# ========== 주식 차트 조회 함수들 (틱 차트 제거) ==========
 
 def fn_ka10080(token: str, stk_cd: str, tic_scope: str) -> Optional[Dict]:
     """
-    주식분봉차트조회요청 (ka10080) - legacy 코드 기반
+    주식분봉차트조회요청 (ka10080)
     
     Args:
         token (str): 접근토큰
@@ -296,7 +271,7 @@ def fn_ka10080(token: str, stk_cd: str, tic_scope: str) -> Optional[Dict]:
 
 def fn_ka10081(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
     """
-    주식일봉차트조회요청 (ka10081) - legacy 코드 기반
+    주식일봉차트조회요청 (ka10081)
     
     Args:
         token (str): 접근토큰
@@ -316,7 +291,7 @@ def fn_ka10081(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
 
 def fn_ka10082(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
     """
-    주식주봉차트조회요청 (ka10082) - legacy 코드 기반
+    주식주봉차트조회요청 (ka10082)
     
     Args:
         token (str): 접근토큰
@@ -336,7 +311,7 @@ def fn_ka10082(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
 
 def fn_ka10083(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
     """
-    주식월봉차트조회요청 (ka10083) - legacy 코드 기반
+    주식월봉차트조회요청 (ka10083)
     
     Args:
         token (str): 접근토큰
@@ -356,7 +331,7 @@ def fn_ka10083(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
 
 def fn_ka10094(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
     """
-    주식년봉차트조회요청 (ka10094) - legacy 코드 기반
+    주식년봉차트조회요청 (ka10094)
     
     Args:
         token (str): 접근토큰
@@ -375,7 +350,7 @@ def fn_ka10094(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
     return _make_request(token, 'ka10094', data)
 
 
-# ========== 편의 함수들 (legacy 코드 기반) ==========
+# ========== 편의 함수들 ==========
 
 def save_chart_data_to_json(data: Dict, filename: str):
     """차트 데이터를 JSON 파일로 저장합니다"""
