@@ -4,9 +4,10 @@ Stock Price Agent 구현
 """
 
 import os
-from typing import Dict, Any
+from typing import Dict, Any, List
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langchain_openai import ChatOpenAI
+from langchain.tools import BaseTool
 from langgraph.prebuilt import create_react_agent
 
 from .prompt import STOCK_PRICE_AGENT_PROMPT
@@ -35,12 +36,34 @@ class StockPriceAgent:
         self.data_manager = get_data_manager()
         print("📁 Stock Price Agent 데이터 매니저 초기화 완료")
         
+        # tools와 tool_names 정보 추가
+        tools_info = self._get_tools_info(self.tools)
+        
+        # 프롬프트 포맷팅
+        formatted_prompt = STOCK_PRICE_AGENT_PROMPT.format(**tools_info)
+        
         # LangGraph React Agent 생성
         self.agent = create_react_agent(
             self.llm,
             tools=self.tools,
-            prompt=STOCK_PRICE_AGENT_PROMPT
+            prompt=formatted_prompt
         )
+    
+    def _get_tools_info(self, tools: List[BaseTool]) -> Dict[str, str]:
+        """tools 정보를 prompt에 사용할 수 있는 형태로 변환합니다"""
+        # tools 설명 생성
+        tools_desc = []
+        tool_names = []
+        
+        for tool in tools:
+            tool_names.append(tool.name)
+            tool_desc = f"- **{tool.name}**: {tool.description}"
+            tools_desc.append(tool_desc)
+        
+        return {
+            'tools': '\n'.join(tools_desc),
+            'tool_names': ', '.join(tool_names)
+        }
     
     def invoke(self, state: MessagesState) -> Dict[str, Any]:
         """

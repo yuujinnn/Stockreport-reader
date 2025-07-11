@@ -47,18 +47,14 @@ class SupervisorAgent:
         # 정확한 날짜 정보 계산
         date_info = self._calculate_date_info()
         
-        # 날짜 정보만 포맷팅하고 {tools}, {tool_names}는 LangGraph가 처리하도록 보존
-        try:
-            formatted_prompt = SUPERVISOR_PROMPT.format(**date_info)
-        except KeyError as e:
-            # {tools}, {tool_names} 등은 LangGraph가 처리하므로 일단 건드리지 않고 진행
-            # 임시로 빈 문자열로 대체해서 날짜만 포맷팅
-            temp_date_info = date_info.copy()
-            temp_date_info.update({
-                'tools': '{tools}',
-                'tool_names': '{tool_names}'
-            })
-            formatted_prompt = SUPERVISOR_PROMPT.format(**temp_date_info)
+        # tools와 tool_names 정보 추가
+        tools_info = self._get_tools_info([self.stock_price_tool])
+        
+        # 모든 포맷팅 정보 결합
+        format_info = {**date_info, **tools_info}
+        
+        # 프롬프트 포맷팅
+        formatted_prompt = SUPERVISOR_PROMPT.format(**format_info)
         
         # LangGraph React Agent 생성 (Tool-calling Supervisor 패턴)
         self.agent = create_react_agent(
@@ -124,6 +120,22 @@ class SupervisorAgent:
             'last_year_end': last_year_end,
             'current_year': str(today.year),
             'last_year': str(today.year - 1)
+        }
+    
+    def _get_tools_info(self, tools: List[BaseTool]) -> Dict[str, str]:
+        """tools 정보를 prompt에 사용할 수 있는 형태로 변환합니다"""
+        # tools 설명 생성
+        tools_desc = []
+        tool_names = []
+        
+        for tool in tools:
+            tool_names.append(tool.name)
+            tool_desc = f"- **{tool.name}**: {tool.description}"
+            tools_desc.append(tool_desc)
+        
+        return {
+            'tools': '\n'.join(tools_desc),
+            'tool_names': ', '.join(tool_names)
         }
     
     @property
