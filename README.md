@@ -19,7 +19,7 @@ sequenceDiagram
     participant TM as TokenManager
     participant K as 키움 API
 
-    U->>SV: "카카오페이(377300)의 2024년 주봉 데이터"
+    U->>SV: "카카오페이 377300의 2024년 주가를 분석해줘"
     SV->>SPA: stock_price_request(query)
     
     Note over SPA: 1단계: 쿼리 분석
