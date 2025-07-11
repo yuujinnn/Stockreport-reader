@@ -38,7 +38,46 @@ def log_tool_execution(tool_name: str, stock_code: str, params: Dict) -> str:
     return log_msg
 
 
-# ========== 새로운 쿼리 분석 툴 ==========
+
+def _process_api_response(raw_data: Dict, stock_code: str, chart_type: str, chart_params: str = None, expected_start_date: str = None, expected_end_date: str = None) -> str:
+    """
+    키움 API 응답을 처리하고 필터링된 데이터를 반환 (기간 검증 통합)
+    
+    Args:
+        raw_data: 키움 API 원본 응답
+        stock_code: 종목코드  
+        chart_type: 차트 유형
+        chart_params: 차트 파라미터 (틱/분봉: scope, 일/주/월/년봉: None)
+        expected_start_date: 예상 시작일 (YYYYMMDD, 선택적)
+        expected_end_date: 예상 종료일 (YYYYMMDD, 선택적)
+        
+    Returns:
+        str: 필터링된 데이터 + 검증 결과 JSON 문자열
+    """
+    try:
+        # 데이터 매니저 import (순환 import 방지)
+        from .data_manager import get_data_manager
+        
+        # 기간 정보 로그 출력
+        if expected_start_date and expected_end_date:
+            print(f"🔍 기간 검증 활성화: {expected_start_date} ~ {expected_end_date}")
+        else:
+            print(f"ℹ️  기간 검증 생략 (기간 정보 없음)")
+        
+        # 데이터 처리 (저장 + 필터링 + 검증 통합)
+        data_manager = get_data_manager()
+        filtered_data = data_manager.process_api_response(
+            raw_data, stock_code, chart_type, chart_params, expected_start_date, expected_end_date
+        )
+        
+        return json.dumps(filtered_data, ensure_ascii=False)
+        
+    except Exception as e:
+        print(f"❌ 데이터 처리 오류: {e}")
+        # 오류 시 원본 데이터 반환 (토큰 문제 발생 가능하지만 시스템 중단 방지)
+        return json.dumps(raw_data, ensure_ascii=False)
+
+
 
 class QueryAnalysisInput(BaseModel):
     user_query: str = Field(description="분석할 사용자 질문")
@@ -174,7 +213,7 @@ class QueryAnalysisTool(BaseTool):
             }, ensure_ascii=False)
 
 
-# 입력 스키마들
+
 class TickChartInput(BaseModel):
     stock_code: str = Field(description="6자리 종목코드 (예: 005930)")
     tick_scope: str = Field(description="틱범위 (1, 3, 5, 10, 30)")
@@ -217,46 +256,8 @@ class YearChartInput(BaseModel):
     expected_end_date: Optional[str] = Field(None, description="검증용 종료일 (YYYYMMDD, 선택적)")
 
 
-def _process_api_response(raw_data: Dict, stock_code: str, chart_type: str, chart_params: str = None, expected_start_date: str = None, expected_end_date: str = None) -> str:
-    """
-    키움 API 응답을 처리하고 필터링된 데이터를 반환 (기간 검증 통합)
-    
-    Args:
-        raw_data: 키움 API 원본 응답
-        stock_code: 종목코드  
-        chart_type: 차트 유형
-        chart_params: 차트 파라미터 (틱/분봉: scope, 일/주/월/년봉: None)
-        expected_start_date: 예상 시작일 (YYYYMMDD, 선택적)
-        expected_end_date: 예상 종료일 (YYYYMMDD, 선택적)
-        
-    Returns:
-        str: 필터링된 데이터 + 검증 결과 JSON 문자열
-    """
-    try:
-        # 데이터 매니저 import (순환 import 방지)
-        from .data_manager import get_data_manager
-        
-        # 기간 정보 로그 출력
-        if expected_start_date and expected_end_date:
-            print(f"🔍 기간 검증 활성화: {expected_start_date} ~ {expected_end_date}")
-        else:
-            print(f"ℹ️  기간 검증 생략 (기간 정보 없음)")
-        
-        # 데이터 처리 (저장 + 필터링 + 검증 통합)
-        data_manager = get_data_manager()
-        filtered_data = data_manager.process_api_response(
-            raw_data, stock_code, chart_type, chart_params, expected_start_date, expected_end_date
-        )
-        
-        return json.dumps(filtered_data, ensure_ascii=False)
-        
-    except Exception as e:
-        print(f"❌ 데이터 처리 오류: {e}")
-        # 오류 시 원본 데이터 반환 (토큰 문제 발생 가능하지만 시스템 중단 방지)
-        return json.dumps(raw_data, ensure_ascii=False)
 
 
-# 툴 클래스들
 class TickChartTool(BaseTool):
     name: str = "get_tick_chart"
     description: str = "주식 틱차트 조회 (1, 3, 5, 10, 30틱 범위). 초단기 실시간 분석용으로 몇 시간 이내의 매우 세밀한 데이터가 필요할 때 사용."
