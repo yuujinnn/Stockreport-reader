@@ -594,7 +594,7 @@ class StockDataManager:
 
     def process_api_response(self, raw_data: Dict[str, Any], stock_code: str, chart_type: str, chart_params: str = None, expected_start_date: str = None, expected_end_date: str = None) -> Dict[str, Any]:
         """
-        키움 API 응답 전체 처리 (저장 + raw 검증 + 필터링 + 최종 검증)
+        키움 API 응답 전체 처리 (저장 + raw 검증 + 필터링)
         
         Args:
             raw_data: 키움 API 원본 응답
@@ -692,3 +692,38 @@ def get_data_manager() -> StockDataManager:
     if _data_manager is None:
         _data_manager = StockDataManager()
     return _data_manager 
+
+def process_api_response_for_tools(raw_data: Dict[str, Any], stock_code: str, chart_type: str, chart_params: str = None, expected_start_date: str = None, expected_end_date: str = None) -> str:
+    """
+    키움 API 응답을 처리하고 필터링된 데이터를 반환 (LangChain 도구 전용)
+    
+    Args:
+        raw_data: 키움 API 원본 응답
+        stock_code: 종목코드  
+        chart_type: 차트 유형
+        chart_params: 차트 파라미터 (틱/분봉: scope, 일/주/월/년봉: None)
+        expected_start_date: 예상 시작일 (YYYYMMDD, 선택적)
+        expected_end_date: 예상 종료일 (YYYYMMDD, 선택적)
+        
+    Returns:
+        str: 필터링된 데이터 + 검증 결과 JSON 문자열
+    """
+    try:
+        # 기간 정보 로그 출력
+        if expected_start_date and expected_end_date:
+            print(f"🔍 기간 검증 활성화: {expected_start_date} ~ {expected_end_date}")
+        else:
+            print(f"ℹ️  기간 검증 생략 (기간 정보 없음)")
+        
+        # 데이터 처리 (저장 + 필터링 + 검증 통합)
+        data_manager = get_data_manager()
+        filtered_data = data_manager.process_api_response(
+            raw_data, stock_code, chart_type, chart_params, expected_start_date, expected_end_date
+        )
+        
+        return json.dumps(filtered_data, ensure_ascii=False)
+        
+    except Exception as e:
+        print(f"❌ 데이터 처리 오류: {e}")
+        # 오류 시 원본 데이터 반환 (토큰 문제 발생 가능하지만 시스템 중단 방지)
+        return json.dumps(raw_data, ensure_ascii=False) 
