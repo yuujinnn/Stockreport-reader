@@ -1,47 +1,43 @@
 """
 Supervisor Agent 구현
 사용자 질문 분석 및 워커 에이전트 조정
+LangGraph 공식 Tool-calling Supervisor 패턴 적용
 """
 
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Annotated
 from datetime import datetime, timedelta
 from langchain.tools import BaseTool, tool
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
-from langgraph.prebuilt import create_react_agent
+from langgraph.prebuilt import create_react_agent, InjectedState
 
-from .prompt import SUPERVISOR_PROMPT, FINAL_ANSWER_PROMPT
+from .prompt import SUPERVISOR_PROMPT
 from ..shared.state import MessagesState
-
-
-class StockPriceAgentInput(BaseModel):
-    """Stock Price Agent 툴 입력 스키마"""
-    request: str = Field(
-        description="Stock Price Agent에게 전달할 주식 데이터 요청. 종목명과 티커가 포함된 상태"
-    )
 
 
 class SupervisorAgent:
     """
-    Supervisor Agent
+    Supervisor Agent (LangGraph 공식 Tool-calling Supervisor 패턴)
     사용자의 질문을 분석하고 Stock Price Agent를 조정하여 최종 답변을 생성
     """
     
-    def __init__(self, llm: ChatOpenAI):
+    def __init__(self, supervisor_llm: ChatOpenAI, stock_llm):
         """
         Supervisor Agent 초기화
         
         Args:
-            llm: LangChain ChatOpenAI 인스턴스
+            supervisor_llm: Supervisor용 LangChain LLM 인스턴스 (OpenAI)
+            stock_llm: Stock Price Agent용 LangChain LLM 인스턴스 (HyperCLOVA X 또는 OpenAI)
         """
-        self.llm = llm
+        self.supervisor_llm = supervisor_llm
+        self.stock_llm = stock_llm
         
         # Stock Price Agent 인스턴스를 지연 로딩으로 생성
         self._stock_price_agent = None
         
-        # Stock Price Agent 툴 정의
+        # Stock Price Agent 툴 정의 (공식 패턴)
         self.stock_price_tool = self._create_stock_price_tool()
         
         # 정확한 날짜 정보 계산
@@ -56,9 +52,10 @@ class SupervisorAgent:
         # 프롬프트 포맷팅
         formatted_prompt = SUPERVISOR_PROMPT.format(**format_info)
         
-        # LangGraph React Agent 생성 (Tool-calling Supervisor 패턴)
+        # LangGraph React Agent 생성 (표준 Tool-calling Supervisor 패턴)
+        # Supervisor는 OpenAI 사용
         self.agent = create_react_agent(
-            self.llm,
+            self.supervisor_llm,
             tools=[self.stock_price_tool],
             prompt=formatted_prompt
         )
@@ -143,28 +140,25 @@ class SupervisorAgent:
         """Stock Price Agent 인스턴스를 지연 로딩합니다 (순환 import 방지)"""
         if self._stock_price_agent is None:
             from ..stock_price_agent.agent import StockPriceAgent
-            self._stock_price_agent = StockPriceAgent(self.llm)
+            # Stock Price Agent는 stock_llm 사용 (HyperCLOVA X 또는 OpenAI)
+            self._stock_price_agent = StockPriceAgent(self.stock_llm)
         return self._stock_price_agent
     
     def _create_stock_price_tool(self) -> BaseTool:
-        """실제 Stock Price Agent를 호출하는 툴을 생성합니다"""
+        """표준 LangChain tool로 Stock Price Agent를 래핑합니다 (공식 패턴)"""
         
-        @tool("call_stock_price_agent", args_schema=StockPriceAgentInput)
-        def call_stock_price_agent(request: str) -> str:
+        @tool("call_stock_price_agent")
+        def call_stock_price_agent(
+            request: Annotated[str, "주식 데이터 요청. 종목명, 티커, 기간, 분석 목적을 포함한 자연어 요청"]
+        ) -> str:
             """
             Stock Price Agent를 호출하여 주식 데이터를 조회합니다.
-            사용자의 요청을 그대로 전달합니다.
-            
-            Args:
-                request: 주식 데이터 요청 (종목명, 티커, 기간, 차트 유형, 분석 목적 포함)
-                
-            Returns:
-                str: Stock Price Agent의 응답
+            키움증권 API를 통해 실제 주식 차트 데이터를 수집하고 분석합니다.
             """
             try:
                 print(f"📝 Stock Price Agent 요청: {request}")
                 
-                # 실제 Stock Price Agent 호출 (Tool-calling Supervisor 패턴)
+                # 표준 LangGraph 방식으로 Sub-agent 호출
                 stock_messages = [HumanMessage(content=request)]
                 stock_state = MessagesState(
                     messages=stock_messages,
@@ -175,12 +169,13 @@ class SupervisorAgent:
                     metadata={"source": "supervisor_tool_call"}
                 )
                 
-                # Stock Price Agent 실행
+                # Stock Price Agent 실행 (표준 invoke)
                 result_state = self.stock_price_agent.invoke(stock_state)
                 
-                # 결과 추출
+                # 결과 추출 (LangGraph 표준 방식)
                 result_messages = result_state.get("messages", [])
                 if result_messages:
+                    # 마지막 메시지의 content 반환 (문자열)
                     final_response = result_messages[-1].content
                     return final_response
                 else:
@@ -193,7 +188,7 @@ class SupervisorAgent:
     
     def invoke(self, state: MessagesState) -> Dict[str, Any]:
         """
-        Supervisor Agent를 실행합니다 (LangGraph Tool-calling Supervisor 패턴)
+        Supervisor Agent를 실행합니다 (표준 LangGraph Tool-calling Supervisor 패턴)
         
         Args:
             state: 현재 상태
@@ -202,13 +197,13 @@ class SupervisorAgent:
             Dict: 업데이트된 상태
         """
         try:
-            # LangGraph prebuilt create_react_agent 실행
+            # 표준 LangGraph prebuilt create_react_agent 실행
             result = self.agent.invoke({"messages": state["messages"]})
             
-            # 결과에서 메시지 추출
+            # 결과에서 메시지 추출 (표준 방식)
             new_messages = result.get("messages", [])
             
-            # 메시지 상태 업데이트
+            # 메시지 상태 업데이트 (표준 방식)
             updated_state = state.copy()
             updated_state["messages"] = new_messages
             
@@ -217,11 +212,12 @@ class SupervisorAgent:
                 updated_state["metadata"] = {}
             updated_state["metadata"]["supervisor_processed"] = True
             updated_state["metadata"]["total_messages"] = len(new_messages)
+            updated_state["metadata"]["pattern"] = "tool_calling_supervisor"
             
             return updated_state
             
         except Exception as e:
-            # 오류 처리
+            # 오류 처리 (표준 방식)
             error_message = f"Supervisor Agent 처리 중 오류 발생: {str(e)}"
             
             error_ai_message = AIMessage(content=error_message)
