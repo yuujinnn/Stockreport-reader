@@ -212,3 +212,7 @@ secrets/
 
 # Datas
 agents/stock_price_agent/data/*
+
+# Claude .md
+.cursor/
+CLAUDE.md

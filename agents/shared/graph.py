@@ -1,6 +1,6 @@
 """
 LangGraph 기반 Supervisor MAS 그래프 정의
-Tool-calling Supervisor 패턴 구현
+표준 Tool-calling Supervisor 패턴 구현 (OpenAI 전용)
 """
 
 import os
@@ -18,33 +18,48 @@ load_dotenv("secrets/.env")
 
 def create_supervisor_graph():
     """
-    Tool-calling Supervisor MAS 그래프를 생성합니다.
+    LangGraph 공식 Tool-calling Supervisor MAS 그래프를 생성합니다.
     
-    LangGraph 공식 가이드의 Tool-calling Supervisor 패턴:
-    - Supervisor가 Stock Price Agent를 툴로 호출
+    공식 가이드의 Tool-calling Supervisor 패턴:
+    - Supervisor가 Stock Price Agent를 표준 tool로 호출
     - 단일 노드 구조로 간단하고 효율적
+    - LangGraph의 자동 tool call 처리 활용
+    - 모든 Agent에서 OpenAI 사용
     
     Returns:
         StateGraph: 컴파일된 LangGraph
     """
     
-    # LLM 초기화
-    llm = ChatOpenAI(
+    # Supervisor용 LLM 초기화 (OpenAI)
+    supervisor_llm = ChatOpenAI(
         model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
         temperature=float(os.getenv('OPENAI_TEMPERATURE', '0')),
         openai_api_key=os.getenv('OPENAI_API_KEY')
     )
     
-    # Supervisor Agent 인스턴스 생성 (Stock Price Agent를 툴로 가짐)
-    supervisor_agent = SupervisorAgent(llm)
+    # Stock Price Agent용 LLM 초기화 (OpenAI 전용)
+    stock_llm = ChatOpenAI(
+        model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
+        temperature=float(os.getenv('OPENAI_TEMPERATURE', '0')),
+        openai_api_key=os.getenv('OPENAI_API_KEY')
+    )
     
-    # StateGraph 생성 (Tool-calling Supervisor 패턴)
+    print("✅ Supervisor Agent: OpenAI (gpt-4o-mini) 사용")
+    print("✅ Stock Price Agent: OpenAI (gpt-4o-mini) 사용")
+    
+    # Supervisor Agent 인스턴스 생성 (두 LLM 모두 OpenAI)
+    supervisor_agent = SupervisorAgent(
+        supervisor_llm=supervisor_llm,
+        stock_llm=stock_llm
+    )
+    
+    # StateGraph 생성 (표준 Tool-calling Supervisor 패턴)
     workflow = StateGraph(MessagesState)
     
-    # Supervisor 노드만 추가 (모든 작업을 툴로 처리)
+    # Supervisor 노드만 추가 (모든 작업을 표준 tool로 처리)
     workflow.add_node("supervisor", supervisor_agent.invoke)
     
-    # 단순한 엣지: START -> supervisor -> END
+    # 단순한 엣지: START -> supervisor -> END (표준 패턴)
     workflow.add_edge(START, "supervisor")
     workflow.add_edge("supervisor", END)
     
@@ -68,7 +83,11 @@ def create_initial_state(user_query: str) -> MessagesState:
         extracted_info=None,
         stock_data=None,
         error=None,
-        metadata={"created_at": os.environ.get("REQUEST_TIME", ""), "pattern": "tool_calling_supervisor"}
+        metadata={
+            "created_at": os.environ.get("REQUEST_TIME", ""), 
+            "pattern": "tool_calling_supervisor",
+            "architecture": "langgraph_official"
+        }
     )
 
 
@@ -84,7 +103,7 @@ def extract_final_answer(state: MessagesState) -> str:
     """
     messages = state["messages"]
     
-    # 마지막 AI 메시지를 찾기
+    # 마지막 AI 메시지를 찾기 (표준 방식)
     for message in reversed(messages):
         if isinstance(message, AIMessage):
             content = getattr(message, 'content', '')

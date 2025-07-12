@@ -11,8 +11,9 @@
 ```mermaid
 sequenceDiagram
     participant U as 사용자
-    participant SV as Supervisor
-    participant SPA as StockPriceAgent
+    participant SV as Supervisor<br/>(LangGraph ReAct Agent)
+    participant SPT as call_stock_price_agent<br/>(표준 LangChain Tool)
+    participant SPA as StockPriceAgent<br/>(Sub-agent)
     participant QA as QueryAnalysisTool
     participant WCT as WeekChartTool
     participant DM as DataManager
@@ -20,7 +21,12 @@ sequenceDiagram
     participant K as 키움 API
 
     U->>SV: "카카오페이 377300의 2024년 주가를 분석해줘"
-    SV->>SPA: stock_price_request(query)
+    
+    Note over SV: LangGraph Tool-calling Supervisor 패턴
+    SV->>SPT: call_stock_price_agent("카카오페이(377300)의 2024년 주가 데이터를 조회하여 분석해주세요")
+    
+    Note over SPT: 표준 LangChain @tool 데코레이터
+    SPT->>SPA: invoke({"messages": [HumanMessage(content=request)]})
     
     Note over SPA: 1단계: 쿼리 분석
     SPA->>QA: analyze_query(query, today_date)
@@ -57,9 +63,14 @@ sequenceDiagram
         DM->>WCT: {"status": "success", "data": [변환된 주봉 데이터], "data_count": N}
     end
     
-    WCT->>SPA: 처리 결과 (data 필드 제거된 요약 정보)
+    WCT->>SPA: 처리 결과
     
     Note over SPA: 4단계: 데이터 반환 (차트 유형 명시)
-    SPA->>SV: "카카오페이(377300)의 2024년 **주봉** 주가 데이터:\n| 주차 | 종가 | ...\n| 202412Week5 | 26250 | ..."
+    SPA->>SPT: {"messages": [AIMessage(content="카카오페이(377300)의 2024년 **주봉** 주가 데이터...")]}
+    
+    Note over SPT: 표준 Tool 응답 (문자열 반환)
+    SPT->>SV: "카카오페이(377300)의 2024년 **주봉** 주가 데이터:\n| 주차 | 종가 | ...\n| 202412Week5 | 26250 | ..."
+    
+    Note over SV: LangGraph 자동 ToolMessage 처리
     SV->>U: 최종 분석 답변
 ```
