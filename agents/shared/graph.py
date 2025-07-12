@@ -1,6 +1,6 @@
 """
 LangGraph 기반 Supervisor MAS 그래프 정의
-LangGraph 공식 Tool-calling Supervisor 패턴 구현
+표준 Tool-calling Supervisor 패턴 구현 (OpenAI 전용)
 """
 
 import os
@@ -24,49 +24,30 @@ def create_supervisor_graph():
     - Supervisor가 Stock Price Agent를 표준 tool로 호출
     - 단일 노드 구조로 간단하고 효율적
     - LangGraph의 자동 tool call 처리 활용
+    - 모든 Agent에서 OpenAI 사용
     
     Returns:
         StateGraph: 컴파일된 LangGraph
     """
     
-    # Supervisor용 LLM 초기화 (OpenAI 유지)
+    # Supervisor용 LLM 초기화 (OpenAI)
     supervisor_llm = ChatOpenAI(
         model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
         temperature=float(os.getenv('OPENAI_TEMPERATURE', '0')),
         openai_api_key=os.getenv('OPENAI_API_KEY')
     )
     
-    # Stock Price Agent용 LLM 초기화 (HyperCLOVA X)
-    try:
-        from langchain_naver import ChatClovaX
-        
-        # HyperCLOVA X 사용 가능한 경우
-        stock_llm = ChatClovaX(
-            model=os.getenv('CLOVA_MODEL', 'HCX-005'),
-            temperature=float(os.getenv('CLOVA_TEMPERATURE', '0')),
-            clovastudio_api_key=os.getenv('CLOVASTUDIO_API_KEY')
-        )
-        print("✅ Stock Price Agent: HyperCLOVA X (HCX-005) 사용")
-        
-    except ImportError:
-        # langchain-naver가 설치되지 않은 경우 OpenAI 사용
-        stock_llm = ChatOpenAI(
-            model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
-            temperature=float(os.getenv('OPENAI_TEMPERATURE', '0')),
-            openai_api_key=os.getenv('OPENAI_API_KEY')
-        )
-        print("⚠️  Stock Price Agent: langchain-naver 미설치, OpenAI 사용")
-        
-    except Exception as e:
-        # CLOVA API 키가 없거나 기타 오류 시 OpenAI 사용
-        stock_llm = ChatOpenAI(
-            model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
-            temperature=float(os.getenv('OPENAI_TEMPERATURE', '0')),
-            openai_api_key=os.getenv('OPENAI_API_KEY')
-        )
-        print(f"⚠️  Stock Price Agent: HyperCLOVA X 초기화 실패 ({e}), OpenAI 사용")
+    # Stock Price Agent용 LLM 초기화 (OpenAI 전용)
+    stock_llm = ChatOpenAI(
+        model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
+        temperature=float(os.getenv('OPENAI_TEMPERATURE', '0')),
+        openai_api_key=os.getenv('OPENAI_API_KEY')
+    )
     
-    # Supervisor Agent 인스턴스 생성 (두 LLM 전달)
+    print("✅ Supervisor Agent: OpenAI (gpt-4o-mini) 사용")
+    print("✅ Stock Price Agent: OpenAI (gpt-4o-mini) 사용")
+    
+    # Supervisor Agent 인스턴스 생성 (두 LLM 모두 OpenAI)
     supervisor_agent = SupervisorAgent(
         supervisor_llm=supervisor_llm,
         stock_llm=stock_llm

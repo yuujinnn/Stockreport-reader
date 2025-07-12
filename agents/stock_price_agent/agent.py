@@ -1,11 +1,11 @@
 """
 Stock Price Agent 구현
 키움증권 REST API를 통한 주식 데이터 조회
-LangGraph 공식 패턴 적용 - 표준 Sub-agent 구현
+LangGraph 공식 패턴 적용 - 표준 Sub-agent 구현 (OpenAI 전용)
 """
 
 import os
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
 from langchain.tools import BaseTool
@@ -21,15 +21,15 @@ class StockPriceAgent:
     """
     Stock Price Agent (LangGraph 공식 Sub-agent 패턴)
     키움증권 API를 통한 주식 데이터 조회 및 분석
-    Supervisor에서 tool로 호출되는 표준 Sub-agent
+    Supervisor에서 tool로 호출되는 표준 Sub-agent (OpenAI 전용)
     """
     
-    def __init__(self, llm: Union[ChatOpenAI, Any]):
+    def __init__(self, llm: ChatOpenAI):
         """
         Stock Price Agent 초기화
         
         Args:
-            llm: LangChain LLM 인스턴스 (ChatOpenAI 또는 ChatClovaX)
+            llm: LangChain ChatOpenAI 인스턴스
         """
         self.llm = llm
         self.tools = get_stock_price_tools()
@@ -49,6 +49,7 @@ class StockPriceAgent:
         formatted_prompt = STOCK_PRICE_AGENT_PROMPT.format(**tools_info)
         
         # LangGraph React Agent 생성 (표준 Sub-agent)
+        # OpenAI 사용
         self.agent = create_react_agent(
             self.llm,
             tools=self.tools,
@@ -61,9 +62,7 @@ class StockPriceAgent:
             model_name = getattr(llm, 'model_name', None) or getattr(llm, 'model', 'Unknown')
             llm_class = llm.__class__.__name__
             
-            if 'Clova' in llm_class:
-                return f"HyperCLOVA X ({model_name})"
-            elif 'OpenAI' in llm_class:
+            if 'OpenAI' in llm_class:
                 return f"OpenAI ({model_name})"
             else:
                 return f"{llm_class} ({model_name})"

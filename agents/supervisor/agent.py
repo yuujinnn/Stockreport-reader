@@ -1,7 +1,7 @@
 """
 Supervisor Agent 구현
 사용자 질문 분석 및 워커 에이전트 조정
-LangGraph 공식 Tool-calling Supervisor 패턴 적용
+LangGraph 공식 Tool-calling Supervisor 패턴 적용 (OpenAI 전용)
 """
 
 import os
@@ -21,15 +21,16 @@ class SupervisorAgent:
     """
     Supervisor Agent (LangGraph 공식 Tool-calling Supervisor 패턴)
     사용자의 질문을 분석하고 Stock Price Agent를 조정하여 최종 답변을 생성
+    모든 Agent에서 OpenAI 사용
     """
     
-    def __init__(self, supervisor_llm: ChatOpenAI, stock_llm):
+    def __init__(self, supervisor_llm: ChatOpenAI, stock_llm: ChatOpenAI):
         """
         Supervisor Agent 초기화
         
         Args:
-            supervisor_llm: Supervisor용 LangChain LLM 인스턴스 (OpenAI)
-            stock_llm: Stock Price Agent용 LangChain LLM 인스턴스 (HyperCLOVA X 또는 OpenAI)
+            supervisor_llm: Supervisor용 ChatOpenAI 인스턴스
+            stock_llm: Stock Price Agent용 ChatOpenAI 인스턴스
         """
         self.supervisor_llm = supervisor_llm
         self.stock_llm = stock_llm
@@ -140,7 +141,7 @@ class SupervisorAgent:
         """Stock Price Agent 인스턴스를 지연 로딩합니다 (순환 import 방지)"""
         if self._stock_price_agent is None:
             from ..stock_price_agent.agent import StockPriceAgent
-            # Stock Price Agent는 stock_llm 사용 (HyperCLOVA X 또는 OpenAI)
+            # Stock Price Agent는 stock_llm 사용 (OpenAI)
             self._stock_price_agent = StockPriceAgent(self.stock_llm)
         return self._stock_price_agent
     

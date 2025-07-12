@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
 LangGraph 기반 Supervisor 멀티 에이전트 시스템
-메인 서버 스크립트 (로컬 개발 환경 최적화)
+메인 서버 스크립트 (로컬 개발 환경 최적화, OpenAI 전용)
 
 이 스크립트는 주식 분석을 위한 멀티 에이전트 시스템을 실행합니다:
-- Supervisor Agent: 사용자 질문 분석 및 워커 에이전트 조정
-- Stock Price Agent: 키움증권 API를 통한 주식 데이터 조회
+- Supervisor Agent: 사용자 질문 분석 및 워커 에이전트 조정 (OpenAI)
+- Stock Price Agent: 키움증권 API를 통한 주식 데이터 조회 (OpenAI)
 
 Architecture: LangGraph Supervisor MAS
 Environment: Local Development Optimized
+LLM: OpenAI (gpt-4o-mini) for all agents
 """
 
 import os
@@ -23,14 +24,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 load_dotenv("secrets/.env")
 
 def print_system_info():
-    """시스템 정보 출력 (로컬 환경 강조)"""
+    """시스템 정보 출력 (로컬 환경 강조, OpenAI 전용)"""
     print("=" * 60)
     print("🤖 LangGraph Supervisor MAS for Stock Analysis")
-    print("🏠 LOCAL DEVELOPMENT ENVIRONMENT")
+    print("🏠 LOCAL DEVELOPMENT ENVIRONMENT (OpenAI 전용)")
     print("=" * 60)
     print(f"📊 Architecture: Supervisor Multi-Agent System")
     print(f"🔧 Framework: LangGraph + LangChain")
-    print(f"🧠 LLM Model: {os.getenv('OPENAI_MODEL', 'gpt-4o-mini')}")
+    print(f"🧠 LLM Model: {os.getenv('OPENAI_MODEL', 'gpt-4o-mini')} (모든 Agent)")
     print(f"📈 Data Source: Kiwoom Securities REST API")
     print(f"💻 Environment: Local Development")
     
@@ -42,9 +43,9 @@ def print_system_info():
     else:
         print(f"📊 LangSmith: Disabled (개발 환경에서는 선택적)")
     
-    print("\n🔧 Agent Configuration:")
-    print(f"  • Supervisor Agent: Query analysis & coordination")
-    print(f"  • Stock Price Agent: Kiwoom API data collection")
+    print("\n🔧 Agent Configuration (OpenAI 전용):")
+    print(f"  • Supervisor Agent: Query analysis & coordination (OpenAI)")
+    print(f"  • Stock Price Agent: Kiwoom API data collection (OpenAI)")
     print("\n🏠 Local Development Features:")
     print(f"  • Hot reload: 파일 변경 시 자동 재시작")
     print(f"  • Debug mode: 상세 로깅 및 오류 추적")
