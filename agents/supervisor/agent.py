@@ -150,11 +150,10 @@ class SupervisorAgent:
         
         @tool("call_stock_price_agent")
         def call_stock_price_agent(
-            request: Annotated[str, "주식 데이터 요청. 종목명, 티커, 기간, 분석 목적을 포함한 자연어 요청"]
+            request: Annotated[str, "주가 데이터에 대한 분석 요청. 종목명, 티커, 기간, 분석 내용을 포함한 자연어 요청"]
         ) -> str:
             """
-            Stock Price Agent를 호출하여 주식 데이터를 조회합니다.
-            키움증권 API를 통해 실제 주식 차트 데이터를 수집하고 분석합니다.
+            Stock Price Agent를 호출하여 주가 데이터를 분석합니다.
             """
             try:
                 print(f"📝 Stock Price Agent 요청: {request}")
