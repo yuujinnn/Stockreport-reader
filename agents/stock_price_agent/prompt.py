@@ -1,7 +1,7 @@
 """
 Stock Price Agent 프롬프트 정의
 """
-
+'''
 QUERY_ANALYSIS_PROMPT_LEGACY = """당신은 주식 쿼리 분석 전문가입니다. 사용자의 질문에서 정확한 정보를 추출해주세요.
 
 **기준 날짜 정보** (Python으로 정확히 계산됨):
@@ -107,7 +107,7 @@ QUERY_ANALYSIS_PROMPT_LEGACY = """당신은 주식 쿼리 분석 전문가입니
 - "최근 N개월/년" 표현은 오늘 날짜를 종료일로 하여 계산하세요
 - 모든 날짜는 YYYYMMDD 형식으로 반환하세요
 - JSON 형식으로만 응답하고, 다른 설명은 포함하지 마세요"""
-
+'''
 
 STOCK_PRICE_AGENT_PROMPT = """
 # 역할

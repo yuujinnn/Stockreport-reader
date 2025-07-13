@@ -18,7 +18,7 @@ from .kiwoom_api import (
     fn_ka10082, fn_ka10083, fn_ka10094,
     get_token_manager, get_today_date
 )
-from .prompt import QUERY_ANALYSIS_PROMPT
+'''from .prompt import QUERY_ANALYSIS_PROMPT'''
 
 # 환경변수 로드
 load_dotenv("secrets/.env")
@@ -417,7 +417,7 @@ def get_stock_price_tools() -> List[BaseTool]:
         List[BaseTool]: 쿼리 분석 + 키움증권 API 툴들 (틱 차트 제외)
     """
     return [
-        QueryAnalysisTool(),      # 쿼리 분석 툴 (날짜 계산 포함)
+        # QueryAnalysisTool(),      # 쿼리 분석 툴 (날짜 계산 포함)
         MinuteChartTool(),
         DayChartTool(),
         WeekChartTool(),
