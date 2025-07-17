@@ -100,7 +100,7 @@ class KiwoomTokenManager:
                 return existing_token['token']
         
         # 새 토큰 발급
-        print("🔄 새로운 접근토큰을 발급받습니다...")
+        print("새로운 토큰을 발급받습니다...")
         token_data = self._request_new_token()
         
         if token_data and token_data.get('return_code') == 0:
@@ -127,7 +127,7 @@ class KiwoomTokenManager:
         }
         
         try:
-            print(f"🌐 토큰 요청: {url}")
+            print(f"토큰 요청: {url}")
             response = requests.post(url, headers=headers, json=data)
             response.raise_for_status()
             
@@ -136,7 +136,7 @@ class KiwoomTokenManager:
             if result.get('return_code') == 0:
                 expires_dt = result.get('expires_dt', '')
                 print(f"✅ 접근토큰 발급 성공")
-                print(f"📅 토큰 만료일: {expires_dt}")
+                print(f"토큰 만료일: {expires_dt}")
                 return result
             else:
                 print(f"❌ 토큰 발급 실패: {result.get('return_msg')}")
@@ -207,7 +207,7 @@ def _make_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
     host = BASE_URL_REAL
     url = host + CHART_ENDPOINT
     
-    # 문서에 명시된 정확한 헤더 구조 (legacy 코드 기반)
+    # 문서에 명시된 정확한 헤더 구조
     headers = {
         'Content-Type': 'application/json;charset=UTF-8',
         'authorization': f'Bearer {token}',
@@ -217,13 +217,13 @@ def _make_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
     }
     
     try:
-        print(f"🌐 키움 API 호출: {tr_code} → {data.get('stk_cd', 'Unknown')}")
+        print(f"키움 API 호출: {tr_code} → {data.get('stk_cd', 'Unknown')}")
         response = requests.post(url, headers=headers, json=data)
         
-        # 응답 상태 코드와 헤더 정보 출력 (legacy 코드 스타일)
-        print(f'📊 응답 Code: {response.status_code}')
+        # 응답 상태 코드와 헤더 정보 출력
+        print(f'응답 Code: {response.status_code}')
         header_info = {key: response.headers.get(key) for key in ['next-key', 'cont-yn', 'api-id']}
-        print(f'📋 응답 Header: {json.dumps(header_info, indent=2, ensure_ascii=False)}')
+        print(f'응답 Header: {json.dumps(header_info, indent=2, ensure_ascii=False)}')
         
         if response.status_code == 200:
             result = response.json()
@@ -231,12 +231,12 @@ def _make_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
             
             # 응답 데이터 크기 정보
             response_size = len(json.dumps(result, ensure_ascii=False))
-            print(f'📦 응답 데이터 크기: {response_size:,} bytes')
+            print(f'응답 데이터 크기: {response_size:,} bytes')
             
             return result
         else:
             print(f'❌ 키움 API 호출 실패: HTTP {response.status_code}')
-            print(f'📄 응답 내용: {response.text}')
+            print(f'응답 내용: {response.text}')
             return None
         
     except requests.exceptions.RequestException as e:
@@ -247,7 +247,6 @@ def _make_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
         return None
 
 
-# ========== 주식 차트 조회 함수들 (틱 차트 제거) ==========
 
 def fn_ka10080(token: str, stk_cd: str, tic_scope: str) -> Optional[Dict]:
     """
@@ -350,14 +349,13 @@ def fn_ka10094(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
     return _make_request(token, 'ka10094', data)
 
 
-# ========== 편의 함수들 ==========
 
 def save_chart_data_to_json(data: Dict, filename: str):
     """차트 데이터를 JSON 파일로 저장합니다"""
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"💾 데이터가 {filename}에 저장되었습니다.")
+        print(f"데이터가 {filename}에 저장되었습니다.")
     except Exception as e:
         print(f"❌ 파일 저장 오류: {e}")
 

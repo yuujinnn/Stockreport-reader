@@ -1,7 +1,7 @@
 # Core LangChain packages (v0.3 stable)
 langchain>=0.3.23,<0.4
 langchain-core>=0.3.52,<0.4
-langchain-openai>=0.2.0,<0.3
+langchain-openai>=0.3.12
 langchain-community>=0.3.0,<0.4
 
 # OpenAI and LangSmith
@@ -16,6 +16,7 @@ uvicorn[standard]>=0.24.0,<0.32
 pydantic>=2.5.0,<3.0
 requests>=2.31.0,<3.0
 python-dotenv>=1.0.0,<2.0
+pandas>=2.0.0
 
 # Optional dependencies for better performance
 tenacity>=8.1.0,<9.0
