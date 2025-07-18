@@ -39,7 +39,7 @@ class StockPriceAgent:
         # Format prompt with current dates
         formatted_prompt = format_prompt_with_dates(STOCK_PRICE_AGENT_PROMPT)
         
-        # Create LangGraph React Agent with date-formatted prompt
+        # Create LangGraph React Agent with date-formatted prompt (name 파라미터 제거 - ChatClovaX 호환성)
         self.agent = create_react_agent(
             self.llm,
             tools=self.tools,

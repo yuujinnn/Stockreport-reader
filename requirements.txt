@@ -17,6 +17,8 @@ pydantic>=2.5.0,<3.0
 requests>=2.31.0,<3.0
 python-dotenv>=1.0.0,<2.0
 pandas>=2.0.0
+pandas_ta
+numpy<2.0
 
 # Optional dependencies for better performance
 tenacity>=8.1.0,<9.0
@@ -34,4 +36,8 @@ Jinja2>=3.1.2,<4.0  # For HTML templates
 
 # LangGraph and Multi-Agent Support
 langgraph>=0.2.50,<0.3  # LangGraph for multi-agent workflows
+langgraph-supervisor  # LangGraph Supervisor for multi-agent systems
 langchain-experimental>=0.3.0,<0.4  # Experimental LangChain features 
+
+# Naver CLOVA X Support
+langchain-naver>=0.1.0  # CLOVA X integration for LangChain 

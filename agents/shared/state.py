@@ -3,7 +3,8 @@
 LangGraph에서 사용되는 에이전트 간 상태 관리
 """
 
-from typing import TypedDict, Annotated, List, Optional, Dict, Any
+from typing import Annotated, List, Optional, Dict, Any
+from typing_extensions import TypedDict
 from langgraph.graph.message import add_messages
 from langchain_core.messages import BaseMessage
 

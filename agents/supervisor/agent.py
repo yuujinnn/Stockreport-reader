@@ -1,223 +1,178 @@
 """
-Supervisor Agent 구현
-사용자 질문 분석 및 워커 에이전트 조정
-LangGraph 공식 Tool-calling Supervisor 패턴 적용 (OpenAI 전용)
+Supervisor Agent 구현 (ChatClovaX + langgraph-supervisor)
+LangGraph 공식 Supervisor 패턴 적용
 """
 
 import os
 from typing import Dict, Any, List, Annotated
 from datetime import datetime, timedelta
-from langchain.tools import BaseTool, tool
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, Field
-from langgraph.prebuilt import create_react_agent, InjectedState
+from langchain_naver import ChatClovaX
+from langgraph_supervisor import create_supervisor
+from langgraph.prebuilt import create_react_agent
 
-from .prompt import SUPERVISOR_PROMPT
+from .prompt import SUPERVISOR_PROMPT_CLOVAX
 from ..shared.state import MessagesState
 
 
 class SupervisorAgent:
     """
-    Supervisor Agent (LangGraph 공식 Tool-calling Supervisor 패턴)
-    사용자의 질문을 분석하고 Stock Price Agent를 조정하여 최종 답변을 생성
-    모든 Agent에서 OpenAI 사용
+    Supervisor Agent using ChatClovaX and langgraph-supervisor
     """
     
-    def __init__(self, supervisor_llm: ChatOpenAI, stock_llm: ChatOpenAI):
+    def __init__(self):
         """
-        Supervisor Agent 초기화
-        
-        Args:
-            supervisor_llm: Supervisor용 ChatOpenAI 인스턴스
-            stock_llm: Stock Price Agent용 ChatOpenAI 인스턴스
+        Initialize Supervisor Agent with ChatClovaX
         """
-        self.supervisor_llm = supervisor_llm
-        self.stock_llm = stock_llm
-        
-        # Stock Price Agent 인스턴스를 지연 로딩으로 생성
-        self._stock_price_agent = None
-        
-        # Stock Price Agent 툴 정의 (공식 패턴)
-        self.stock_price_tool = self._create_stock_price_tool()
-        
-        # 정확한 날짜 정보 계산
-        date_info = self._calculate_date_info()
-        
-        # tools와 tool_names 정보 추가
-        tools_info = self._get_tools_info([self.stock_price_tool])
-        
-        # 모든 포맷팅 정보 결합
-        format_info = {**date_info, **tools_info}
-        
-        # 프롬프트 포맷팅
-        formatted_prompt = SUPERVISOR_PROMPT.format(**format_info)
-        
-        # LangGraph React Agent 생성 (표준 Tool-calling Supervisor 패턴)
-        # Supervisor는 OpenAI 사용
-        self.agent = create_react_agent(
-            self.supervisor_llm,
-            tools=[self.stock_price_tool],
-            prompt=formatted_prompt
+        # Initialize ChatClovaX for supervisor
+        self.supervisor_llm = ChatClovaX(
+            model="HCX-005",
+            max_tokens=4096,
+            temperature=0.1,  # Slightly higher for better coordination
         )
+        
+        # Import and initialize Stock Price Agent
+        from ..stock_price_agent.agent import StockPriceAgent
+        self.stock_price_agent = StockPriceAgent()
+        
+        # Get formatted prompt with dates
+        self.formatted_prompt = self._format_prompt_with_dates()
+        
+        # ChatClovaX는 langgraph-supervisor와 호환성 문제가 있으므로 수동 구현 사용
+        print("🔧 ChatClovaX 호환성을 위해 수동 Supervisor 구현 사용")
+        self.supervisor = None
+        self._create_manual_supervisor()
     
-    def _calculate_date_info(self) -> Dict[str, str]:
-        """Python datetime.now()로 정확한 날짜 정보를 계산합니다"""
+    def _format_prompt_with_dates(self) -> str:
+        """Format prompt with current date information"""
         today = datetime.now()
         
-        # 기본 날짜들
-        today_date = today.strftime('%Y%m%d')
-        yesterday_date = (today - timedelta(days=1)).strftime('%Y%m%d')
-        tomorrow_date = (today + timedelta(days=1)).strftime('%Y%m%d')
-        
-        # 이번달
-        this_month_start = today.replace(day=1).strftime('%Y%m%d')
-        if today.month == 12:
-            next_month = today.replace(year=today.year + 1, month=1, day=1)
-        else:
-            next_month = today.replace(month=today.month + 1, day=1)
-        this_month_end = (next_month - timedelta(days=1)).strftime('%Y%m%d')
-        
-        # 지난달
-        if today.month == 1:
-            last_month_start = today.replace(year=today.year - 1, month=12, day=1).strftime('%Y%m%d')
-            this_month_first = today.replace(day=1)
-            last_month_end = (this_month_first - timedelta(days=1)).strftime('%Y%m%d')
-        else:
-            last_month_start = today.replace(month=today.month - 1, day=1).strftime('%Y%m%d')
-            this_month_first = today.replace(day=1)
-            last_month_end = (this_month_first - timedelta(days=1)).strftime('%Y%m%d')
-        
-        # 다음달
-        next_month_start = next_month.strftime('%Y%m%d')
-        if next_month.month == 12:
-            next_next_month = next_month.replace(year=next_month.year + 1, month=1, day=1)
-        else:
-            next_next_month = next_month.replace(month=next_month.month + 1, day=1)
-        next_month_end = (next_next_month - timedelta(days=1)).strftime('%Y%m%d')
-        
-        # 올해/작년
-        this_year_start = today.replace(month=1, day=1).strftime('%Y%m%d')
-        this_year_end = today.replace(month=12, day=31).strftime('%Y%m%d')
-        last_year_start = today.replace(year=today.year - 1, month=1, day=1).strftime('%Y%m%d')
-        last_year_end = today.replace(year=today.year - 1, month=12, day=31).strftime('%Y%m%d')
-        
-        return {
-            'today_date': today_date,
-            'yesterday_date': yesterday_date,
-            'tomorrow_date': tomorrow_date,
-            'this_month_start': this_month_start,
-            'this_month_end': this_month_end,
-            'last_month_start': last_month_start,
-            'last_month_end': last_month_end,
-            'next_month_start': next_month_start,
-            'next_month_end': next_month_end,
-            'this_year_start': this_year_start,
-            'this_year_end': this_year_end,
-            'last_year_start': last_year_start,
-            'last_year_end': last_year_end,
+        # Calculate date ranges
+        date_info = {
+            'today_date': today.strftime('%Y%m%d'),
+            'yesterday_date': (today - timedelta(days=1)).strftime('%Y%m%d'),
+            'tomorrow_date': (today + timedelta(days=1)).strftime('%Y%m%d'),
+            'this_month_start': today.replace(day=1).strftime('%Y%m%d'),
+            'this_month_end': self._get_month_end(today).strftime('%Y%m%d'),
+            'last_month_start': self._get_last_month_start(today).strftime('%Y%m%d'),
+            'last_month_end': (today.replace(day=1) - timedelta(days=1)).strftime('%Y%m%d'),
+            'next_month_start': self._get_next_month_start(today).strftime('%Y%m%d'),
+            'next_month_end': self._get_next_month_end(today).strftime('%Y%m%d'),
+            'this_year_start': today.replace(month=1, day=1).strftime('%Y%m%d'),
+            'this_year_end': today.replace(month=12, day=31).strftime('%Y%m%d'),
+            'last_year_start': today.replace(year=today.year-1, month=1, day=1).strftime('%Y%m%d'),
+            'last_year_end': today.replace(year=today.year-1, month=12, day=31).strftime('%Y%m%d'),
             'current_year': str(today.year),
             'last_year': str(today.year - 1)
         }
-    
-    def _get_tools_info(self, tools: List[BaseTool]) -> Dict[str, str]:
-        """tools 정보를 prompt에 사용할 수 있는 형태로 변환합니다"""
-        # tools 설명 생성
-        tools_desc = []
-        tool_names = []
         
-        for tool in tools:
-            tool_names.append(tool.name)
-            tool_desc = f"- **{tool.name}**: {tool.description}"
-            tools_desc.append(tool_desc)
-        
-        return {
-            'tools': '\n'.join(tools_desc),
-            'tool_names': ', '.join(tool_names)
-        }
+        return SUPERVISOR_PROMPT_CLOVAX.format(**date_info)
     
-    @property
-    def stock_price_agent(self):
-        """Stock Price Agent 인스턴스를 지연 로딩합니다 (순환 import 방지)"""
-        if self._stock_price_agent is None:
-            from ..stock_price_agent.agent import StockPriceAgent
-            # Stock Price Agent는 stock_llm 사용 (OpenAI)
-            self._stock_price_agent = StockPriceAgent(self.stock_llm)
-        return self._stock_price_agent
+    def _get_month_end(self, date):
+        """Get the last day of the month"""
+        if date.month == 12:
+            next_month = date.replace(year=date.year + 1, month=1, day=1)
+        else:
+            next_month = date.replace(month=date.month + 1, day=1)
+        return next_month - timedelta(days=1)
     
-    def _create_stock_price_tool(self) -> BaseTool:
-        """표준 LangChain tool로 Stock Price Agent를 래핑합니다 (공식 패턴)"""
+    def _get_last_month_start(self, date):
+        """Get the first day of last month"""
+        if date.month == 1:
+            return date.replace(year=date.year - 1, month=12, day=1)
+        else:
+            return date.replace(month=date.month - 1, day=1)
+    
+    def _get_next_month_start(self, date):
+        """Get the first day of next month"""
+        if date.month == 12:
+            return date.replace(year=date.year + 1, month=1, day=1)
+        else:
+            return date.replace(month=date.month + 1, day=1)
+    
+    def _get_next_month_end(self, date):
+        """Get the last day of next month"""
+        next_month_start = self._get_next_month_start(date)
+        return self._get_month_end(next_month_start)
+    
+    def _create_manual_supervisor(self):
+        """Create manual supervisor if langgraph-supervisor fails"""
+        from langgraph.graph import StateGraph, START, END
+        from langchain_core.tools import tool
+        from langgraph.types import Command
+        from langgraph.prebuilt import InjectedState
+        from typing import Any
         
+        # Create handoff tool for Stock Price Agent
         @tool("call_stock_price_agent")
         def call_stock_price_agent(
-            request: Annotated[str, "주가 데이터에 대한 분석 요청. 종목명, 티커, 기간, 분석 내용을 포함한 자연어 요청"]
+            request: str,
+            state: Annotated[Dict[str, Any], InjectedState]
         ) -> str:
             """
-            Stock Price Agent를 호출하여 주가 데이터를 분석합니다.
+            Call Stock Price Agent for stock data analysis
+            
+            Args:
+                request: The stock analysis request
+                state: Current graph state (injected automatically)
             """
             try:
-                print(f"📝 Stock Price Agent 요청: {request}")
+                print(f"📝 Calling Stock Price Agent: {request}")
                 
-                # 표준 LangGraph 방식으로 Sub-agent 호출
-                stock_messages = [HumanMessage(content=request)]
-                stock_state = MessagesState(
-                    messages=stock_messages,
-                    user_query=request,
-                    extracted_info=None,
-                    stock_data=None,
-                    error=None,
-                    metadata={"source": "supervisor_tool_call"}
-                )
+                # Call Stock Price Agent
+                result = self.stock_price_agent.run(request)
+                return result
                 
-                # Stock Price Agent 실행 (표준 invoke)
-                result_state = self.stock_price_agent.invoke(stock_state)
-                
-                # 결과 추출 (LangGraph 표준 방식)
-                result_messages = result_state.get("messages", [])
-                if result_messages:
-                    # 마지막 메시지의 content 반환 (문자열)
-                    final_response = result_messages[-1].content
-                    return final_response
-                else:
-                    return "Stock Price Agent에서 응답을 받지 못했습니다."
-                    
             except Exception as e:
-                return f"Stock Price Agent 호출 중 오류 발생: {str(e)}"
+                return f"Error calling Stock Price Agent: {str(e)}"
         
-        return call_stock_price_agent
+        # Create supervisor agent with handoff tools (name 파라미터 제거 - ChatClovaX 호환성)
+        self.supervisor_agent = create_react_agent(
+            self.supervisor_llm,
+            tools=[call_stock_price_agent],
+            prompt=self.formatted_prompt
+        )
+        
+        # Create simple graph
+        workflow = StateGraph(MessagesState)
+        workflow.add_node("supervisor", self.supervisor_agent)
+        workflow.add_edge(START, "supervisor")
+        workflow.add_edge("supervisor", END)
+        
+        self.supervisor = workflow.compile()
+        
+        print("🔧 Manual supervisor implementation created successfully")
     
     def invoke(self, state: MessagesState) -> Dict[str, Any]:
         """
-        Supervisor Agent를 실행합니다 (표준 LangGraph Tool-calling Supervisor 패턴)
+        Invoke the supervisor agent
         
         Args:
-            state: 현재 상태
+            state: Current state with messages
             
         Returns:
-            Dict: 업데이트된 상태
+            Dict: Updated state
         """
         try:
-            # 표준 LangGraph prebuilt create_react_agent 실행
-            result = self.agent.invoke({"messages": state["messages"]})
+            if self.supervisor is None:
+                raise ValueError("Supervisor not initialized")
             
-            # 결과에서 메시지 추출 (표준 방식)
-            new_messages = result.get("messages", [])
+            # Invoke supervisor
+            result = self.supervisor.invoke({"messages": state["messages"]})
             
-            # 메시지 상태 업데이트 (표준 방식)
+            # Update state
             updated_state = state.copy()
-            updated_state["messages"] = new_messages
+            updated_state["messages"] = result.get("messages", state["messages"])
             
-            # 메타데이터 업데이트
+            # Add metadata
             if updated_state["metadata"] is None:
                 updated_state["metadata"] = {}
             updated_state["metadata"]["supervisor_processed"] = True
-            updated_state["metadata"]["total_messages"] = len(new_messages)
-            updated_state["metadata"]["pattern"] = "tool_calling_supervisor"
+            updated_state["metadata"]["pattern"] = "langgraph_supervisor"
             
             return updated_state
             
         except Exception as e:
-            # 오류 처리 (표준 방식)
             error_message = f"Supervisor Agent 처리 중 오류 발생: {str(e)}"
             
             error_ai_message = AIMessage(content=error_message)

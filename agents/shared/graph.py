@@ -1,11 +1,11 @@
 """
 LangGraph 기반 Supervisor MAS 그래프 정의
-표준 Tool-calling Supervisor 패턴 구현 (OpenAI 전용)
+ChatClovaX + langgraph-supervisor 패턴 구현
 """
 
 import os
 from langgraph.graph import StateGraph, START, END
-from langchain_openai import ChatOpenAI
+from langchain_naver import ChatClovaX
 from langchain_core.messages import HumanMessage, AIMessage
 from dotenv import load_dotenv
 
@@ -18,53 +18,51 @@ load_dotenv("secrets/.env")
 
 def create_supervisor_graph():
     """
-    LangGraph 공식 Tool-calling Supervisor MAS 그래프를 생성합니다.
+    ChatClovaX 기반 Supervisor MAS 그래프를 생성합니다.
     
-    공식 가이드의 Tool-calling Supervisor 패턴:
-    - Supervisor가 Stock Price Agent를 표준 tool로 호출
-    - 단일 노드 구조로 간단하고 효율적
-    - LangGraph의 자동 tool call 처리 활용
-    - 모든 Agent에서 OpenAI 사용
+    새로운 구조:
+    - Supervisor: ChatClovaX (HCX-005) 기반 총괄 감독관
+    - Stock Price Agent: ChatClovaX (HCX-005) 기반 주가 분석 전문가
+    - langgraph-supervisor 또는 수동 구현으로 협업
     
     Returns:
         StateGraph: 컴파일된 LangGraph
     """
     
-    # Supervisor용 LLM 초기화 (OpenAI)
-    supervisor_llm = ChatOpenAI(
-        model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
-        temperature=float(os.getenv('OPENAI_TEMPERATURE', '0')),
-        openai_api_key=os.getenv('OPENAI_API_KEY')
-    )
-    
-    # Stock Price Agent용 LLM 초기화 (OpenAI 전용)
-    stock_llm = ChatOpenAI(
-        model=os.getenv('OPENAI_MODEL', 'gpt-4o-mini'),
-        temperature=float(os.getenv('OPENAI_TEMPERATURE', '0')),
-        openai_api_key=os.getenv('OPENAI_API_KEY')
-    )
-    
-    print("✅ Supervisor Agent: OpenAI (gpt-4o-mini) 사용")
-    print("✅ Stock Price Agent: OpenAI (gpt-4o-mini) 사용")
-    
-    # Supervisor Agent 인스턴스 생성 (두 LLM 모두 OpenAI)
-    supervisor_agent = SupervisorAgent(
-        supervisor_llm=supervisor_llm,
-        stock_llm=stock_llm
-    )
-    
-    # StateGraph 생성 (표준 Tool-calling Supervisor 패턴)
-    workflow = StateGraph(MessagesState)
-    
-    # Supervisor 노드만 추가 (모든 작업을 표준 tool로 처리)
-    workflow.add_node("supervisor", supervisor_agent.invoke)
-    
-    # 단순한 엣지: START -> supervisor -> END (표준 패턴)
-    workflow.add_edge(START, "supervisor")
-    workflow.add_edge("supervisor", END)
-    
-    # 그래프 컴파일
-    return workflow.compile()
+    try:
+        # CLOVA Studio API 키 확인
+        clova_api_key = os.getenv('CLOVASTUDIO_API_KEY')
+        if not clova_api_key:
+            raise ValueError("CLOVASTUDIO_API_KEY가 설정되지 않았습니다.")
+        
+        print("🤖 ChatClovaX 기반 Supervisor 시스템 초기화 중...")
+        print(f"🔑 CLOVA Studio API 키: {'설정됨' if clova_api_key else '없음'}")
+        
+        # Supervisor Agent 생성 (ChatClovaX 기반)
+        supervisor_agent = SupervisorAgent()
+        
+        # Simple StateGraph 생성 (Supervisor 중심 구조)
+        workflow = StateGraph(MessagesState)
+        
+        # Supervisor 노드 추가
+        workflow.add_node("supervisor", supervisor_agent.invoke)
+        
+        # 간단한 플로우: START -> supervisor -> END
+        workflow.add_edge(START, "supervisor")
+        workflow.add_edge("supervisor", END)
+        
+        # 그래프 컴파일
+        graph = workflow.compile()
+        
+        print("✅ ChatClovaX 기반 Supervisor 그래프 생성 완료")
+        print("🏗️  구조: START -> Supervisor (ChatClovaX) -> END")
+        print("👥 협업 방식: Supervisor가 Stock Price Agent 조정")
+        
+        return graph
+        
+    except Exception as e:
+        print(f"❌ 그래프 생성 실패: {e}")
+        raise
 
 
 def create_initial_state(user_query: str) -> MessagesState:
@@ -77,41 +75,68 @@ def create_initial_state(user_query: str) -> MessagesState:
     Returns:
         MessagesState: 초기 상태
     """
+    initial_message = HumanMessage(content=user_query)
+    
     return MessagesState(
-        messages=[HumanMessage(content=user_query)],
+        messages=[initial_message],
         user_query=user_query,
         extracted_info=None,
         stock_data=None,
         error=None,
         metadata={
-            "created_at": os.environ.get("REQUEST_TIME", ""), 
-            "pattern": "tool_calling_supervisor",
-            "architecture": "langgraph_official"
+            "system": "ChatClovaX_Supervisor",
+            "model": "HCX-005",
+            "pattern": "langgraph_supervisor",
+            "created_at": os.getenv("REQUEST_TIME", "unknown")
         }
     )
 
 
-def extract_final_answer(state: MessagesState) -> str:
+def extract_final_answer(final_state: MessagesState) -> str:
     """
     최종 상태에서 답변을 추출합니다.
     
     Args:
-        state: 최종 상태
+        final_state: 최종 상태
         
     Returns:
         str: 최종 답변
     """
-    messages = state["messages"]
+    try:
+        messages = final_state.get("messages", [])
+        
+        if not messages:
+            return "응답을 생성할 수 없습니다."
+        
+        # 마지막 AI 메시지 찾기
+        for message in reversed(messages):
+            if isinstance(message, AIMessage) and message.content:
+                return message.content
+        
+        # AI 메시지가 없다면 마지막 메시지 반환
+        last_message = messages[-1]
+        if hasattr(last_message, 'content') and last_message.content:
+            return last_message.content
+        
+        return "응답을 처리할 수 없습니다."
+        
+    except Exception as e:
+        return f"답변 추출 중 오류 발생: {str(e)}"
+
+
+def get_graph_status() -> dict:
+    """
+    그래프 시스템 상태를 반환합니다.
     
-    # 마지막 AI 메시지를 찾기 (표준 방식)
-    for message in reversed(messages):
-        if isinstance(message, AIMessage):
-            content = getattr(message, 'content', '')
-            if isinstance(content, str) and content.strip():
-                return content.strip()
-    
-    # AI 메시지가 없으면 오류 상태 확인
-    if state.get("error"):
-        return f"처리 중 오류가 발생했습니다: {state['error']}"
-    
-    return "죄송합니다. 적절한 답변을 생성할 수 없었습니다." 
+    Returns:
+        dict: 시스템 상태 정보
+    """
+    return {
+        "system": "ChatClovaX Supervisor MAS",
+        "supervisor_model": "HCX-005 (ChatClovaX)",
+        "worker_agents": ["Stock Price Agent (HCX-005)"],
+        "pattern": "langgraph-supervisor + manual fallback",
+        "api_dependencies": ["CLOVASTUDIO_API_KEY"],
+        "framework": "LangGraph + LangChain + ChatClovaX",
+        "status": "active" if os.getenv('CLOVASTUDIO_API_KEY') else "api_key_missing"
+    } 

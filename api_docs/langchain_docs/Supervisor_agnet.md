@@ -343,7 +343,7 @@ from IPython.display import display, Image
 display(Image(supervisor.get_graph().draw_mermaid_png()))
 ```
 
-![Graph](assets/output.png)
+![Graph](https://langchain-ai.github.io/langgraph/tutorials/multi_agent/assets/output.png)
 
 **Note:** When you run this code, it will generate and display a visual representation of the supervisor graph showing the flow between the supervisor and worker agents.
 
