@@ -70,7 +70,7 @@ class MinuteChartTool(BaseTool):
             
             data_manager = get_data_manager()
             result = data_manager.process_chart_data(
-                raw_data, stock_code, "minute", None, expected_start_date, expected_end_date
+                raw_data, stock_code, "minute", None, expected_start_date, expected_end_date, minute_scope
             )
             
             # Use unified formatting function from data_manager
@@ -102,7 +102,7 @@ class DayChartTool(BaseTool):
             
             data_manager = get_data_manager()
             result = data_manager.process_chart_data(
-                raw_data, stock_code, "day", base_date, expected_start_date, expected_end_date
+                raw_data, stock_code, "day", base_date, expected_start_date, expected_end_date, None
             )
             
             # Use unified formatting function from data_manager
@@ -134,7 +134,7 @@ class WeekChartTool(BaseTool):
             
             data_manager = get_data_manager()
             result = data_manager.process_chart_data(
-                raw_data, stock_code, "week", base_date, expected_start_date, expected_end_date
+                raw_data, stock_code, "week", base_date, expected_start_date, expected_end_date, None
             )
             
             # Use unified formatting function from data_manager
@@ -166,7 +166,7 @@ class MonthChartTool(BaseTool):
             
             data_manager = get_data_manager()
             result = data_manager.process_chart_data(
-                raw_data, stock_code, "month", base_date, expected_start_date, expected_end_date
+                raw_data, stock_code, "month", base_date, expected_start_date, expected_end_date, None
             )
             
             # Use unified formatting function from data_manager
@@ -198,7 +198,7 @@ class YearChartTool(BaseTool):
             
             data_manager = get_data_manager()
             result = data_manager.process_chart_data(
-                raw_data, stock_code, "year", base_date, expected_start_date, expected_end_date
+                raw_data, stock_code, "year", base_date, expected_start_date, expected_end_date, None
             )
             
             # Use unified formatting function from data_manager
