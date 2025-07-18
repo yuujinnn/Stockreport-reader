@@ -9,7 +9,7 @@ from typing import Optional, List
 import uvicorn
 import logging
 
-from .agent_clova import StockPriceAgent
+from .agent import StockPriceAgent
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -174,7 +174,7 @@ async def root():
 def run_server(host: str = "0.0.0.0", port: int = 8000, reload: bool = False):
     """Run the FastAPI server"""
     uvicorn.run(
-        "agents.stock_price_agent.server_clova:app",
+        "agents.stock_price_agent.test:app",
         host=host,
         port=port,
         reload=reload,
