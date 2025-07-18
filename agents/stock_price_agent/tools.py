@@ -9,7 +9,7 @@ from langchain.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from .kiwoom_api import (
-    get_token_manager, get_minute_chart, get_day_chart, 
+    get_minute_chart, get_day_chart, 
     get_week_chart, get_month_chart, get_year_chart
 )
 from .data_manager import get_data_manager
@@ -58,13 +58,7 @@ class MinuteChartTool(BaseTool):
 
     def _run(self, stock_code: str, minute_scope: str, expected_start_date: str = None, expected_end_date: str = None) -> str:
         try:
-            token_manager = get_token_manager()
-            token = token_manager.get_access_token()
-            
-            if not token:
-                return "Failed to get access token"
-            
-            raw_data = get_minute_chart(token, stock_code, minute_scope)
+            raw_data = get_minute_chart(stock_code, minute_scope)
             if not raw_data:
                 return "Failed to fetch minute chart data"
             
@@ -90,13 +84,7 @@ class DayChartTool(BaseTool):
             base_date = get_today_date()
             
         try:
-            token_manager = get_token_manager()
-            token = token_manager.get_access_token()
-            
-            if not token:
-                return "Failed to get access token"
-            
-            raw_data = get_day_chart(token, stock_code, base_date)
+            raw_data = get_day_chart(stock_code, base_date)
             if not raw_data:
                 return "Failed to fetch daily chart data"
             
@@ -122,13 +110,7 @@ class WeekChartTool(BaseTool):
             base_date = get_today_date()
             
         try:
-            token_manager = get_token_manager()
-            token = token_manager.get_access_token()
-            
-            if not token:
-                return "Failed to get access token"
-            
-            raw_data = get_week_chart(token, stock_code, base_date)
+            raw_data = get_week_chart(stock_code, base_date)
             if not raw_data:
                 return "Failed to fetch weekly chart data"
             
@@ -154,13 +136,7 @@ class MonthChartTool(BaseTool):
             base_date = get_today_date()
             
         try:
-            token_manager = get_token_manager()
-            token = token_manager.get_access_token()
-            
-            if not token:
-                return "Failed to get access token"
-            
-            raw_data = get_month_chart(token, stock_code, base_date)
+            raw_data = get_month_chart(stock_code, base_date)
             if not raw_data:
                 return "Failed to fetch monthly chart data"
             
@@ -186,13 +162,7 @@ class YearChartTool(BaseTool):
             base_date = get_today_date()
             
         try:
-            token_manager = get_token_manager()
-            token = token_manager.get_access_token()
-            
-            if not token:
-                return "Failed to get access token"
-            
-            raw_data = get_year_chart(token, stock_code, base_date)
+            raw_data = get_year_chart(stock_code, base_date)
             if not raw_data:
                 return "Failed to fetch yearly chart data"
             

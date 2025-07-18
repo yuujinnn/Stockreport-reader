@@ -54,85 +54,7 @@ class StockDataManager:
             }
         }
         
-        # Technical indicator configurations for different chart types
-        self.indicator_configs = self._setup_indicator_configs()
-        
         self._init_directories()
-    
-    def _setup_indicator_configs(self):
-        """Setup technical indicator parameters for different chart types and timeframes"""
-        return {
-            "minute_1_3_5": {
-                "sma_periods": [9, 20, 50],
-                "ema_periods": [9, 20, 50], 
-                "macd": {"fast": 6, "slow": 13, "signal": 5},
-                "rsi": 9,
-                "stoch": {"k": 9, "d": 3},
-                "bollinger": {"n": 20, "std": 2},
-                "atr": 9,
-                "cmf": 20
-            },
-            "minute_10_15": {
-                "sma_periods": [20, 50, 100],
-                "ema_periods": [20, 50, 100],
-                "macd": {"fast": 12, "slow": 26, "signal": 9},
-                "rsi": 14,
-                "stoch": {"k": 14, "d": 3},
-                "bollinger": {"n": 20, "std": 2},
-                "atr": 14,
-                "cmf": 20
-            },
-            "minute_30_45_60": {
-                "sma_periods": [20, 50, 200],
-                "ema_periods": [20, 50, 200],
-                "macd": {"fast": 12, "slow": 26, "signal": 9},
-                "rsi": 14,
-                "stoch": {"k": 14, "d": 3},
-                "bollinger": {"n": 20, "std": 2},
-                "atr": 14,
-                "cmf": 20
-            },
-            "day": {
-                "sma_periods": [20, 50, 200],
-                "ema_periods": [20, 50, 200],
-                "macd": {"fast": 12, "slow": 26, "signal": 9},
-                "rsi": 14,
-                "stoch": {"k": 14, "d": 3},
-                "bollinger": {"n": 20, "std": 2},
-                "atr": 14,
-                "cmf": 20
-            },
-            "week": {
-                "sma_periods": [10, 20, 50],
-                "ema_periods": [10, 20, 50],
-                "macd": {"fast": 6, "slow": 13, "signal": 5},
-                "rsi": 9,
-                "stoch": {"k": 9, "d": 3},
-                "bollinger": {"n": 10, "std": 2},
-                "atr": 10,
-                "cmf": 10
-            },
-            "month": {
-                "sma_periods": [6, 12, 24],
-                "ema_periods": [6, 12, 24],
-                "macd": {"fast": 3, "slow": 6, "signal": 3},
-                "rsi": 6,
-                "stoch": {"k": 6, "d": 3},
-                "bollinger": {"n": 6, "std": 2},
-                "atr": 6,
-                "cmf": 6
-            },
-            "year": {
-                "sma_periods": [3, 5, 10],
-                "ema_periods": [3, 5, 10],
-                "macd": {"fast": 2, "slow": 5, "signal": 2},
-                "rsi": 6,
-                "stoch": {"k": 6, "d": 3},
-                "bollinger": {"n": 6, "std": 2},
-                "atr": 6,
-                "cmf": 6
-            }
-        }
     
     def _init_directories(self):
         """Initialize data directories"""
@@ -697,22 +619,12 @@ class StockDataManager:
         print(f"📅 날짜 형식 변환 완료: {chart_type} 차트용 {len(converted_records)}개 레코드")
         return converted_records
     
-    def _get_indicator_config_key(self, chart_type: str, minute_scope: str = None) -> str:
-        """Get indicator configuration key based on chart type and minute scope"""
-        if chart_type == "minute" and minute_scope:
-            minute_val = int(minute_scope)
-            if minute_val in [1, 3, 5]:
-                return "minute_1_3_5"
-            elif minute_val in [10, 15]:
-                return "minute_10_15"
-            elif minute_val in [30, 45, 60]:
-                return "minute_30_45_60"
-        
-        return chart_type  # day, week, month, year
+
     
     def _add_technical_indicators(self, df: pd.DataFrame, chart_type: str, minute_scope: str = None) -> pd.DataFrame:
         """
         Add technical indicators to DataFrame based on chart type and timeframe
+        Calculate all indicators first, then filter based on chart type requirements
         
         Args:
             df: DataFrame with OHLCV data
@@ -720,15 +632,11 @@ class StockDataManager:
             minute_scope: Minute scope for minute charts (1, 3, 5, 10, 15, 30, 45, 60)
             
         Returns:
-            pd.DataFrame: DataFrame with technical indicators added
+            pd.DataFrame: DataFrame with required technical indicators only
         """
         if df.empty or len(df) < 10:  # Need minimum data for indicators
             print("⚠️  Insufficient data for technical indicators")
             return df
-        
-        # Get indicator configuration
-        config_key = self._get_indicator_config_key(chart_type, minute_scope)
-        config = self.indicator_configs.get(config_key, self.indicator_configs["day"])
         
         # Create a copy to avoid modifying original
         df_with_indicators = df.copy()
@@ -749,81 +657,184 @@ class StockDataManager:
                 print("⚠️  Insufficient valid data after cleaning")
                 return df
             
-            # Calculate SMA (Simple Moving Averages)
-            for period in config["sma_periods"]:
-                if len(df_with_indicators) >= period:
-                    df_with_indicators[f'sma_{period}'] = ta.sma(df_with_indicators['close'], length=period)
+            # Calculate ALL possible indicators first
             
-            # Calculate EMA (Exponential Moving Averages)
-            for period in config["ema_periods"]:
-                if len(df_with_indicators) >= period:
-                    df_with_indicators[f'ema_{period}'] = ta.ema(df_with_indicators['close'], length=period)
+            # SMA (Simple Moving Averages) - all periods
+            all_sma_periods = [10, 20, 50]
+            for period in all_sma_periods:
+                df_with_indicators[f'sma_{period}'] = ta.sma(df_with_indicators['close'], length=period)
             
-            # Calculate MACD
-            macd_params = config["macd"]
-            if len(df_with_indicators) >= macd_params["slow"]:
+            # EMA (Exponential Moving Averages) - all periods  
+            all_ema_periods = [10, 20, 50]
+            for period in all_ema_periods:
+                df_with_indicators[f'ema_{period}'] = ta.ema(df_with_indicators['close'], length=period)
+            
+            # MACD with 6-13-5 parameters (as specified in table)
+            if len(df_with_indicators) >= 13:
                 macd_result = ta.macd(
                     df_with_indicators['close'], 
-                    fast=macd_params["fast"], 
-                    slow=macd_params["slow"], 
-                    signal=macd_params["signal"]
+                    fast=6, 
+                    slow=13, 
+                    signal=5
                 )
                 if macd_result is not None and not macd_result.empty:
                     df_with_indicators = pd.concat([df_with_indicators, macd_result], axis=1)
             
-            # Calculate RSI
-            if len(df_with_indicators) >= config["rsi"]:
-                df_with_indicators['rsi'] = ta.rsi(df_with_indicators['close'], length=config["rsi"])
+            # RSI
+            if len(df_with_indicators) >= 14:
+                df_with_indicators['rsi'] = ta.rsi(df_with_indicators['close'], length=14)
             
-            # Calculate Stochastic
-            stoch_params = config["stoch"]
-            if len(df_with_indicators) >= stoch_params["k"]:
+            # Stochastic with 9-3-3 parameters
+            if len(df_with_indicators) >= 9:
                 stoch_result = ta.stoch(
                     df_with_indicators['high'], 
                     df_with_indicators['low'], 
                     df_with_indicators['close'],
-                    k=stoch_params["k"],
-                    d=stoch_params["d"]
+                    k=9,
+                    d=3
                 )
                 if stoch_result is not None and not stoch_result.empty:
                     df_with_indicators = pd.concat([df_with_indicators, stoch_result], axis=1)
             
-            # Calculate Bollinger Bands
-            bb_params = config["bollinger"]
-            if len(df_with_indicators) >= bb_params["n"]:
+            # Bollinger Bands with 10-2.0 parameters
+            if len(df_with_indicators) >= 10:
                 bb_result = ta.bbands(
                     df_with_indicators['close'], 
-                    length=bb_params["n"], 
-                    std=bb_params["std"]
+                    length=10, 
+                    std=2.0
                 )
                 if bb_result is not None and not bb_result.empty:
                     df_with_indicators = pd.concat([df_with_indicators, bb_result], axis=1)
             
-            # Calculate ATR (Average True Range)
-            if len(df_with_indicators) >= config["atr"]:
+            # ATR (Average True Range)
+            if len(df_with_indicators) >= 14:
                 df_with_indicators['atr'] = ta.atr(
                     df_with_indicators['high'], 
                     df_with_indicators['low'], 
                     df_with_indicators['close'], 
-                    length=config["atr"]
+                    length=14
                 )
             
-            # Calculate CMF (Chaikin Money Flow)
-            if len(df_with_indicators) >= config["cmf"]:
+            # CMF (Chaikin Money Flow)
+            if len(df_with_indicators) >= 20:
                 df_with_indicators['cmf'] = ta.cmf(
                     df_with_indicators['high'], 
                     df_with_indicators['low'], 
                     df_with_indicators['close'], 
                     df_with_indicators['volume'], 
-                    length=config["cmf"]
+                    length=20
                 )
             
-            print(f"✅ Technical indicators added: {len(df_with_indicators.columns) - len(df.columns)} new columns")
-            return df_with_indicators
+            # Now filter indicators based on chart type according to temp.md table
+            df_filtered = self._filter_indicators_by_chart_type(df_with_indicators, chart_type, minute_scope)
+            
+            print(f"✅ Technical indicators calculated and filtered: {len(df_filtered.columns) - len(df.columns)} indicators kept for {chart_type}")
+            return df_filtered
             
         except Exception as e:
             print(f"❌ Error calculating technical indicators: {e}")
             return df
+    
+    def _filter_indicators_by_chart_type(self, df: pd.DataFrame, chart_type: str, minute_scope: str = None) -> pd.DataFrame:
+        """
+        Filter indicators based on chart type according to temp.md table
+        Maps temp.md indicator names to actual pandas_ta column names
+        
+        Args:
+            df: DataFrame with all indicators calculated
+            chart_type: Chart type (minute, day, week, month, year)
+            minute_scope: Minute scope for minute charts
+            
+        Returns:
+            pd.DataFrame: DataFrame with only required indicators for the chart type
+        """
+        # Start with base columns (OHLCV + date)
+        base_columns = ['date', 'open', 'high', 'low', 'close', 'volume', 'amount']
+        keep_columns = [col for col in base_columns if col in df.columns]
+        
+        # Mapping from temp.md indicator names to actual column names generated by our code
+        # Based on actual available columns: ['sma_10', 'sma_20', 'sma_50', 'ema_10', 'ema_20', 'ema_50', 'MACD_6_13_5', 'MACDh_6_13_5', 'MACDs_6_13_5', 'rsi', 'STOCHk_9_3_3', 'STOCHd_9_3_3', 'BBL_10_2.0', 'BBM_10_2.0', 'BBU_10_2.0', 'BBB_10_2.0', 'BBP_10_2.0', 'atr', 'cmf']
+        indicator_mapping = {
+            'sma_10': 'sma_10',
+            'sma_20': 'sma_20', 
+            'sma_50': 'sma_50',
+            'ema_10': 'ema_10',
+            'ema_20': 'ema_20',
+            'ema_50': 'ema_50',
+            'MACD_6_13_5': 'MACD_6_13_5',
+            'MACDh_6_13_5': 'MACDh_6_13_5',
+            'MACDs_6_13_5': 'MACDs_6_13_5',
+            'rsi': 'rsi',
+            'STOCHk_9_3_3': 'STOCHk_9_3_3',
+            'STOCHd_9_3_3': 'STOCHd_9_3_3',
+            'BBL_10_2.0': 'BBL_10_2.0',
+            'BBM_10_2.0': 'BBM_10_2.0',
+            'BBU_10_2.0': 'BBU_10_2.0',
+            'BBB_10_2.0': 'BBB_10_2.0',
+            'BBP_10_2.0': 'BBP_10_2.0',
+            'atr': 'atr',
+            'cmf': 'cmf'
+        }
+        
+        # Define required indicators for each chart type based on temp.md table
+        if chart_type == "minute" and minute_scope:
+            minute_val = int(minute_scope)
+            if minute_val in [1, 3, 5, 10, 15]:  # 초단기 분봉 (1-15m)
+                required_temp_indicators = [
+                    'sma_10', 'sma_20', 'ema_10', 'ema_20', 
+                    'MACDh_6_13_5', 'rsi', 'STOCHk_9_3_3', 
+                    'BBB_10_2.0', 'atr', 'cmf'
+                ]
+            elif minute_val in [30, 45, 60]:  # 중기 분봉 (30-60m)
+                required_temp_indicators = [
+                    'sma_10', 'ema_10', 'ema_20', 
+                    'MACDh_6_13_5', 'rsi', 'STOCHk_9_3_3', 
+                    'BBB_10_2.0', 'atr', 'cmf'
+                ]
+            else:
+                required_temp_indicators = []  # fallback
+        
+        elif chart_type == "day":  # 일봉
+            required_temp_indicators = [
+                'sma_20', 'sma_50', 'ema_20', 'ema_50', 
+                'MACDh_6_13_5', 'rsi', 'STOCHk_9_3_3', 
+                'BBB_10_2.0', 'atr', 'cmf'
+            ]
+        
+        elif chart_type == "week":  # 주봉
+            required_temp_indicators = [
+                'sma_20', 'sma_50', 'ema_20', 'ema_50', 
+                'MACDh_6_13_5', 'rsi', 'BBB_10_2.0', 'atr', 'cmf'
+            ]
+        
+        elif chart_type == "month":  # 월봉
+            required_temp_indicators = [
+                'MACDh_6_13_5', 'rsi', 'cmf'
+            ]
+        
+        elif chart_type == "year":  # 년봉
+            required_temp_indicators = [
+                'MACDh_6_13_5', 'rsi', 'cmf'
+            ]
+        
+        else:
+            required_temp_indicators = []  # fallback
+        
+        # Convert temp.md indicator names to actual pandas_ta column names and add to keep_columns
+        for temp_indicator in required_temp_indicators:
+            actual_column = indicator_mapping.get(temp_indicator)
+            if actual_column and actual_column in df.columns:
+                keep_columns.append(actual_column)
+            else:
+                available_cols = [col for col in df.columns if col not in base_columns]
+                print(f"⚠️  Required indicator {temp_indicator} (maps to {actual_column}) not found in DataFrame")
+                print(f"Available indicator columns: {available_cols}")
+        
+        # Return filtered DataFrame
+        filtered_df = df[keep_columns].copy()
+        
+        print(f"📊 Filtered indicators for {chart_type}: {len(keep_columns) - len(base_columns)} indicators kept")
+        return filtered_df
     
     def _save_filtered_data_csv(self, df: pd.DataFrame, stock_code: str, chart_type: str, 
                                base_date: str = None, expected_start_date: str = None, 

@@ -177,8 +177,55 @@ class KiwoomTokenManager:
             return False
 
 
-def make_api_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
-    """Make API request to Kiwoom chart endpoint with detailed logging"""
+def make_api_request_with_retry(tr_code: str, data: Dict, max_retries: int = 1) -> Optional[Dict]:
+    """
+    Make API request with automatic token refresh on authentication failure
+    
+    Args:
+        tr_code: API transaction code
+        data: Request data
+        max_retries: Maximum retry attempts (default 1)
+        
+    Returns:
+        Dict: API response or None if failed
+    """
+    token_manager = get_token_manager()
+    
+    for attempt in range(max_retries + 1):
+        # Get current token (refresh if needed)
+        token = token_manager.get_access_token(force_refresh=(attempt > 0))
+        
+        if not token:
+            print(f"❌ Failed to get access token (attempt {attempt + 1})")
+            continue
+        
+        # Make API request
+        result = _make_single_api_request(token, tr_code, data)
+        
+        if result is not None:
+            # Check for token authentication errors
+            return_code = result.get('return_code', 0)
+            return_msg = result.get('return_msg', '')
+            
+            if return_code == 3 and 'Token' in return_msg:
+                print(f"🔄 Token authentication failed (attempt {attempt + 1}): {return_msg}")
+                if attempt < max_retries:
+                    print("🔄 Retrying with new token...")
+                    continue
+            
+            return result
+        else:
+            print(f"❌ API request failed (attempt {attempt + 1})")
+            if attempt < max_retries:
+                print("🔄 Retrying...")
+                continue
+    
+    print(f"❌ All retry attempts failed for {tr_code}")
+    return None
+
+
+def _make_single_api_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
+    """Make single API request to Kiwoom chart endpoint with detailed logging"""
     url = BASE_URL + CHART_ENDPOINT
     headers = {
         'Content-Type': 'application/json;charset=UTF-8',
@@ -199,11 +246,18 @@ def make_api_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
         
         if response.status_code == 200:
             result = response.json()
-            print('✅ Kiwoom API call successful')
             
-            # Response data size info
-            response_size = len(json.dumps(result, ensure_ascii=False))
-            print(f'Response data size: {response_size:,} bytes')
+            # Check return code in response body
+            return_code = result.get('return_code', 0)
+            if return_code == 0:
+                print('✅ Kiwoom API call successful')
+                
+                # Response data size info
+                response_size = len(json.dumps(result, ensure_ascii=False))
+                print(f'Response data size: {response_size:,} bytes')
+            else:
+                return_msg = result.get('return_msg', 'Unknown error')
+                print(f'⚠️  API returned error: [{return_code}] {return_msg}')
             
             return result
         else:
@@ -219,9 +273,66 @@ def make_api_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
         return None
 
 
-# Chart data fetching functions
-def get_minute_chart(token: str, stock_code: str, minute_scope: str) -> Optional[Dict]:
-    """Get minute chart data (ka10080)"""
+# Legacy function for backward compatibility
+def make_api_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
+    """Legacy function - use make_api_request_with_retry instead"""
+    return _make_single_api_request(token, tr_code, data)
+
+
+# Chart data fetching functions with automatic token refresh
+def get_minute_chart(stock_code: str, minute_scope: str) -> Optional[Dict]:
+    """Get minute chart data (ka10080) with automatic token refresh"""
+    data = {
+        'stk_cd': stock_code,
+        'tic_scope': minute_scope,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request_with_retry('ka10080', data)
+
+
+def get_day_chart(stock_code: str, base_date: str) -> Optional[Dict]:
+    """Get daily chart data (ka10081) with automatic token refresh"""
+    data = {
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request_with_retry('ka10081', data)
+
+
+def get_week_chart(stock_code: str, base_date: str) -> Optional[Dict]:
+    """Get weekly chart data (ka10082) with automatic token refresh"""
+    data = {
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request_with_retry('ka10082', data)
+
+
+def get_month_chart(stock_code: str, base_date: str) -> Optional[Dict]:
+    """Get monthly chart data (ka10083) with automatic token refresh"""
+    data = {
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request_with_retry('ka10083', data)
+
+
+def get_year_chart(stock_code: str, base_date: str) -> Optional[Dict]:
+    """Get yearly chart data (ka10094) with automatic token refresh"""
+    data = {
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request_with_retry('ka10094', data)
+
+
+# Legacy functions for backward compatibility
+def get_minute_chart_legacy(token: str, stock_code: str, minute_scope: str) -> Optional[Dict]:
+    """Legacy function - use get_minute_chart instead"""
     data = {
         'stk_cd': stock_code,
         'tic_scope': minute_scope,
@@ -230,8 +341,8 @@ def get_minute_chart(token: str, stock_code: str, minute_scope: str) -> Optional
     return make_api_request(token, 'ka10080', data)
 
 
-def get_day_chart(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
-    """Get daily chart data (ka10081)"""
+def get_day_chart_legacy(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
+    """Legacy function - use get_day_chart instead"""
     data = {
         'stk_cd': stock_code,
         'base_dt': base_date,
@@ -240,8 +351,8 @@ def get_day_chart(token: str, stock_code: str, base_date: str) -> Optional[Dict]
     return make_api_request(token, 'ka10081', data)
 
 
-def get_week_chart(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
-    """Get weekly chart data (ka10082)"""
+def get_week_chart_legacy(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
+    """Legacy function - use get_week_chart instead"""
     data = {
         'stk_cd': stock_code,
         'base_dt': base_date,
@@ -250,8 +361,8 @@ def get_week_chart(token: str, stock_code: str, base_date: str) -> Optional[Dict
     return make_api_request(token, 'ka10082', data)
 
 
-def get_month_chart(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
-    """Get monthly chart data (ka10083)"""
+def get_month_chart_legacy(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
+    """Legacy function - use get_month_chart instead"""
     data = {
         'stk_cd': stock_code,
         'base_dt': base_date,
@@ -260,8 +371,8 @@ def get_month_chart(token: str, stock_code: str, base_date: str) -> Optional[Dic
     return make_api_request(token, 'ka10083', data)
 
 
-def get_year_chart(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
-    """Get yearly chart data (ka10094)"""
+def get_year_chart_legacy(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
+    """Legacy function - use get_year_chart instead"""
     data = {
         'stk_cd': stock_code,
         'base_dt': base_date,
