@@ -1,141 +1,98 @@
 """
-Stock Price Agent 구현
-키움증권 REST API를 통한 주식 데이터 조회
-LangGraph 공식 패턴 적용 - 표준 Sub-agent 구현 (OpenAI 전용)
+ChatClovaX Stock Price Agent
+Simplified LangGraph implementation using create_react_agent
 """
 
 import os
 from typing import Dict, Any, List
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_openai import ChatOpenAI
-from langchain.tools import BaseTool
+from langchain_naver import ChatClovaX
 from langgraph.prebuilt import create_react_agent
 
 from .prompt import STOCK_PRICE_AGENT_PROMPT
-from .tools import get_stock_price_tools
+from .tools import get_stock_tools
 from .data_manager import get_data_manager
-from ..shared.state import MessagesState
+from .utils import format_prompt_with_dates
 
 
 class StockPriceAgent:
     """
-    Stock Price Agent (LangGraph 공식 Sub-agent 패턴)
-    키움증권 API를 통한 주식 데이터 조회 및 분석
-    Supervisor에서 tool로 호출되는 표준 Sub-agent (OpenAI 전용)
+    Simplified Stock Price Agent using ChatClovaX and LangGraph
     """
     
-    def __init__(self, llm: ChatOpenAI):
-        """
-        Stock Price Agent 초기화
+    def __init__(self):
+        """Initialize the agent with ChatClovaX model and tools"""
         
-        Args:
-            llm: LangChain ChatOpenAI 인스턴스
-        """
-        self.llm = llm
-        self.tools = get_stock_price_tools()
+        # Initialize ChatClovaX model (HCX-005)
+        self.llm = ChatClovaX(
+            model="HCX-005",
+            max_tokens=4096,  # Sufficient for tool usage (>= 1024 required)
+            temperature=0,  # Lower for more consistent analysis
+        )
         
-        # 사용 중인 모델 정보 출력
-        model_info = self._get_model_info(llm)
-        print(f"🤖 Stock Price Agent 초기화: {model_info}")
+        # Get tools
+        self.tools = get_stock_tools()
         
-        # 데이터 매니저 초기화 (data 폴더 새로 생성)
+        # Initialize data manager
         self.data_manager = get_data_manager()
-        print("📁 Stock Price Agent 데이터 매니저 초기화 완료")
         
-        # tools와 tool_names 정보 추가
-        tools_info = self._get_tools_info(self.tools)
+        # Format prompt with current dates
+        formatted_prompt = format_prompt_with_dates(STOCK_PRICE_AGENT_PROMPT)
         
-        # 프롬프트 포맷팅
-        formatted_prompt = STOCK_PRICE_AGENT_PROMPT.format(**tools_info)
-        
-        # LangGraph React Agent 생성 (표준 Sub-agent)
-        # OpenAI 사용
+        # Create LangGraph React Agent with date-formatted prompt (name 파라미터 제거 - ChatClovaX 호환성)
         self.agent = create_react_agent(
             self.llm,
             tools=self.tools,
             prompt=formatted_prompt
         )
-    
-    def _get_model_info(self, llm) -> str:
-        """사용 중인 모델 정보를 반환합니다"""
-        try:
-            model_name = getattr(llm, 'model_name', None) or getattr(llm, 'model', 'Unknown')
-            llm_class = llm.__class__.__name__
-            
-            if 'OpenAI' in llm_class:
-                return f"OpenAI ({model_name})"
-            else:
-                return f"{llm_class} ({model_name})"
-        except:
-            return f"{llm.__class__.__name__}"
-    
-    def _get_tools_info(self, tools: List[BaseTool]) -> Dict[str, str]:
-        """tools 정보를 prompt에 사용할 수 있는 형태로 변환합니다"""
-        # tools 설명 생성
-        tools_desc = []
-        tool_names = []
         
-        for tool in tools:
-            tool_names.append(tool.name)
-            tool_desc = f"- **{tool.name}**: {tool.description}"
-            tools_desc.append(tool_desc)
-        
-        return {
-            'tools': '\n'.join(tools_desc),
-            'tool_names': ', '.join(tool_names)
-        }
+        print(f"🤖 Stock Price Agent initialized with ChatClovaX HCX-005")
+        print(f"📊 Tools available: {[tool.name for tool in self.tools]}")
+        print(f"📅 Prompt formatted with current dates")
     
-    def invoke(self, state: MessagesState) -> Dict[str, Any]:
+    def run(self, user_query: str) -> str:
         """
-        Stock Price Agent를 실행합니다 (표준 LangGraph Sub-agent 패턴)
+        Main entry point for the agent
         
         Args:
-            state: 현재 상태
+            user_query: User's question about stock data
             
         Returns:
-            Dict: 업데이트된 상태
+            str: Agent's response with analysis and data
         """
         try:
-            # 표준 LangGraph agent invoke
-            result = self.agent.invoke({"messages": state["messages"]})
+            # Invoke the agent
+            result = self.agent.invoke({"messages": [HumanMessage(content=user_query)]})
             
-            # 결과에서 최종 응답 추출
-            result_messages = result.get("messages", [])
-            if result_messages:
-                final_response = result_messages[-1].content
-                
-                # 데이터 요약 정보 추가
-                data_summary = self.data_manager.get_data_summary()
-                summary_text = f"\n\n📊 데이터 처리 요약:\n• 저장된 파일: {data_summary['filtered_files']}개\n• 총 크기: {data_summary['total_size_mb']}MB"
-                final_response += summary_text
-                
-                # 최종 메시지 업데이트
-                result_messages[-1].content = final_response
+            # Extract final response
+            if result and "messages" in result:
+                messages = result["messages"]
+                if messages:
+                    final_message = messages[-1]
+                    if hasattr(final_message, 'content'):
+                        return final_message.content
             
-            # 메시지 상태 업데이트 (표준 방식)
-            updated_state = state.copy()
-            updated_state["messages"] = result_messages
-            
-            # 메타데이터 업데이트
-            if updated_state["metadata"] is None:
-                updated_state["metadata"] = {}
-            updated_state["metadata"]["stock_price_processed"] = True
-            updated_state["metadata"]["api_calls_made"] = len(result_messages)
-            
-            # 데이터 파일 정보 추가
-            data_summary = self.data_manager.get_data_summary()
-            updated_state["metadata"]["data_files_created"] = data_summary['filtered_files']
-            
-            return updated_state
+            return "I couldn't process your request. Please try asking about specific stock data."
             
         except Exception as e:
-            # 오류 처리 (표준 방식)
-            error_message = f"Stock Price Agent 처리 중 오류 발생: {str(e)}"
-            
-            error_ai_message = AIMessage(content=error_message)
-            
-            updated_state = state.copy()
-            updated_state["messages"] = state["messages"] + [error_ai_message]
-            updated_state["error"] = str(e)
-            
-            return updated_state 
+            error_msg = f"Error processing request: {str(e)}"
+            print(f"❌ {error_msg}")
+            return error_msg
+    
+    def get_available_tools(self) -> List[str]:
+        """Get list of available tool names"""
+        return [tool.name for tool in self.tools]
+
+
+def run_agent(user_query: str) -> str:
+    """
+    Public entry point function for running the stock price agent
+    
+    Args:
+        user_query: User's question about stock data
+        
+    Returns:
+        str: Agent's response
+    """
+    agent = StockPriceAgent()
+    return agent.run(user_query) 

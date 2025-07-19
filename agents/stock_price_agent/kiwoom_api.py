@@ -1,71 +1,65 @@
 """
-키움증권 REST API 함수들
-Stock Price Agent 전용 구현 (legacy 코드 기반 완전한 토큰 관리)
+Simplified Kiwoom API module for ChatClovaX agent
+Handles authentication and chart data fetching only
 """
 
 import os
 import json
 import requests
-from typing import Dict, Optional, Any, List
+from typing import Dict, Optional
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-# 환경변수 로드
 load_dotenv("secrets/.env")
 
-# 키움증권 API 설정 (legacy 코드 기반)
-BASE_URL_MOCK = 'https://mockapi.kiwoom.com'
-BASE_URL_REAL = 'https://api.kiwoom.com'
+BASE_URL = 'https://api.kiwoom.com'
 CHART_ENDPOINT = '/api/dostk/chart'
 
 
 class KiwoomTokenManager:
-    """키움 API 토큰 관리자 (legacy utils.py 완전 구현)"""
+    """Simplified token manager for Kiwoom API with complete legacy features"""
     
     def __init__(self):
-        """토큰 매니저 초기화"""
-        self.base_url = "https://api.kiwoom.com"
+        self.base_url = BASE_URL
         self.token_file = "secrets/access_token.json"
-        
-        # secrets 폴더에서 키 정보 로드
         self.appkey = self._load_secret("57295187_appkey.txt")
         self.secretkey = self._load_secret("57295187_secretkey.txt")
-        
+    
     def _load_secret(self, filename: str) -> str:
-        """secrets 폴더에서 키 정보를 로드합니다"""
+        """Load secret from file"""
         try:
             with open(f"secrets/{filename}", "r", encoding="utf-8") as f:
                 return f.read().strip()
         except FileNotFoundError:
-            raise FileNotFoundError(f"secrets/{filename} 파일을 찾을 수 없습니다.")
+            raise FileNotFoundError(f"secrets/{filename} file not found")
     
     def _save_token_to_file(self, token_data: Dict):
-        """토큰을 파일에 저장합니다"""
+        """Save token to file with detailed logging"""
         try:
             with open(self.token_file, 'w', encoding='utf-8') as f:
                 json.dump(token_data, f, ensure_ascii=False, indent=2)
-            print(f"✅ 토큰이 {self.token_file}에 저장되었습니다.")
+            print(f"✅ Token saved to {self.token_file}")
         except Exception as e:
-            print(f"❌ 토큰 저장 오류: {e}")
+            print(f"❌ Token save error: {e}")
     
     def _load_token_from_file(self) -> Optional[Dict]:
-        """파일에서 토큰을 로드합니다"""
+        """Load token from file with error handling"""
         try:
             if os.path.exists(self.token_file):
                 with open(self.token_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
         except Exception as e:
-            print(f"❌ 토큰 로드 오류: {e}")
+            print(f"❌ Token load error: {e}")
         return None
     
     def _is_token_valid(self, token_data: Dict) -> bool:
-        """토큰이 유효한지 확인합니다"""
+        """Check if token is still valid with detailed logging"""
         if not token_data or 'expires_dt' not in token_data:
             return False
         
         try:
             expires_dt = datetime.strptime(token_data['expires_dt'], '%Y%m%d%H%M%S')
-            # 만료 1시간 전에 재발급
+            # Refresh 1 hour before expiry
             buffer_time = timedelta(hours=1)
             current_time = datetime.now()
             
@@ -73,47 +67,48 @@ class KiwoomTokenManager:
             
             if is_valid:
                 remaining = expires_dt - current_time
-                print(f"🔑 토큰 유효: {remaining.total_seconds()/3600:.1f}시간 남음")
+                print(f"🔑 Token valid: {remaining.total_seconds()/3600:.1f} hours remaining")
             else:
-                print(f"⏰ 토큰 만료 임박 또는 만료됨")
+                print(f"⏰ Token expiring soon or expired")
                 
             return is_valid
         except ValueError as e:
-            print(f"❌ 토큰 만료일 파싱 오류: {e}")
+            print(f"❌ Token expiry date parsing error: {e}")
             return False
     
     def get_access_token(self, force_refresh=False) -> Optional[str]:
         """
-        유효한 접근토큰을 반환합니다. 필요시 자동으로 재발급합니다.
+        Get valid access token with automatic refresh
         
         Args:
-            force_refresh (bool): 강제 재발급 여부
+            force_refresh (bool): Force token refresh
             
         Returns:
-            str: 유효한 접근토큰 또는 None
+            str: Valid access token or None
         """
-        # 강제 재발급이 아닌 경우, 기존 토큰 확인
+        # Check existing token if not forcing refresh
         if not force_refresh:
             existing_token = self._load_token_from_file()
             if existing_token and self._is_token_valid(existing_token):
-                print("✅ 기존 토큰을 사용합니다.")
+                print("✅ Using existing token")
                 return existing_token['token']
         
-        # 새 토큰 발급
-        print("🔄 새로운 접근토큰을 발급받습니다...")
+        # Request new token
+        print("🔄 Requesting new token...")
         token_data = self._request_new_token()
         
         if token_data and token_data.get('return_code') == 0:
-            # 토큰을 파일에 저장
+            # Save token to file
             self._save_token_to_file(token_data)
-            print("✅ 새 토큰 발급 및 저장 완료")
+            print("✅ New token issued and saved")
             return token_data['token']
         else:
-            print(f"❌ 토큰 발급 실패: {token_data.get('return_msg', 'Unknown error') if token_data else 'API 호출 실패'}")
+            error_msg = token_data.get('return_msg', 'Unknown error') if token_data else 'API call failed'
+            print(f"❌ Token issuance failed: {error_msg}")
             return None
     
     def _request_new_token(self) -> Optional[Dict]:
-        """새로운 접근토큰을 발급받습니다"""
+        """Request new access token"""
         url = f"{self.base_url}/oauth2/token"
         
         headers = {
@@ -127,7 +122,7 @@ class KiwoomTokenManager:
         }
         
         try:
-            print(f"🌐 토큰 요청: {url}")
+            print(f"Token request: {url}")
             response = requests.post(url, headers=headers, json=data)
             response.raise_for_status()
             
@@ -135,19 +130,19 @@ class KiwoomTokenManager:
             
             if result.get('return_code') == 0:
                 expires_dt = result.get('expires_dt', '')
-                print(f"✅ 접근토큰 발급 성공")
-                print(f"📅 토큰 만료일: {expires_dt}")
+                print(f"✅ Access token issued successfully")
+                print(f"Token expires: {expires_dt}")
                 return result
             else:
-                print(f"❌ 토큰 발급 실패: {result.get('return_msg')}")
+                print(f"❌ Token issuance failed: {result.get('return_msg')}")
                 return result
                 
         except requests.exceptions.RequestException as e:
-            print(f"❌ API 요청 오류: {e}")
+            print(f"❌ API request error: {e}")
             return None
     
     def revoke_token(self, token: str) -> bool:
-        """접근토큰을 폐기합니다"""
+        """Revoke access token"""
         url = f"{self.base_url}/oauth2/revoke"
         
         headers = {
@@ -167,47 +162,71 @@ class KiwoomTokenManager:
             result = response.json()
             
             if result.get('return_code') == 0:
-                print("✅ 토큰 폐기 성공")
-                # 저장된 토큰 파일 삭제
+                print("✅ Token revoked successfully")
+                # Remove saved token file
                 if os.path.exists(self.token_file):
                     os.remove(self.token_file)
+                    print("✅ Token file removed")
                 return True
             else:
-                print(f"❌ 토큰 폐기 실패: {result.get('return_msg')}")
+                print(f"❌ Token revocation failed: {result.get('return_msg')}")
                 return False
                 
         except requests.exceptions.RequestException as e:
-            print(f"❌ API 요청 오류: {e}")
+            print(f"❌ API request error: {e}")
             return False
 
 
-# 전역 매니저 인스턴스
-_token_manager = None
-
-def get_token_manager() -> KiwoomTokenManager:
-    """전역 토큰 매니저 인스턴스 반환"""
-    global _token_manager
-    if _token_manager is None:
-        _token_manager = KiwoomTokenManager()
-    return _token_manager
-
-
-def _make_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
+def make_api_request_with_retry(tr_code: str, data: Dict, max_retries: int = 1) -> Optional[Dict]:
     """
-    키움 API 요청을 수행하는 공통 함수 (legacy 코드 기반 문서 스펙 준수)
+    Make API request with automatic token refresh on authentication failure
     
     Args:
-        token (str): 접근토큰
-        tr_code (str): TR 코드 (api-id)
-        data (Dict): 요청 데이터
-    
+        tr_code: API transaction code
+        data: Request data
+        max_retries: Maximum retry attempts (default 1)
+        
     Returns:
-        Dict: API 응답 데이터
+        Dict: API response or None if failed
     """
-    host = BASE_URL_REAL
-    url = host + CHART_ENDPOINT
+    token_manager = get_token_manager()
     
-    # 문서에 명시된 정확한 헤더 구조 (legacy 코드 기반)
+    for attempt in range(max_retries + 1):
+        # Get current token (refresh if needed)
+        token = token_manager.get_access_token(force_refresh=(attempt > 0))
+        
+        if not token:
+            print(f"❌ Failed to get access token (attempt {attempt + 1})")
+            continue
+        
+        # Make API request
+        result = _make_single_api_request(token, tr_code, data)
+        
+        if result is not None:
+            # Check for token authentication errors
+            return_code = result.get('return_code', 0)
+            return_msg = result.get('return_msg', '')
+            
+            if return_code == 3 and 'Token' in return_msg:
+                print(f"🔄 Token authentication failed (attempt {attempt + 1}): {return_msg}")
+                if attempt < max_retries:
+                    print("🔄 Retrying with new token...")
+                    continue
+            
+            return result
+        else:
+            print(f"❌ API request failed (attempt {attempt + 1})")
+            if attempt < max_retries:
+                print("🔄 Retrying...")
+                continue
+    
+    print(f"❌ All retry attempts failed for {tr_code}")
+    return None
+
+
+def _make_single_api_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
+    """Make single API request to Kiwoom chart endpoint with detailed logging"""
+    url = BASE_URL + CHART_ENDPOINT
     headers = {
         'Content-Type': 'application/json;charset=UTF-8',
         'authorization': f'Bearer {token}',
@@ -217,150 +236,157 @@ def _make_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
     }
     
     try:
-        print(f"🌐 키움 API 호출: {tr_code} → {data.get('stk_cd', 'Unknown')}")
+        print(f"📡 Kiwoom API call: {tr_code} → {data.get('stk_cd', 'Unknown')}")
         response = requests.post(url, headers=headers, json=data)
         
-        # 응답 상태 코드와 헤더 정보 출력 (legacy 코드 스타일)
-        print(f'📊 응답 Code: {response.status_code}')
+        # Response status and header info
+        print(f'Response Code: {response.status_code}')
         header_info = {key: response.headers.get(key) for key in ['next-key', 'cont-yn', 'api-id']}
-        print(f'📋 응답 Header: {json.dumps(header_info, indent=2, ensure_ascii=False)}')
+        print(f'Response Header: {json.dumps(header_info, indent=2, ensure_ascii=False)}')
         
         if response.status_code == 200:
             result = response.json()
-            print('✅ 키움 API 호출 성공')
             
-            # 응답 데이터 크기 정보
-            response_size = len(json.dumps(result, ensure_ascii=False))
-            print(f'📦 응답 데이터 크기: {response_size:,} bytes')
+            # Check return code in response body
+            return_code = result.get('return_code', 0)
+            if return_code == 0:
+                print('✅ Kiwoom API call successful')
+                
+                # Response data size info
+                response_size = len(json.dumps(result, ensure_ascii=False))
+                print(f'Response data size: {response_size:,} bytes')
+            else:
+                return_msg = result.get('return_msg', 'Unknown error')
+                print(f'⚠️  API returned error: [{return_code}] {return_msg}')
             
             return result
         else:
-            print(f'❌ 키움 API 호출 실패: HTTP {response.status_code}')
-            print(f'📄 응답 내용: {response.text}')
+            print(f'❌ Kiwoom API call failed: HTTP {response.status_code}')
+            print(f'Response content: {response.text}')
             return None
         
     except requests.exceptions.RequestException as e:
-        print(f"❌ API 요청 오류: {e}")
+        print(f"❌ API request error: {e}")
         return None
     except json.JSONDecodeError as e:
-        print(f"❌ JSON 파싱 오류: {e}")
+        print(f"❌ JSON parsing error: {e}")
         return None
 
 
-# ========== 주식 차트 조회 함수들 (틱 차트 제거) ==========
+# Legacy function for backward compatibility
+def make_api_request(token: str, tr_code: str, data: Dict) -> Optional[Dict]:
+    """Legacy function - use make_api_request_with_retry instead"""
+    return _make_single_api_request(token, tr_code, data)
 
-def fn_ka10080(token: str, stk_cd: str, tic_scope: str) -> Optional[Dict]:
-    """
-    주식분봉차트조회요청 (ka10080)
-    
-    Args:
-        token (str): 접근토큰
-        stk_cd (str): 종목코드
-        tic_scope (str): 틱범위 (1:1분, 3:3분, 5:5분, 10:10분, 15:15분, 30:30분, 45:45분, 60:60분)
-    
-    Returns:
-        Dict: API 응답 데이터
-    """
-    # ka10080 전용 body 파라미터
+
+# Chart data fetching functions with automatic token refresh
+def get_minute_chart(stock_code: str, minute_scope: str) -> Optional[Dict]:
+    """Get minute chart data (ka10080) with automatic token refresh"""
     data = {
-        'stk_cd': stk_cd,
-        'tic_scope': tic_scope,
-        'upd_stkpc_tp': '1'        # 수정주가 고정
+        'stk_cd': stock_code,
+        'tic_scope': minute_scope,
+        'upd_stkpc_tp': '1'
     }
-    return _make_request(token, 'ka10080', data)
+    return make_api_request_with_retry('ka10080', data)
 
-def fn_ka10081(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
-    """
-    주식일봉차트조회요청 (ka10081)
-    
-    Args:
-        token (str): 접근토큰
-        stk_cd (str): 종목코드
-        base_dt (str): 기준일자 (YYYYMMDD)
-    
-    Returns:
-        Dict: API 응답 데이터
-    """
-    # ka10081 전용 body 파라미터
+
+def get_day_chart(stock_code: str, base_date: str) -> Optional[Dict]:
+    """Get daily chart data (ka10081) with automatic token refresh"""
     data = {
-        'stk_cd': stk_cd,
-        'base_dt': base_dt,
-        'upd_stkpc_tp': '1'        # 수정주가 고정
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
     }
-    return _make_request(token, 'ka10081', data)
+    return make_api_request_with_retry('ka10081', data)
 
-def fn_ka10082(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
-    """
-    주식주봉차트조회요청 (ka10082)
-    
-    Args:
-        token (str): 접근토큰
-        stk_cd (str): 종목코드
-        base_dt (str): 기준일자 (YYYYMMDD)
-    
-    Returns:
-        Dict: API 응답 데이터
-    """
-    # ka10082 전용 body 파라미터
+
+def get_week_chart(stock_code: str, base_date: str) -> Optional[Dict]:
+    """Get weekly chart data (ka10082) with automatic token refresh"""
     data = {
-        'stk_cd': stk_cd,
-        'base_dt': base_dt,
-        'upd_stkpc_tp': '1'        # 수정주가 고정
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
     }
-    return _make_request(token, 'ka10082', data)
+    return make_api_request_with_retry('ka10082', data)
 
-def fn_ka10083(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
-    """
-    주식월봉차트조회요청 (ka10083)
-    
-    Args:
-        token (str): 접근토큰
-        stk_cd (str): 종목코드
-        base_dt (str): 기준일자 (YYYYMMDD)
-    
-    Returns:
-        Dict: API 응답 데이터
-    """
-    # ka10083 전용 body 파라미터
+
+def get_month_chart(stock_code: str, base_date: str) -> Optional[Dict]:
+    """Get monthly chart data (ka10083) with automatic token refresh"""
     data = {
-        'stk_cd': stk_cd,
-        'base_dt': base_dt,
-        'upd_stkpc_tp': '1'        # 수정주가 고정
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
     }
-    return _make_request(token, 'ka10083', data)
+    return make_api_request_with_retry('ka10083', data)
 
-def fn_ka10094(token: str, stk_cd: str, base_dt: str) -> Optional[Dict]:
-    """
-    주식년봉차트조회요청 (ka10094)
-    
-    Args:
-        token (str): 접근토큰
-        stk_cd (str): 종목코드
-        base_dt (str): 기준일자 (YYYYMMDD)
-    
-    Returns:
-        Dict: API 응답 데이터
-    """
-    # ka10094 전용 body 파라미터
+
+def get_year_chart(stock_code: str, base_date: str) -> Optional[Dict]:
+    """Get yearly chart data (ka10094) with automatic token refresh"""
     data = {
-        'stk_cd': stk_cd,
-        'base_dt': base_dt,
-        'upd_stkpc_tp': '1'        # 수정주가 고정
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
     }
-    return _make_request(token, 'ka10094', data)
+    return make_api_request_with_retry('ka10094', data)
 
 
-# ========== 편의 함수들 ==========
+# Legacy functions for backward compatibility
+def get_minute_chart_legacy(token: str, stock_code: str, minute_scope: str) -> Optional[Dict]:
+    """Legacy function - use get_minute_chart instead"""
+    data = {
+        'stk_cd': stock_code,
+        'tic_scope': minute_scope,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request(token, 'ka10080', data)
 
-def save_chart_data_to_json(data: Dict, filename: str):
-    """차트 데이터를 JSON 파일로 저장합니다"""
-    try:
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"💾 데이터가 {filename}에 저장되었습니다.")
-    except Exception as e:
-        print(f"❌ 파일 저장 오류: {e}")
 
-def get_today_date() -> str:
-    """오늘 날짜를 YYYYMMDD 형식으로 반환합니다"""
-    return datetime.now().strftime('%Y%m%d') 
+def get_day_chart_legacy(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
+    """Legacy function - use get_day_chart instead"""
+    data = {
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request(token, 'ka10081', data)
+
+
+def get_week_chart_legacy(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
+    """Legacy function - use get_week_chart instead"""
+    data = {
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request(token, 'ka10082', data)
+
+
+def get_month_chart_legacy(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
+    """Legacy function - use get_month_chart instead"""
+    data = {
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request(token, 'ka10083', data)
+
+
+def get_year_chart_legacy(token: str, stock_code: str, base_date: str) -> Optional[Dict]:
+    """Legacy function - use get_year_chart instead"""
+    data = {
+        'stk_cd': stock_code,
+        'base_dt': base_date,
+        'upd_stkpc_tp': '1'
+    }
+    return make_api_request(token, 'ka10094', data)
+
+
+# Global token manager instance
+_token_manager = None
+
+def get_token_manager() -> KiwoomTokenManager:
+    """Get global token manager instance"""
+    global _token_manager
+    if _token_manager is None:
+        _token_manager = KiwoomTokenManager()
+    return _token_manager 

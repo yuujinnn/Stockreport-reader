@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
-LangGraph 기반 Supervisor 멀티 에이전트 시스템
-메인 서버 스크립트 (로컬 개발 환경 최적화, OpenAI 전용)
+ChatClovaX 기반 Supervisor 멀티 에이전트 시스템
+메인 서버 스크립트 (langgraph-supervisor 패턴)
 
 이 스크립트는 주식 분석을 위한 멀티 에이전트 시스템을 실행합니다:
-- Supervisor Agent: 사용자 질문 분석 및 워커 에이전트 조정 (OpenAI)
-- Stock Price Agent: 키움증권 API를 통한 주식 데이터 조회 (OpenAI)
+- Supervisor Agent: ChatClovaX 기반 사용자 질문 분석 및 워커 에이전트 조정
+- Stock Price Agent: ChatClovaX 기반 키움증권 API를 통한 주식 데이터 조회
 
-Architecture: LangGraph Supervisor MAS
-Environment: Local Development Optimized
-LLM: OpenAI (gpt-4o-mini) for all agents
+Architecture: LangGraph Supervisor MAS (ChatClovaX)
+Environment: Local Development + Production Ready
+LLM: ChatClovaX HCX-005 for all agents
 """
 
 import os
 import sys
 import argparse
+import asyncio
+from datetime import datetime
 from dotenv import load_dotenv
 
 # 프로젝트 루트를 Python 경로에 추가
@@ -24,342 +26,246 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 load_dotenv("secrets/.env")
 
 def print_system_info():
-    """시스템 정보 출력 (로컬 환경 강조, OpenAI 전용)"""
-    print("=" * 60)
-    print("🤖 LangGraph Supervisor MAS for Stock Analysis")
-    print("🏠 LOCAL DEVELOPMENT ENVIRONMENT (OpenAI 전용)")
-    print("=" * 60)
-    print(f"📊 Architecture: Supervisor Multi-Agent System")
-    print(f"🔧 Framework: LangGraph + LangChain")
-    print(f"🧠 LLM Model: {os.getenv('OPENAI_MODEL', 'gpt-4o-mini')} (모든 Agent)")
+    """시스템 정보 출력 (ChatClovaX 기반)"""
+    print("=" * 70)
+    print("🤖 ChatClovaX Supervisor MAS for Stock Analysis")
+    print("🚀 NAVER CLOVA X POWERED SYSTEM")
+    print("=" * 70)
+    print(f"📊 Architecture: LangGraph Supervisor Multi-Agent System")
+    print(f"🔧 Framework: LangGraph + langgraph-supervisor")
+    print(f"🧠 LLM Model: ChatClovaX HCX-005 (모든 Agent)")
     print(f"📈 Data Source: Kiwoom Securities REST API")
-    print(f"💻 Environment: Local Development")
+    print(f"💻 Environment: Local Development + Production Ready")
     
-    # LangSmith 정보 (LANGSMITH_API_KEY 사용)
+    # API 키 상태 확인
+    clova_api = "✅ 설정됨" if os.getenv('CLOVASTUDIO_API_KEY') else "❌ 없음"
+    langsmith_api = "✅ 설정됨" if os.getenv('LANGSMITH_API_KEY') else "❌ 없음"
+    
+    print(f"\n🔑 API Key Status:")
+    print(f"  • CLOVASTUDIO_API_KEY: {clova_api}")
+    print(f"  • LANGSMITH_API_KEY: {langsmith_api}")
+    
+    # LangSmith 정보
     if os.getenv('LANGSMITH_API_KEY'):
-        project = os.getenv('LANGSMITH_PROJECT', 'MiraeAssetAI')
-        print(f"📊 LangSmith: Enabled (Project: {project})")
-        print(f"🔗 Dashboard: https://smith.langchain.com/")
+        project = os.getenv('LANGSMITH_PROJECT', 'ChatClovaX_StockAnalysis')
+        print(f"\n📊 LangSmith: Enabled")
+        print(f"  • Project: {project}")
+        print(f"  • Dashboard: https://smith.langchain.com/")
     else:
-        print(f"📊 LangSmith: Disabled (개발 환경에서는 선택적)")
+        print(f"\n📊 LangSmith: Disabled")
     
-    print("\n🔧 Agent Configuration (OpenAI 전용):")
-    print(f"  • Supervisor Agent: Query analysis & coordination (OpenAI)")
-    print(f"  • Stock Price Agent: Kiwoom API data collection (OpenAI)")
-    print("\n🏠 Local Development Features:")
-    print(f"  • Hot reload: 파일 변경 시 자동 재시작")
-    print(f"  • Debug mode: 상세 로깅 및 오류 추적")
-    print(f"  • Kiwoom test: API 연결 상태 확인")
-    print("=" * 60)
+    print("\n🔧 Agent Configuration (ChatClovaX HCX-005):")
+    print(f"  • Supervisor Agent: 질문 분석 및 워커 에이전트 조정")
+    print(f"  • Stock Price Agent: 키움증권 API 데이터 수집 및 분석")
+    
+    print("\n🏗️  System Features:")
+    print(f"  • langgraph-supervisor 패턴")
+    print(f"  • Manual fallback 지원")
+    print(f"  • ChatClovaX 통합 Tool Calling")
+    print(f"  • 실시간 주가 데이터 분석")
+    print(f"  • FastAPI REST API 서버")
 
-
-def check_requirements():
-    """필수 의존성 및 환경변수 확인 (로컬 환경 가이드 포함)"""
-    print("🔍 로컬 개발 환경 요구사항 확인 중...")
+def check_environment():
+    """환경 설정 확인"""
+    print("\n🔍 환경 설정 검증:")
     
-    # 환경변수 확인
-    required_env_vars = ['OPENAI_API_KEY']
-    missing_vars = []
+    # 필수 API 키 확인
+    clova_key = os.getenv('CLOVASTUDIO_API_KEY')
+    if not clova_key:
+        print("  ❌ CLOVASTUDIO_API_KEY가 설정되지 않았습니다.")
+        print("     secrets/.env 파일에 API 키를 추가해주세요.")
+        return False
+    else:
+        print("  ✅ CLOVASTUDIO_API_KEY 확인됨")
     
-    for var in required_env_vars:
-        if not os.getenv(var):
-            missing_vars.append(var)
-    
-    if missing_vars:
-        print(f"❌ 누락된 환경변수: {', '.join(missing_vars)}")
-        print("📝 로컬 개발 환경 설정 가이드:")
-        print("   1. secrets/.env 파일에 다음 변수들을 설정해주세요:")
-        for var in missing_vars:
-            print(f"      {var}=your_value_here")
-        print("   2. 키움 API 키 파일도 확인해주세요:")
-        print("      secrets/57295187_appkey.txt")
-        print("      secrets/57295187_secretkey.txt")
-        print("   3. 자세한 설정 방법은 .cursor/rules/development.md를 참조하세요")
+    # 패키지 import 테스트
+    try:
+        from langchain_naver import ChatClovaX
+        print("  ✅ langchain_naver 패키지 설치됨")
+    except ImportError:
+        print("  ❌ langchain_naver 패키지가 설치되지 않았습니다.")
+        print("     'pip install langchain-naver'를 실행해주세요.")
         return False
     
-    # 필수 라이브러리 확인
     try:
-        import langgraph
-        import langchain
-        import fastapi
-        print("✅ 모든 의존성이 설치되었습니다.")
-        return True
+        from agents.shared.graph import create_supervisor_graph
+        print("  ✅ Supervisor 그래프 모듈 확인됨")
     except ImportError as e:
-        print(f"❌ 누락된 라이브러리: {e}")
-        print("💡 로컬 환경 설정 명령어:")
-        print("   pip install -r requirements.txt")
-        print("   # 개발용 도구도 설치하려면:")
-        print("   pip install pytest black flake8 mypy")
+        print(f"  ❌ Supervisor 그래프 모듈 import 실패: {e}")
         return False
+    
+    print("  ✅ 환경 설정이 올바릅니다.")
+    return True
 
-
-def run_supervisor_server(args):
-    """Supervisor API 서버 실행 (로컬 환경 최적화)"""
-    from agents.supervisor.api import run_supervisor_server
+def run_api_server(host: str = None, port: int = None, reload: bool = None):
+    """API 서버 실행"""
+    print("\n🚀 ChatClovaX Supervisor API 서버 시작...")
     
-    print("\n🚀 로컬 개발용 Supervisor API 서버를 시작합니다...")
-    print(f"📡 Host: {args.host}")
-    print(f"🔌 Port: {args.port}")
-    print(f"🔄 Reload: {args.reload}")
-    print(f"🐛 Debug: {args.debug}")
+    # 환경 설정 확인
+    if not check_environment():
+        print("\n❌ 환경 설정 문제로 인해 서버를 시작할 수 없습니다.")
+        return
     
-    # 로컬 환경 안내
-    if args.host in ['127.0.0.1', 'localhost']:
-        print(f"🏠 로컬 전용 모드 - 외부 접근 차단됨")
-    elif args.host == '0.0.0.0':
-        print(f"🌐 네트워크 모드 - 같은 네트워크에서 접근 가능")
+    # 서버 설정
+    if host is None:
+        host = os.getenv('SERVER_HOST', '0.0.0.0')
+    if port is None:
+        port = int(os.getenv('SERVER_PORT', '8000'))
+    if reload is None:
+        reload = os.getenv('SERVER_RELOAD', 'true').lower() == 'true'
     
-    print(f"📱 API Documentation: http://{args.host}:{args.port}/docs")
-    print(f"🏥 Health Check: http://{args.host}:{args.port}/health")
-    print("=" * 60)
-    
-    # 디버그 모드 설정
-    if args.debug:
-        import logging
-        logging.basicConfig(level=logging.DEBUG)
-        print("🐛 디버그 모드 활성화 - 상세 로그가 출력됩니다")
+    print(f"\n🌐 서버 정보:")
+    print(f"  • 주소: http://{host}:{port}")
+    print(f"  • 핫 리로드: {'활성화' if reload else '비활성화'}")
+    print(f"  • API 문서: http://{host}:{port}/docs")
+    print(f"  • 헬스체크: http://{host}:{port}/health")
     
     try:
-        run_supervisor_server(
-            host=args.host,
-            port=args.port,
-            reload=args.reload
+        import uvicorn
+        from agents.supervisor.api import app
+        
+        print(f"\n⏰ 시작 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("🔥 서버가 시작됩니다...")
+        
+        # 환경변수 설정
+        os.environ["REQUEST_TIME"] = datetime.now().isoformat()
+        
+        uvicorn.run(
+            app,
+            host=host,
+            port=port,
+            reload=reload,
+            log_level="info"
         )
+        
     except KeyboardInterrupt:
-        print("\n👋 로컬 개발 서버가 종료되었습니다.")
+        print("\n\n🛑 사용자에 의해 서버가 중단되었습니다.")
     except Exception as e:
-        print(f"\n❌ 서버 실행 오류: {e}")
-        print("💡 문제 해결 방법:")
-        print("   1. 포트가 이미 사용 중인지 확인: netstat -ano | findstr :8000")
-        print("   2. 다른 포트로 시도: python main_supervisor.py --port 8080")
-        print("   3. 환경변수 설정 확인: secrets/.env 파일")
-        sys.exit(1)
+        print(f"\n❌ 서버 실행 중 오류 발생: {e}")
 
-
-def run_legacy_server(args):
-    """기존 단일 에이전트 서버 실행 (호환성용)"""
-    from stock_price.api import run_server
+def run_interactive_mode():
+    """대화형 모드 실행"""
+    print("\n💬 ChatClovaX Supervisor 대화형 모드 시작...")
     
-    print("\n🔧 Legacy 단일 에이전트 서버를 시작합니다...")
-    print(f"📡 Host: {args.host}")
-    print(f"🔌 Port: {args.port}")
-    print(f"🔄 Reload: {args.reload}")
-    print("📝 이 모드는 호환성 목적으로만 사용하세요.")
-    print("=" * 60)
-    
-    try:
-        run_server(
-            host=args.host,
-            port=args.port,
-            reload=args.reload
-        )
-    except KeyboardInterrupt:
-        print("\n👋 서버가 종료되었습니다.")
-    except Exception as e:
-        print(f"\n❌ 서버 실행 오류: {e}")
-        sys.exit(1)
-
-
-def test_graph():
-    """LangGraph 연결 및 기본 동작 테스트"""
-    print("🧪 LangGraph 연결 테스트 중...")
+    # 환경 설정 확인
+    if not check_environment():
+        print("\n❌ 환경 설정 문제로 인해 대화형 모드를 시작할 수 없습니다.")
+        return
     
     try:
         from agents.shared.graph import create_supervisor_graph, create_initial_state, extract_final_answer
         
-        # 그래프 생성 테스트
-        print("  • Supervisor 그래프 생성 중...")
+        # 그래프 생성
+        print("🤖 Supervisor 시스템 초기화 중...")
         graph = create_supervisor_graph()
-        print("  ✅ 그래프 생성 완료")
+        print("✅ 시스템이 준비되었습니다!\n")
         
-        # 간단한 상태 테스트
-        print("  • 상태 생성 테스트 중...")
-        test_state = create_initial_state("테스트 질문입니다")
-        print("  ✅ 상태 생성 완료")
+        print("=" * 50)
+        print("💬 ChatClovaX 주식 분석 시스템에 오신 것을 환영합니다!")
+        print("📝 주식 관련 질문을 입력하세요 (종료: 'quit' 또는 'exit')")
+        print("=" * 50)
         
-        print("✅ LangGraph 테스트 완료 - 시스템이 정상 작동합니다.")
-        return True
-        
+        while True:
+            try:
+                # 사용자 입력
+                user_input = input("\n👤 질문: ").strip()
+                
+                if user_input.lower() in ['quit', 'exit', '종료']:
+                    print("👋 대화형 모드를 종료합니다.")
+                    break
+                
+                if not user_input:
+                    print("❓ 질문을 입력해주세요.")
+                    continue
+                
+                # 처리 시작
+                print(f"🤖 ChatClovaX Supervisor 처리 중...")
+                start_time = datetime.now()
+                
+                # 그래프 실행
+                initial_state = create_initial_state(user_input)
+                final_state = graph.invoke(initial_state)
+                
+                # 결과 추출
+                answer = extract_final_answer(final_state)
+                processing_time = (datetime.now() - start_time).total_seconds()
+                
+                # 결과 출력
+                print(f"\n🤖 ChatClovaX 응답 ({processing_time:.2f}초):")
+                print("=" * 50)
+                print(answer)
+                print("=" * 50)
+                
+            except KeyboardInterrupt:
+                print("\n\n🛑 사용자에 의해 중단되었습니다.")
+                break
+            except Exception as e:
+                print(f"\n❌ 처리 중 오류 발생: {e}")
+                
     except Exception as e:
-        print(f"❌ LangGraph 테스트 실패: {e}")
-        print("💡 문제 해결 방법:")
-        print("   1. 환경변수 확인: OPENAI_API_KEY 설정 여부")
-        print("   2. 의존성 재설치: pip install -r requirements.txt")
-        print("   3. Python 경로 확인: 프로젝트 루트에서 실행")
-        return False
+        print(f"❌ 시스템 초기화 실패: {e}")
 
-
-def test_kiwoom_connection():
-    """키움 API 연결 테스트 (로컬 개발용)"""
-    print("🔗 키움 API 연결 테스트 중...")
+def run_test_mode():
+    """테스트 모드 실행"""
+    print("\n🧪 ChatClovaX Supervisor 테스트 모드 시작...")
     
     try:
-        from agents.stock_price_agent.kiwoom_api import get_token_manager
-        
-        # 키 파일 존재 확인
-        appkey_file = "secrets/57295187_appkey.txt"
-        secretkey_file = "secrets/57295187_secretkey.txt"
-        
-        if not os.path.exists(appkey_file):
-            print(f"❌ 키움 앱키 파일 없음: {appkey_file}")
-            return False
-        
-        if not os.path.exists(secretkey_file):
-            print(f"❌ 키움 시크릿키 파일 없음: {secretkey_file}")
-            return False
-        
-        print("  • 키움 API 키 파일 확인 완료")
-        
-        # 토큰 매니저 생성 테스트
-        print("  • 토큰 매니저 생성 중...")
-        token_manager = get_token_manager()
-        print("  ✅ 토큰 매니저 생성 완료")
-        
-        # 토큰 발급 테스트 (실제 API 호출)
-        print("  • 접근 토큰 발급 테스트 중...")
-        token = token_manager.get_access_token()
-        
-        if token:
-            print("  ✅ 키움 API 연결 성공 - 토큰 발급 완료")
-            print(f"  📄 토큰 (앞 10자리): {token[:10]}...")
-            return True
-        else:
-            print("  ❌ 토큰 발급 실패")
-            return False
-            
+        # 테스트 스크립트 실행
+        from test_new_supervisor import main as test_main
+        test_main()
     except Exception as e:
-        print(f"❌ 키움 API 연결 테스트 실패: {e}")
-        print("💡 문제 해결 방법:")
-        print("   1. 키움 API 키 파일 확인:")
-        print("      secrets/57295187_appkey.txt")
-        print("      secrets/57295187_secretkey.txt")
-        print("   2. 네트워크 연결 확인")
-        print("   3. 키움 API 서비스 상태 확인")
-        return False
-
+        print(f"❌ 테스트 실행 실패: {e}")
 
 def main():
-    """메인 실행 함수 (로컬 개발 환경 최적화)"""
+    """메인 함수"""
     parser = argparse.ArgumentParser(
-        description="LangGraph 기반 Supervisor 멀티 에이전트 주식 분석 시스템 (로컬 개발용)",
+        description="ChatClovaX 기반 Supervisor 멀티 에이전트 시스템",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-로컬 개발 환경 사용법:
-  python main_supervisor.py                    # 로컬 서버 실행 (127.0.0.1:8000)
-  python main_supervisor.py --debug            # 디버그 모드로 실행
-  python main_supervisor.py --test             # 시스템 테스트
-  python main_supervisor.py --kiwoom-test      # 키움 API 연결 테스트
-  python main_supervisor.py --port 8080        # 포트 8080으로 실행
-  python main_supervisor.py --host 0.0.0.0     # 네트워크 접근 허용
-
-개발 도구:
-  python main_supervisor.py --legacy           # Legacy 단일 에이전트 실행
-  python main_supervisor.py --no-reload        # 자동 재시작 비활성화
-
-로컬 환경 설정 가이드는 .cursor/rules/development.md를 참조하세요.
+사용 예시:
+  python main_supervisor.py                   # API 서버 모드 (기본)
+  python main_supervisor.py --mode interactive  # 대화형 모드
+  python main_supervisor.py --mode test        # 테스트 모드
+  python main_supervisor.py --host 127.0.0.1 --port 8080  # 사용자 정의 서버 설정
         """
     )
     
-    # 서버 모드 선택
     parser.add_argument(
-        '--legacy', 
-        action='store_true',
-        help='기존 단일 에이전트 모드로 실행 (호환성용)'
+        '--mode', 
+        choices=['server', 'interactive', 'test'],
+        default='server',
+        help='실행 모드 선택 (기본: server)'
     )
-    
-    parser.add_argument(
-        '--test',
-        action='store_true', 
-        help='시스템 테스트만 수행하고 종료'
-    )
-    
-    parser.add_argument(
-        '--kiwoom-test',
-        action='store_true',
-        help='키움 API 연결 테스트만 수행하고 종료'
-    )
-    
-    parser.add_argument(
-        '--debug',
-        action='store_true',
-        help='디버그 모드 활성화 (상세 로깅)'
-    )
-    
-    # 서버 설정 (로컬 환경 기본값)
     parser.add_argument(
         '--host',
-        default=os.getenv('SERVER_HOST', '127.0.0.1'),  # 로컬 전용으로 변경
-        help='서버 호스트 주소 (기본값: 127.0.0.1, 네트워크 접근시 0.0.0.0)'
+        default=None,
+        help='서버 호스트 (기본: 0.0.0.0)'
     )
-    
     parser.add_argument(
         '--port',
         type=int,
-        default=int(os.getenv('SERVER_PORT', '8000')),
-        help='서버 포트 번호 (기본값: 8000)'
+        default=None,
+        help='서버 포트 (기본: 8000)'
     )
-    
-    parser.add_argument(
-        '--reload',
-        action='store_true',
-        default=os.getenv('SERVER_RELOAD', 'true').lower() == 'true',
-        help='개발 모드 (파일 변경시 자동 재시작, 기본값: true)'
-    )
-    
     parser.add_argument(
         '--no-reload',
         action='store_true',
-        help='자동 재시작 비활성화'
+        help='핫 리로드 비활성화'
     )
     
     args = parser.parse_args()
     
-    # --no-reload 옵션 처리
-    if args.no_reload:
-        args.reload = False
-    
     # 시스템 정보 출력
     print_system_info()
     
-    # 요구사항 확인
-    if not check_requirements():
-        print("\n❌ 로컬 개발 환경 요구사항을 충족하지 않습니다.")
-        print("📖 자세한 설정 방법은 .cursor/rules/development.md를 참조하세요.")
-        sys.exit(1)
-    
-    # 키움 API 테스트 모드
-    if args.kiwoom_test:
-        if test_kiwoom_connection():
-            print("\n✅ 키움 API 연결 테스트가 성공했습니다!")
-            sys.exit(0)
-        else:
-            print("\n❌ 키움 API 연결 테스트에 실패했습니다.")
-            sys.exit(1)
-    
-    # 시스템 테스트 모드
-    if args.test:
-        graph_ok = test_graph()
-        kiwoom_ok = test_kiwoom_connection()
-        
-        if graph_ok and kiwoom_ok:
-            print("\n✅ 모든 테스트가 통과했습니다!")
-            print("🚀 서버를 시작할 준비가 완료되었습니다.")
-            sys.exit(0)
-        else:
-            print("\n❌ 일부 테스트에 실패했습니다.")
-            if not graph_ok:
-                print("   • LangGraph 테스트 실패")
-            if not kiwoom_ok:
-                print("   • 키움 API 연결 테스트 실패")
-            print("📖 문제 해결 방법은 .cursor/rules/troubleshooting.md를 참조하세요.")
-            sys.exit(1)
-    
-    # 서버 실행
-    if args.legacy:
-        run_legacy_server(args)
-    else:
-        run_supervisor_server(args)
-
+    # 모드별 실행
+    if args.mode == 'server':
+        reload = not args.no_reload
+        run_api_server(args.host, args.port, reload)
+    elif args.mode == 'interactive':
+        run_interactive_mode()
+    elif args.mode == 'test':
+        run_test_mode()
 
 if __name__ == "__main__":
     main() 
