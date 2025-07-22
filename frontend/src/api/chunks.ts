@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { config } from '../config';
-import { ChunkInfo } from '../types';
+import type { ChunkInfo } from '../types';
 
 export const chunksApi = {
   async getChunks(fileId: string): Promise<ChunkInfo[]> {

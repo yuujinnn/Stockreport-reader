@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pin } from 'lucide-react';
-import { ChunkInfo } from '../../types';
+import type { ChunkInfo } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import classNames from 'classnames';
 

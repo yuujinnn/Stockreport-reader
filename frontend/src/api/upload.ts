@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { config } from '../config';
-import { UploadResponse } from '../types';
+import type { UploadResponse } from '../types';
 
 export const uploadApi = {
   async uploadPdf(file: File): Promise<UploadResponse> {
@@ -17,6 +17,8 @@ export const uploadApi = {
   },
 
   getPdfUrl(fileId: string): string {
-    return `${config.uploadApiUrl}/file/${fileId}/download`;
+    // Properly encode the fileId to handle special characters
+    const encodedFileId = encodeURIComponent(fileId);
+    return `${config.uploadApiUrl}/file/${encodedFileId}/download`;
   },
 }; 

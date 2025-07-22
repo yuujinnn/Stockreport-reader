@@ -3,17 +3,57 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { ChunkOverlay } from './ChunkOverlay';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 
-// Set worker URL
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Set worker URL - try different worker configurations
+if (typeof window !== 'undefined' && 'Worker' in window) {
+  pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+}
 
 export function PdfViewer() {
   const { pdfUrl, pages, currentPage, setCurrentPage, hasBBox, chunks } = useAppStore();
   const [scale, setScale] = useState(1.0);
   const [pageWidth, setPageWidth] = useState<number>(0);
   const [pageHeight, setPageHeight] = useState<number>(0);
+  const [pdfData, setPdfData] = useState<string | null>(null);
+  const [loadingError, setLoadingError] = useState<string | null>(null);
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+
+  // Load PDF as blob to avoid CORS issues
+  React.useEffect(() => {
+    if (pdfUrl) {
+      console.log('Loading PDF from:', pdfUrl);
+      setLoadingError(null);
+      setPdfData(null); // Reset previous data
+      
+      fetch(pdfUrl)
+        .then(response => {
+          console.log('PDF fetch response:', response.status, response.statusText);
+          if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          return response.blob();
+        })
+        .then(blob => {
+          console.log('PDF blob size:', blob.size, 'type:', blob.type);
+          if (blob.size === 0) throw new Error('PDF blob is empty');
+          const url = URL.createObjectURL(blob);
+          console.log('Created blob URL:', url);
+          setPdfData(url);
+        })
+        .catch(error => {
+          console.error('Error loading PDF:', error);
+          setLoadingError(error.message);
+          setPdfData(null);
+        });
+    }
+
+    return () => {
+      if (pdfData && pdfData.startsWith('blob:')) {
+        console.log('Cleaning up blob URL:', pdfData);
+        URL.revokeObjectURL(pdfData);
+      }
+    };
+  }, [pdfUrl, pdfData]);
 
   if (!pdfUrl) return null;
 
@@ -68,7 +108,30 @@ export function PdfViewer() {
       <div className="flex-1 overflow-auto p-4">
         <div className="flex justify-center">
           <div className="relative">
-            <Document file={pdfUrl} loading={<div>Loading PDF...</div>}>
+            <Document 
+              file={pdfData || pdfUrl} 
+              loading={<div className="p-4 text-gray-600">Loading PDF...</div>}
+              error={
+                <div className="p-4 text-red-600">
+                  <p>Failed to load PDF file.</p>
+                  <p className="text-sm mt-2">URL: {pdfUrl}</p>
+                  {loadingError && <p className="text-sm mt-1">Error: {loadingError}</p>}
+                  <p className="text-xs mt-1 text-gray-500">
+                    Make sure the backend server is running on port 9000
+                  </p>
+                </div>
+              }
+              onLoadSuccess={(pdf) => {
+                console.log('PDF loaded successfully:', pdf);
+                console.log('Number of pages:', pdf.numPages);
+              }}
+              onLoadError={(error) => {
+                console.error('PDF load error:', error);
+                console.error('PDF URL:', pdfUrl);
+                console.error('PDF Data URL:', pdfData);
+                console.error('Error details:', error.message || error);
+              }}
+            >
               <Page
                 pageNumber={currentPage}
                 scale={scale}

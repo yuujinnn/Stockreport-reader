@@ -1,54 +1,47 @@
 import { config } from '../config';
-import { QueryRequest, QueryStreamChunk } from '../types';
+import type { QueryRequest, QueryStreamChunk } from '../types';
 
 export const chatApi = {
   async* streamQuery(request: QueryRequest): AsyncGenerator<QueryStreamChunk, void, unknown> {
-    const response = await fetch(`${config.queryApiUrl}/query`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error('No response body');
-    }
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-
+    console.log('Sending query request:', request);
+    
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      const response = await fetch(`${config.queryApiUrl}/query`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+      });
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6).trim();
-            if (data === '[DONE]') {
-              return;
-            }
-            try {
-              const chunk = JSON.parse(data) as QueryStreamChunk;
-              yield chunk;
-            } catch (e) {
-              console.error('Failed to parse SSE data:', e);
-            }
-          }
-        }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Query API error:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    } finally {
-      reader.releaseLock();
+
+      // Handle regular JSON response (not SSE for now)
+      const data = await response.json();
+      console.log('Received response:', data);
+      
+      if (data.success && data.answer) {
+        // Simulate streaming by yielding the full answer at once
+        yield {
+          content: data.answer,
+          done: false,
+        };
+        
+        // Send done signal
+        yield {
+          done: true,
+          pages: [], // Backend doesn't provide pages yet
+        };
+      } else {
+        throw new Error(data.error || 'Unknown error occurred');
+      }
+    } catch (error) {
+      console.error('Chat API error:', error);
+      throw error;
     }
   },
 }; 

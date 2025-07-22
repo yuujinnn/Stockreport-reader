@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Bot, AlertCircle } from 'lucide-react';
-import { Message } from '../../types';
+import type { Message } from '../../types';
 import classNames from 'classnames';
 
 interface MessageBubbleProps {

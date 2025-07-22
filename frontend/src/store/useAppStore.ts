@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Message, ChunkInfo } from '../types';
+import type { Message, ChunkInfo } from '../types';
 
 interface AppState {
   // PDF state

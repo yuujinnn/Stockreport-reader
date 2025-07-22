@@ -4,6 +4,7 @@ Handles file uploads and manages processed_states.json for chunk metadata
 """
 
 import os
+import io
 import json
 import uuid
 from pathlib import Path
@@ -12,7 +13,7 @@ from typing import Optional, List, Dict, Any
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 import PyPDF2
 
@@ -193,19 +194,38 @@ async def get_chunks(file_id: str):
 @app.get("/file/{file_id}/download")
 async def download_file(file_id: str):
     """Download the uploaded PDF file"""
-    file_path = UPLOAD_DIR / f"{file_id}.pdf"
-    if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="File not found"
-        )
+    # Decode the file_id in case it was URL encoded
+    import urllib.parse
+    decoded_file_id = urllib.parse.unquote(file_id)
     
-    from fastapi.responses import FileResponse
-    return FileResponse(
-        path=file_path,
-        media_type="application/pdf",
-        filename=f"{file_id}.pdf"
-    )
+    file_path = UPLOAD_DIR / f"{decoded_file_id}.pdf"
+    if not file_path.exists():
+        # Try with original file_id if decoded version doesn't exist
+        file_path = UPLOAD_DIR / f"{file_id}.pdf"
+        if not file_path.exists():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="File not found"
+            )
+    
+    # Read file and return as streaming response for better CORS handling
+    try:
+        with open(file_path, 'rb') as f:
+            pdf_content = f.read()
+        
+        return StreamingResponse(
+            io.BytesIO(pdf_content),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"inline; filename={file_id}.pdf",
+                "Content-Length": str(len(pdf_content))
+            }
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to read file: {str(e)}"
+        )
 
 
 @app.get("/health")
