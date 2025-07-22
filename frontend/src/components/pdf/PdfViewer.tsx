@@ -18,14 +18,12 @@ export function PdfViewer() {
   const [pageHeight, setPageHeight] = useState<number>(0);
   const [pdfData, setPdfData] = useState<string | null>(null);
   const [loadingError, setLoadingError] = useState<string | null>(null);
-  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
 
   // Load PDF as blob to avoid CORS issues
   React.useEffect(() => {
     if (pdfUrl) {
       console.log('Loading PDF from:', pdfUrl);
       setLoadingError(null);
-      setPdfData(null); // Reset previous data
       
       fetch(pdfUrl)
         .then(response => {
@@ -35,9 +33,7 @@ export function PdfViewer() {
         })
         .then(blob => {
           console.log('PDF blob size:', blob.size, 'type:', blob.type);
-          if (blob.size === 0) throw new Error('PDF blob is empty');
           const url = URL.createObjectURL(blob);
-          console.log('Created blob URL:', url);
           setPdfData(url);
         })
         .catch(error => {
@@ -49,11 +45,10 @@ export function PdfViewer() {
 
     return () => {
       if (pdfData && pdfData.startsWith('blob:')) {
-        console.log('Cleaning up blob URL:', pdfData);
         URL.revokeObjectURL(pdfData);
       }
     };
-  }, [pdfUrl, pdfData]);
+  }, [pdfUrl]);
 
   if (!pdfUrl) return null;
 
