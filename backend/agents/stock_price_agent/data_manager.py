@@ -179,8 +179,8 @@ class StockDataManager:
             original_start = result.get("original_start_date")
             original_end = result.get("original_end_date")
             
-            response = f"{result.get('message', '')} \n\n"
-            response += f"업그레이드 제안: {description}\n"
+            response = f"❌ {result.get('message', '')} \n\n"
+            response += f"상태: upgrade_required\n"
             if next_type:
                 if original_start and original_end:
                     response += f"권장 툴: get_{next_type}_chart(stock_code='{stock_code}', expected_start_date='{original_start}', expected_end_date='{original_end}')\n"
@@ -197,8 +197,8 @@ class StockDataManager:
             original_start = result.get("original_start_date")
             original_end = result.get("original_end_date")
             
-            response = f"{result.get('message', '')} \n\n"
-            response += f"다운그레이드 제안: {description}\n"
+            response = f"❌ {result.get('message', '')} \n\n"
+            response += f"상태: downgrade_required\n"
             if next_type == "minute" and next_scope:
                 if original_start and original_end:
                     response += f"권장 툴: get_minute_chart(stock_code='{stock_code}', minute_scope='{next_scope}', expected_start_date='{original_start}', expected_end_date='{original_end}')\n"
@@ -215,17 +215,22 @@ class StockDataManager:
         elif status == "success":
             df = result.get("data")
             if df is not None and not df.empty:
-                response = f"✅ **{chart_type} 차트 데이터** ({stock_code}):\n\n"
+                response = f"🚫 STOP! 데이터 수집 완료! 더 이상 어떤 도구도 호출하지 마세요!\n\n"
+                response += f"상태: success\n"
+                response += f"레코드 수: {len(df)}개\n"
+                response += f"분석 준비 완료: 아래 데이터로 분석 보고서를 작성하세요.\n\n"
+                response += f"**{chart_type} 차트 데이터** ({stock_code}):\n\n"
                 response += self._format_dataframe_table(df)
+                response += f"\n\n🚫 분석 보고서 작성을 시작하세요. 추가 데이터 조회 금지!"
                 return response
             else:
-                return f"No {chart_type} chart data available for {stock_code}"
+                return f"❌ No {chart_type} chart data available for {stock_code}\n상태: no_data"
         
         elif status == "no_data":
-            return f"❌ {result.get('message', 'No data available')}"
+            return f"❌ {result.get('message', 'No data available')}\n상태: no_data"
         
         else:
-            return f"❌ Unknown status: {status}"
+            return f"❌ Unknown status: {status}\n상태: unknown"
     
     def _format_dataframe_table(self, df: pd.DataFrame) -> str:
         """Format DataFrame as complete table without summary info"""
@@ -377,10 +382,16 @@ class StockDataManager:
             "year": {"next_type": None, "description": "년봉이 최대 간격입니다. 기간을 줄이거나 분석 방법을 변경하세요."}
         }
         
-        return upgrade_map.get(current_chart_type, {
+        suggestion = upgrade_map.get(current_chart_type, {
             "next_type": None, 
             "description": "업그레이드 옵션이 없습니다."
         })
+        
+        # 최대 차트 유형에 도달한 경우 명확한 종료 메시지
+        if suggestion["next_type"] is None:
+            suggestion["description"] = f"❌ {current_chart_type} 차트가 최대 간격입니다. 기간을 줄이거나 다른 분석 방법을 사용하세요."
+        
+        return suggestion
     
     def _get_chart_downgrade_suggestion(self, current_chart_type: str, minute_scope: str = None) -> Dict[str, str]:
         """
@@ -412,6 +423,7 @@ class StockDataManager:
                 suggestion["next_type"] = "minute"
             else:
                 suggestion["next_type"] = None
+                suggestion["description"] = f"❌ {minute_scope}분봉이 최소 간격입니다. 기간을 늘리거나 다른 분석 방법을 사용하세요."
             
             return suggestion
         
@@ -424,10 +436,16 @@ class StockDataManager:
                 "day": {"next_type": "minute", "next_scope": "60", "description": "일봉 → 60분봉으로 차트 유형 변경"}
             }
             
-            return downgrade_map.get(current_chart_type, {
+            suggestion = downgrade_map.get(current_chart_type, {
                 "next_type": None, 
                 "description": "다운그레이드 옵션이 없습니다."
             })
+            
+            # 최소 차트 유형에 도달한 경우 명확한 종료 메시지
+            if suggestion["next_type"] is None:
+                suggestion["description"] = f"❌ {current_chart_type} 차트가 최소 간격입니다. 기간을 늘리거나 다른 분석 방법을 사용하세요."
+            
+            return suggestion
     
     def _extract_chart_dataframe(self, raw_data: Dict[str, Any], 
                                 chart_type: str) -> pd.DataFrame:
