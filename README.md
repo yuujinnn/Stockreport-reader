@@ -1,76 +1,165 @@
-# Stockreport-reader
+# Stockreport Reader
 
-**미래에셋증권 AI 페스티벌** |  AI Service 부문 [🔗](https://miraeassetfesta.com/)
+증권사 리포트 PDF를 업로드하고, 문단 단위로 인용하며 대화할 수 있는 AI 챗봇 서비스입니다.
 
----
+## 프로젝트 구조
 
-## Stock Price 에이전트
-
-키움증권 REST API를 사용하여 차트 데이터를 조회합니다.
-
-```mermaid
-sequenceDiagram
-    participant U as 사용자
-    participant SV as Supervisor<br/>(LangGraph ReAct Agent)
-    participant SPT as call_stock_price_agent<br/>(표준 LangChain Tool)
-    participant SPA as StockPriceAgent<br/>(Sub-agent)
-    participant QA as QueryAnalysisTool
-    participant WCT as WeekChartTool
-    participant DM as DataManager
-    participant TM as TokenManager
-    participant K as 키움 API
-
-    U->>SV: "카카오페이 377300의 2024년 주가를 분석해줘"
-    
-    Note over SV: LangGraph Tool-calling Supervisor 패턴
-    SV->>SPT: call_stock_price_agent("카카오페이(377300)의 2024년 주가 데이터를 조회하여 분석해주세요")
-    
-    Note over SPT: 표준 LangChain @tool 데코레이터
-    SPT->>SPA: invoke({"messages": [HumanMessage(content=request)]})
-    
-    Note over SPA: 1단계: 쿼리 분석
-    SPA->>QA: analyze_query(query, today_date)
-    QA->>SPA: {"377300": {"start_date": "20240101", "end_date": "20241231"}}
-    
-    Note over SPA: 2단계: 차트 유형 결정 (기간: 1년 → 주봉 선택)
-    
-    Note over SPA: 3단계: 데이터 수집
-    SPA->>WCT: get_week_chart(stock_code="377300", base_date="20241231", expected_start_date="20240101", expected_end_date="20241231")
-    
-    WCT->>TM: get_access_token()
-    alt 토큰 유효
-        TM->>WCT: 기존 토큰 반환
-    else 토큰 무효/만료
-        TM->>K: OAuth2 토큰 발급 요청
-        K->>TM: 새 토큰
-        TM->>WCT: 새 토큰 반환
-    end
-    
-    WCT->>K: fn_ka10082(token, stk_cd="377300", base_dt="20241231")
-    K->>WCT: 원본 주봉 데이터 (YYYYMMDD 형식)
-    
-    WCT->>DM: process_api_response(raw_data, "377300", "week", "20241231", "20240101", "20241231")
-    
-    Note over DM: 데이터 처리 로직
-    DM->>DM: 1. save_raw_data() - 원본 저장
-    DM->>DM: 2. _filter_data_by_date_range() - 날짜 범위 필터링
-    DM->>DM: 3. _convert_date_format_for_chart_type() - 주봉 형식 변환 (YYYYMMDD → YYYYMMWeekN)
-    
-    alt 레코드 수 > 100개
-        DM->>WCT: {"status": "upgrade_required", "suggestion": "get_month_chart"}
-    else 레코드 수 ≤ 100개
-        DM->>DM: 4. save_filtered_data() - 변환된 데이터 저장
-        DM->>WCT: {"status": "success", "data": [변환된 주봉 데이터], "data_count": N}
-    end
-    
-    WCT->>SPA: 처리 결과
-    
-    Note over SPA: 4단계: 데이터 반환 (차트 유형 명시)
-    SPA->>SPT: {"messages": [AIMessage(content="카카오페이(377300)의 2024년 **주봉** 주가 데이터...")]}
-    
-    Note over SPT: 표준 Tool 응답 (문자열 반환)
-    SPT->>SV: "카카오페이(377300)의 2024년 **주봉** 주가 데이터:\n| 주차 | 종가 | ...\n| 202412Week5 | 26250 | ..."
-    
-    Note over SV: LangGraph 자동 ToolMessage 처리
-    SV->>U: 최종 분석 답변
 ```
+Stockreport-reader/
+├── backend/
+│   ├── main_supervisor.py      # 멀티에이전트 시스템 (포트 8000)
+│   ├── upload_api.py          # PDF 업로드 서비스 (포트 9000)
+│   └── agents/                # 멀티에이전트 모듈
+└── frontend/                  # React 웹 애플리케이션
+    ├── src/
+    │   ├── api/              # API 통신 모듈
+    │   ├── components/       # UI 컴포넌트
+    │   ├── store/           # 상태 관리 (Zustand)
+    │   ├── hooks/           # 커스텀 훅
+    │   └── types/           # TypeScript 타입 정의
+    └── public/
+```
+
+## 주요 기능
+
+### 1. PDF 업로드 및 뷰어
+- PDF 파일 드래그 앤 드롭 업로드
+- React-PDF 기반 PDF 렌더링
+- 페이지 네비게이션 및 줌 기능
+
+### 2. 청크 기반 인용 시스템
+- PDF 문단별 BBox(Bounding Box) 표시
+- 클릭으로 문단 인용 선택/해제
+- 인용된 청크는 채팅 시 자동으로 컨텍스트에 포함
+
+### 3. AI 채팅 인터페이스
+- ChatClovaX 기반 대화형 AI
+- SSE(Server-Sent Events) 스트리밍 응답
+- 답변에 참조 페이지 표시
+
+## 설치 및 실행
+
+### 사전 요구사항
+- Python 3.8+
+- Node.js 18+
+- pnpm
+
+### Backend 설정
+
+1. 가상환경 생성 및 활성화:
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+```
+
+2. 의존성 설치:
+```bash
+pip install -r requirements.txt
+```
+
+3. 환경변수 설정 (secrets/.env):
+```
+CLOVASTUDIO_API_KEY=your_api_key_here
+LANGSMITH_API_KEY=your_api_key_here
+```
+
+4. 서비스 실행:
+```bash
+# Upload API (포트 9000)
+python upload_api.py
+
+# Supervisor API (포트 8000)
+python main_supervisor.py
+```
+
+### Frontend 설정
+
+1. 의존성 설치:
+```bash
+cd frontend
+pnpm install
+```
+
+2. 개발 서버 실행:
+```bash
+pnpm dev
+```
+
+3. 브라우저에서 http://localhost:5173 접속
+
+## API 명세
+
+### Upload Service (포트 9000)
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| POST | /upload | PDF 파일 업로드 |
+| GET | /chunks/{fileId} | 청크 정보 조회 |
+| GET | /file/{fileId}/download | PDF 파일 다운로드 |
+
+### Query Service (포트 8000)
+
+| 메서드 | 경로 | 설명 |
+|--------|------|------|
+| POST | /query | AI 질의 (SSE 스트리밍) |
+| GET | /health | 서비스 상태 확인 |
+
+## 작동 방식
+
+### BBox 없는 상태 (초기)
+1. PDF 업로드 시 `processed_states.json` 생성 (빈 상태)
+2. 프론트엔드는 PDF만 렌더링, 인용 UI 비활성화
+3. `/chunks/{fileId}` API는 빈 배열 반환
+
+### BBox 있는 상태 (청킹 완료 후)
+1. 백그라운드 파이프라인이 청킹 및 BBox 추출
+2. `processed_states.json`에 `chunks_content` 업데이트
+3. `/chunks/{fileId}` API가 BBox 정보 반환
+4. 프론트엔드가 자동으로 오버레이 UI 활성화
+
+## 테스트
+
+### Frontend 테스트
+```bash
+cd frontend
+pnpm test              # 테스트 실행
+pnpm test:coverage     # 커버리지 포함
+```
+
+### Backend 테스트
+```bash
+cd backend
+pytest                 # 테스트 실행
+pytest --cov          # 커버리지 포함
+```
+
+## 기술 스택
+
+### Backend
+- FastAPI: 웹 프레임워크
+- LangChain/LangGraph: 멀티에이전트 시스템
+- ChatClovaX: AI 언어 모델
+- PyPDF2: PDF 처리
+
+### Frontend
+- React 19 + TypeScript
+- Vite: 빌드 도구
+- Tailwind CSS: 스타일링
+- Zustand: 상태 관리
+- React-PDF: PDF 렌더링
+- Tanstack Query: 데이터 페칭
+- Vitest: 테스트 프레임워크
+
+## 확장성
+
+이 프로젝트는 다음과 같은 확장이 가능하도록 설계되었습니다:
+
+1. **청킹 파이프라인 추가**: 백그라운드에서 PDF 분석 및 BBox 추출
+2. **벡터 DB 통합**: 청크별 임베딩 및 RAG 구현
+3. **다중 파일 지원**: 여러 PDF 동시 관리
+4. **사용자 인증**: 세션 기반 파일 관리
+
+## 라이선스
+
+MIT License

@@ -41,3 +41,6 @@ langchain-experimental>=0.3.0,<0.4  # Experimental LangChain features
 
 # Naver CLOVA X Support
 langchain-naver>=0.1.0  # CLOVA X integration for LangChain 
+
+# PDF Processing
+PyPDF2>=3.0.0  # For PDF page counting 
