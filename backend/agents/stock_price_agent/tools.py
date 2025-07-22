@@ -25,28 +25,24 @@ class MinuteChartInput(BaseModel):
 
 class DayChartInput(BaseModel):
     stock_code: str = Field(description="6-digit stock code (e.g., 005930)")
-    base_date: str = Field(description="Base date in YYYYMMDD format", default_factory=get_today_date)
     expected_start_date: Optional[str] = Field(None, description="Expected start date (YYYYMMDD)")
     expected_end_date: Optional[str] = Field(None, description="Expected end date (YYYYMMDD)")
 
 
 class WeekChartInput(BaseModel):
     stock_code: str = Field(description="6-digit stock code (e.g., 005930)")
-    base_date: str = Field(description="Base date in YYYYMMDD format", default_factory=get_today_date)
     expected_start_date: Optional[str] = Field(None, description="Expected start date (YYYYMMDD)")
     expected_end_date: Optional[str] = Field(None, description="Expected end date (YYYYMMDD)")
 
 
 class MonthChartInput(BaseModel):
     stock_code: str = Field(description="6-digit stock code (e.g., 005930)")
-    base_date: str = Field(description="Base date in YYYYMMDD format", default_factory=get_today_date)
     expected_start_date: Optional[str] = Field(None, description="Expected start date (YYYYMMDD)")
     expected_end_date: Optional[str] = Field(None, description="Expected end date (YYYYMMDD)")
 
 
 class YearChartInput(BaseModel):
     stock_code: str = Field(description="6-digit stock code (e.g., 005930)")
-    base_date: str = Field(description="Base date in YYYYMMDD format", default_factory=get_today_date)
     expected_start_date: Optional[str] = Field(None, description="Expected start date (YYYYMMDD)")
     expected_end_date: Optional[str] = Field(None, description="Expected end date (YYYYMMDD)")
 
@@ -79,9 +75,9 @@ class DayChartTool(BaseTool):
     description: str = "주식 일봉차트 조회. 중단기 분석의 표준으로 1주일~1년 기간의 일반적인 기술적 분석에 가장 적합. 기준일자 역순으로 과거 데이터 조회."
     args_schema: type = DayChartInput
 
-    def _run(self, stock_code: str, base_date: str = None, expected_start_date: str = None, expected_end_date: str = None) -> str:
-        if base_date is None:
-            base_date = get_today_date()
+    def _run(self, stock_code: str, expected_start_date: str = None, expected_end_date: str = None) -> str:
+        # Use expected_end_date as base_date, fallback to today if not provided
+        base_date = expected_end_date if expected_end_date else get_today_date()
             
         try:
             raw_data = get_day_chart(stock_code, base_date)
@@ -105,9 +101,9 @@ class WeekChartTool(BaseTool):
     description: str = "주식 주봉차트 조회. 중장기 트렌드 및 패턴 분석용으로 1개월~5년 기간의 거시적 흐름 파악에 적합. 노이즈 제거된 안정적 패턴 확인 가능."
     args_schema: type = WeekChartInput
 
-    def _run(self, stock_code: str, base_date: str = None, expected_start_date: str = None, expected_end_date: str = None) -> str:
-        if base_date is None:
-            base_date = get_today_date()
+    def _run(self, stock_code: str, expected_start_date: str = None, expected_end_date: str = None) -> str:
+        # Use expected_end_date as base_date, fallback to today if not provided
+        base_date = expected_end_date if expected_end_date else get_today_date()
             
         try:
             raw_data = get_week_chart(stock_code, base_date)
@@ -131,9 +127,9 @@ class MonthChartTool(BaseTool):
     description: str = "주식 월봉차트 조회. 장기 트렌드 및 펀더멘털 분석용으로 6개월~10년 기간의 거시경제 영향과 기업 실적 반영 패턴 확인에 적합."
     args_schema: type = MonthChartInput
 
-    def _run(self, stock_code: str, base_date: str = None, expected_start_date: str = None, expected_end_date: str = None) -> str:
-        if base_date is None:
-            base_date = get_today_date()
+    def _run(self, stock_code: str, expected_start_date: str = None, expected_end_date: str = None) -> str:
+        # Use expected_end_date as base_date, fallback to today if not provided
+        base_date = expected_end_date if expected_end_date else get_today_date()
             
         try:
             raw_data = get_month_chart(stock_code, base_date)
@@ -157,9 +153,9 @@ class YearChartTool(BaseTool):
     description: str = "주식 년봉차트 조회. 초장기 히스토리 분석용으로 5년 이상의 역사적 패턴, 경기 사이클, 구조적 변화 분석에 적합. 장기 투자 관점에서 사용."
     args_schema: type = YearChartInput
 
-    def _run(self, stock_code: str, base_date: str = None, expected_start_date: str = None, expected_end_date: str = None) -> str:
-        if base_date is None:
-            base_date = get_today_date()
+    def _run(self, stock_code: str, expected_start_date: str = None, expected_end_date: str = None) -> str:
+        # Use expected_end_date as base_date, fallback to today if not provided
+        base_date = expected_end_date if expected_end_date else get_today_date()
             
         try:
             raw_data = get_year_chart(stock_code, base_date)
