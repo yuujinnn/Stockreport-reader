@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Debug</title>
+</head>
+<body>
+    <h1>PDF Debug Test</h1>
+    <button onclick="testPDF()">Test PDF Loading</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testPDF() {
+            const fileId = 'c3807c4ad553417f9fe185b88a6df104_FMB842(00)';
+            const url = `http://localhost:9000/file/${fileId}/download`;
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                console.log('Testing URL:', url);
+                const response = await fetch(url);
+                console.log('Response:', response);
+                
+                resultDiv.innerHTML = `
+                    <p>Status: ${response.status}</p>
+                    <p>OK: ${response.ok}</p>
+                    <p>Headers:</p>
+                    <ul>
+                `;
+                
+                for (const [key, value] of response.headers.entries()) {
+                    resultDiv.innerHTML += `<li>${key}: ${value}</li>`;
+                }
+                resultDiv.innerHTML += '</ul>';
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    resultDiv.innerHTML += `<p style="color: green;">✓ PDF loaded (${blob.size} bytes, type: ${blob.type})</p>`;
+                    
+                    // Try to display it
+                    const objectUrl = URL.createObjectURL(blob);
+                    resultDiv.innerHTML += `<iframe src="${objectUrl}" width="600" height="400"></iframe>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html> 

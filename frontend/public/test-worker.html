@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF Worker Test (Local)</title>
+</head>
+<body>
+    <h1>PDF Worker Test (Local)</h1>
+    <button onclick="testWorker()">Test Worker Access</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testWorker() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing local worker accessibility...</p>';
+            
+            try {
+                // Test if local worker file is accessible
+                const workerUrl = '/pdf.worker.min.js';
+                
+                resultDiv.innerHTML += `<p>Checking worker at: ${workerUrl}</p>`;
+                
+                const response = await fetch(workerUrl);
+                if (!response.ok) {
+                    throw new Error(`Worker file not accessible: ${response.status} ${response.statusText}`);
+                }
+                
+                const content = await response.text();
+                resultDiv.innerHTML += `<p style="color: green;">✓ Worker file accessible (${content.length} bytes)</p>`;
+                
+                // Test PDF proxy
+                const fileId = '7d3cb8225250463d9be6a5aa98e098b8_FMB842(00)';
+                const pdfUrl = `/file/${fileId}/download`;
+                
+                resultDiv.innerHTML += `<p>Testing PDF proxy: ${pdfUrl}</p>`;
+                
+                const pdfResponse = await fetch(pdfUrl);
+                if (!pdfResponse.ok) {
+                    throw new Error(`PDF not accessible: ${pdfResponse.status} ${pdfResponse.statusText}`);
+                }
+                
+                const pdfBlob = await pdfResponse.blob();
+                resultDiv.innerHTML += `<p style="color: green;">✓ PDF accessible (${pdfBlob.size} bytes, type: ${pdfBlob.type})</p>`;
+                
+                resultDiv.innerHTML += `
+                    <div style="margin-top: 20px; padding: 10px; background: #e8f5e8; border-radius: 5px;">
+                        <h3>✅ All tests passed!</h3>
+                        <p>The main React app should now work with local worker.</p>
+                        <p><a href="/" style="color: blue;">← Go back to main app</a></p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Worker test error:', error);
+                resultDiv.innerHTML += `<p style="color: red;">✗ Error: ${error.message}</p>`;
+                
+                resultDiv.innerHTML += `
+                    <div style="margin-top: 20px; padding: 10px; background: #ffe8e8; border-radius: 5px;">
+                        <h3>❌ Test failed</h3>
+                        <p>Check the console for detailed errors.</p>
+                        <p>Make sure the development server is running.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Auto-run test on page load
+        window.addEventListener('load', function() {
+            document.getElementById('result').innerHTML = '<p style="color: blue;">Ready to test. Click the button above.</p>';
+        });
+    </script>
+</body>
+</html> 

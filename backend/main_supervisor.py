@@ -10,6 +10,8 @@ ChatClovaX 기반 Supervisor 멀티 에이전트 시스템
 Architecture: LangGraph Supervisor MAS (ChatClovaX)
 Environment: Local Development + Production Ready
 LLM: ChatClovaX HCX-005 for all agents
+
+uvicorn agents.supervisor.api:app --host 0.0.0.0 --port 8000 --reload
 """
 
 import os
