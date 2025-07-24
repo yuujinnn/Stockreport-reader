@@ -194,34 +194,79 @@ async def get_chunks(file_id: str):
 @app.get("/file/{file_id}/download")
 async def download_file(file_id: str):
     """Download the uploaded PDF file"""
-    # Decode the file_id in case it was URL encoded
     import urllib.parse
-    decoded_file_id = urllib.parse.unquote(file_id)
+    import os
     
-    file_path = UPLOAD_DIR / f"{decoded_file_id}.pdf"
-    if not file_path.exists():
-        # Try with original file_id if decoded version doesn't exist
-        file_path = UPLOAD_DIR / f"{file_id}.pdf"
-        if not file_path.exists():
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="File not found"
-            )
+    print(f"Download request for file_id: {file_id}")
     
-    # Read file and return as streaming response for better CORS handling
+    # Try multiple decoding strategies
+    possible_file_ids = [
+        file_id,  # Original
+        urllib.parse.unquote(file_id),  # URL decoded once
+        urllib.parse.unquote(urllib.parse.unquote(file_id)),  # URL decoded twice
+    ]
+    
+    file_path = None
+    actual_file_id = None
+    
+    # Try to find the file with any of the possible file IDs
+    for potential_id in possible_file_ids:
+        potential_path = UPLOAD_DIR / f"{potential_id}.pdf"
+        print(f"Trying file path: {potential_path}")
+        if potential_path.exists():
+            file_path = potential_path
+            actual_file_id = potential_id
+            break
+    
+    # If still not found, try to find any file that contains the base UUID
+    if not file_path:
+        # Extract UUID part (first 32 characters)
+        base_uuid = file_id.split('_')[0] if '_' in file_id else file_id[:32]
+        print(f"Searching for files with UUID: {base_uuid}")
+        
+        for file in UPLOAD_DIR.glob("*.pdf"):
+            if file.stem.startswith(base_uuid):
+                file_path = file
+                actual_file_id = file.stem
+                print(f"Found matching file: {file_path}")
+                break
+    
+    if not file_path or not file_path.exists():
+        print(f"File not found. Searched paths:")
+        for potential_id in possible_file_ids:
+            print(f"  - {UPLOAD_DIR / f'{potential_id}.pdf'}")
+        
+        # List all files in upload directory for debugging
+        print("Available files:")
+        for file in UPLOAD_DIR.glob("*.pdf"):
+            print(f"  - {file.name}")
+            
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File not found: {file_id}"
+        )
+    
+    # Read file and return as streaming response
     try:
         with open(file_path, 'rb') as f:
             pdf_content = f.read()
+        
+        # Use the original filename for the response
+        safe_filename = urllib.parse.quote(actual_file_id.split('_', 1)[-1] if '_' in actual_file_id else actual_file_id)
         
         return StreamingResponse(
             io.BytesIO(pdf_content),
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f"inline; filename={file_id}.pdf",
-                "Content-Length": str(len(pdf_content))
+                "Content-Disposition": f"inline; filename*=UTF-8''{safe_filename}.pdf",
+                "Content-Length": str(len(pdf_content)),
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET",
+                "Access-Control-Allow-Headers": "*"
             }
         )
     except Exception as e:
+        print(f"Error reading file {file_path}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to read file: {str(e)}"

@@ -64,14 +64,24 @@ CLOVASTUDIO_API_KEY=your_api_key_here
 LANGSMITH_API_KEY=your_api_key_here
 ```
 
+(frontend/.env)
+```
+VITE_UPLOAD_API_URL=http://localhost:9000
+VITE_QUERY_API_URL=http://localhost:8000
+```
+
 4. 서비스 실행:
 ```bash
 # Upload API (포트 9000)
-python upload_api.py
+cd backend && conda activate py311-base && uvicorn upload_api:app --host 0.0.0.0 --port 9000 --reload
 
 # Supervisor API (포트 8000)
-python main_supervisor.py
+cd backend && conda activate py311-base && uvicorn agents.supervisor.api:app --host 0.0.0.0 --port 8000 --reload
+
+# Frontend
+cd frontend && pnpm dev
 ```
+or just run `start-services.bat`
 
 ### Frontend 설정
 

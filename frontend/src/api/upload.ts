@@ -19,6 +19,11 @@ export const uploadApi = {
   getPdfUrl(fileId: string): string {
     // Properly encode the fileId to handle special characters
     const encodedFileId = encodeURIComponent(fileId);
+    // Use proxy route in development to avoid CORS issues
+    if (import.meta.env.DEV) {
+      return `/file/${encodedFileId}/download`;
+    }
+    // Use direct URL in production
     return `${config.uploadApiUrl}/file/${encodedFileId}/download`;
   },
 }; 

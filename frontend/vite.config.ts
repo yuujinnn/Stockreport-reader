@@ -16,6 +16,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/query-api/, ''),
       },
+      // Add proxy for PDF file downloads
+      '/file': {
+        target: 'http://localhost:9000',
+        changeOrigin: true,
+      },
     },
   },
 })
