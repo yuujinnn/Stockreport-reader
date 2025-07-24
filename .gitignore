@@ -208,11 +208,17 @@ __marimo__/
 
 # Secrets
 #   Kiwoom Rest API
-secrets/
+backend/secrets/*.txt
+backend/secrets/*.json
 
 # Datas
-agents/stock_price_agent/data/*
+backend/agents/stock_price_agent/data/*
+backend/processed/*.json
+backend/uploads/*.pdf
 
 # Claude .md
 .cursor/
 CLAUDE.md
+
+# Vite
+frontend/.vite/deps/
