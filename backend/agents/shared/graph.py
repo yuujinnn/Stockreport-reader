@@ -13,7 +13,7 @@ from .state import MessagesState
 from ..supervisor.agent import SupervisorAgent
 
 # 환경변수 로드
-load_dotenv("secrets/.env")
+load_dotenv("../../secrets/.env")
 
 
 def create_supervisor_graph():

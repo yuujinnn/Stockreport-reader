@@ -23,7 +23,7 @@ This is a comprehensive multi-agent system built with **ChatClovaX (HCX-005)** a
 - **Frontend**: React 19 + TypeScript + Tailwind CSS
 - **Backend**: FastAPI + LangGraph + ChatClovaX
 - **Multi-Agent System**: Supervisor + Worker Agent Pattern
-- **Data Sources**: Kiwoom Securities API, PDF Documents
+- **Data Sources**: Kiwoom REST API, PDF Documents
 
 ---
 
@@ -93,7 +93,7 @@ graph TB
         
         subgraph "Worker Agents"
             StockAgent[Stock Price Agent<br/>ChatClovaX HCX-005<br/>📊 Stock Data Analysis]
-            NewsAgent[🔜 News Agent<br/>ChatClovaX HCX-005<br/>📰 News Analysis]
+            SearchAgent[✅ Search Agent<br/>ChatClovaX HCX-005<br/>🔍 Web Search & News Analysis<br/>Tavily + Naver News]
             DARTAgent[🔜 DART Agent<br/>ChatClovaX HCX-005<br/>📈 Corporate Filings Analysis]
         end
         
@@ -104,22 +104,22 @@ graph TB
         
         subgraph "Tools & APIs"
             KiwoomTools[Kiwoom API Tools<br/>📡 Chart Data Retrieval]
-            NewsTools[🔜 Naver News API Tools<br/>📰 News Retrieval]
+            SearchTools[✅ Search & News Tools<br/>🌐 Tavily Web Search + 📰 Naver News + 🔗 Content Crawling]
             DARTTools[🔜 DART API Tools<br/>📊 Corporate Filings Retrieval]
         end
     end
     
     User[👤 User Query] --> Supervisor
     Supervisor -->|handoff| StockAgent
-    Supervisor -.->|future| NewsAgent
+    Supervisor -->|handoff| SearchAgent
     Supervisor -.->|future| DARTAgent
     
     StockAgent --> KiwoomTools
-    NewsAgent -.-> NewsTools
+    SearchAgent --> SearchTools
     DARTAgent -.-> DARTTools
     
     StockAgent --> State
-    NewsAgent -.-> State
+    SearchAgent --> State
     DARTAgent -.-> State
     
     State --> Graph
@@ -127,7 +127,7 @@ graph TB
     
     style Supervisor fill:#e3f2fd
     style StockAgent fill:#f3e5f5
-    style NewsAgent fill:#e8f5e8,stroke-dasharray: 5 5
+    style SearchAgent fill:#e8f5e8
     style DARTAgent fill:#fff3e0,stroke-dasharray: 5 5
     style State fill:#fce4ec
 ```
@@ -400,7 +400,7 @@ graph TB
     end
     
     subgraph "External Services"
-        KiwoomAPI[Kiwoom Securities API<br/>Chart Data]
+        KiwoomAPI[Kiwoom REST API<br/>Chart Data]
         ClovaAPI[CLOVA Studio API<br/>ChatClovaX Models]
         LangSmith[LangSmith<br/>Observability]
     end
@@ -499,7 +499,7 @@ graph TB
     end
     
     subgraph "External APIs"
-        KiwoomAPI[Kiwoom Securities API<br/>📡 Stock Chart Data]
+        KiwoomAPI[Kiwoom REST API<br/>📡 Stock Chart Data]
         ClovaStudio[CLOVA Studio API<br/>🤖 AI Services]
         LangSmithAPI[LangSmith API<br/>📊 Observability]
     end
@@ -521,47 +521,49 @@ graph TB
 
 ## Extension Points
 
-### 11. System Extension Architecture (Adding News Agent)
+### 11. Implemented Search Agent Architecture
 
 ```mermaid
 graph TB
-    subgraph "Current System"
+    subgraph "Active System"
         CurrentSupervisor[Supervisor Agent<br/>✅ Active]
         CurrentStock[Stock Price Agent<br/>✅ Active]
+        CurrentSearch[Search Agent<br/>✅ Active & Integrated]
     end
     
-    subgraph "Extension: News Agent"
-        NewsAgent[News Agent<br/>🔜 To be added]
-        NewsTools[News Tools<br/>📰 Naver News API]
-        NewsPrompt[News Analysis Prompt<br/>📋 News-specific instructions]
+    subgraph "Search Agent Capabilities"
+        SearchTools[Search & News Tools<br/>🌐 Comprehensive Search Suite]
+        SearchPrompt[Search Agent Prompt<br/>📋 Autonomous reasoning instructions]
         
-        subgraph "News Agent Tools"
-            SearchNews[search_news<br/>🔍 News Search]
-            AnalyzeNews[analyze_sentiment<br/>📊 Sentiment Analysis]
-            SummarizeNews[summarize_articles<br/>📝 Article Summary]
+        subgraph "Search Agent Tools"
+            TavilyTool[tavily_web_search<br/>🌐 Global Web Search]
+            NaverRelevance[search_naver_news_by_relevance<br/>📰 Korean News (Relevance)]
+            NaverDate[search_naver_news_by_date<br/>📅 Korean News (Latest)]
+            ContentCrawl[Content Crawling<br/>🔗 Deep article analysis]
         end
     end
     
     subgraph "Integration Points"
-        SupervisorTools[Supervisor Handoff Tools<br/>🔧 call_news_agent]
+        SupervisorTools[Supervisor Handoff Tools<br/>🔧 call_search_agent]
         SharedState[MessagesState<br/>📝 Shared between agents]
         CommonGraph[LangGraph Workflow<br/>🔄 Agent orchestration]
     end
     
     CurrentSupervisor --> SupervisorTools
-    SupervisorTools -.-> NewsAgent
-    NewsAgent --> NewsTools
-    NewsAgent --> NewsPrompt
-    NewsAgent --> SearchNews
-    NewsAgent --> AnalyzeNews
-    NewsAgent --> SummarizeNews
+    SupervisorTools --> CurrentSearch
+    CurrentSearch --> SearchTools
+    CurrentSearch --> SearchPrompt
+    CurrentSearch --> TavilyTool
+    CurrentSearch --> NaverRelevance
+    CurrentSearch --> NaverDate
+    CurrentSearch --> ContentCrawl
     
     CurrentStock --> SharedState
-    NewsAgent -.-> SharedState
+    CurrentSearch --> SharedState
     SharedState --> CommonGraph
     
-    style NewsAgent fill:#e8f5e8,stroke-dasharray: 5 5
-    style NewsTools fill:#e8f5e8,stroke-dasharray: 5 5
+    style CurrentSearch fill:#e8f5e8
+    style SearchTools fill:#e8f5e8
     style SupervisorTools fill:#fff3e0
 ```
 
@@ -577,8 +579,11 @@ graph TB
         StockAgent[Stock Price Agent<br/>📊 ✅ Active]
     end
     
+    subgraph "Implemented Agents"
+        SearchAgent[Search Agent<br/>🔍 ✅ Completed]
+    end
+    
     subgraph "Planned Agents"
-        NewsAgent[News Agent<br/>📰 🔜 Phase 1]
         DARTAgent[DART Agent<br/>📈 🔮 Phase 2]
     end
     
@@ -589,7 +594,7 @@ graph TB
     end
     
     Supervisor --> StockAgent
-    Supervisor -.-> NewsAgent
+    Supervisor --> SearchAgent
     Supervisor -.-> DARTAgent
     
     HandoffTools --> Supervisor
@@ -597,7 +602,7 @@ graph TB
     StateManagement --> HandoffTools
     
     style StockAgent fill:#f3e5f5
-    style NewsAgent fill:#e8f5e8,stroke-dasharray: 5 5
+    style SearchAgent fill:#e8f5e8
     style DARTAgent fill:#fff3e0,stroke-dasharray: 10 10
 
 ```
@@ -607,25 +612,42 @@ graph TB
 ## Current Implementation Status
 
 ### ✅ Completed Components
-- **Supervisor Agent**: ChatClovaX-based coordinator with handoff tools
-- **Stock Price Agent**: Full stock analysis with Kiwoom API integration
+- **Supervisor Agent**: ChatClovaX-based coordinator with handoff tools for both Stock and Search agents
+- **Stock Price Agent**: Full stock analysis with Kiwoom API integration  
+- **Search Agent**: Comprehensive search capabilities with Tavily web search and Naver News API
 - **PDF Processing**: Upload, chunking, and viewer system
 - **Frontend**: React-based UI with chat and PDF viewing
 - **APIs**: Upload service (9000) and Query service (8000)
 - **State Management**: LangGraph MessagesState and Zustand frontend state
 
 ### 🔜 Ready for Extension
-- **News Agent**: Framework ready for addition
+- **DART Agent**: Framework ready for corporate filings analysis
 - **Additional Tools**: Easy integration pattern established
 - **Shared Components**: Reusable state and graph infrastructure
 - **API Expansion**: Scalable FastAPI structure
 
-### 🎯 Next Steps for News Agent
-1. Create `backend/agents/news_agent/` directory structure
-2. Implement News Agent with ChatClovaX
-3. Add Naver News API tools
-4. Create handoff tool in Supervisor
-5. Update shared state if needed
-6. Test integration with existing system
+### 🎯 Implementation Status for Search Agent (Evolved from News Agent)
 
-This documentation provides a comprehensive view of the current system and serves as a blueprint for adding the News Agent and future expansions. 
+#### ✅ **Production Implementation Completed**
+1. **Architecture Evolution**: Refactored from NewsAgent to SearchAgent with expanded capabilities
+2. **Comprehensive Tool Suite**: 
+   - `tavily_web_search`: Global web search with Tavily API integration and content crawling
+   - `search_naver_news_by_relevance`: Korean news search with relevance ranking
+   - `search_naver_news_by_date`: Korean news search with latest-first sorting
+   - Integrated content crawling for all search results
+3. **Pure Autonomous Agent Logic**: True ReAct-style reasoning with NO hard-coded tool selection logic
+4. **Supervisor Integration**: `call_search_agent` handoff tool fully integrated
+5. **API Integration**: 
+   - Tavily Search API for global web search
+   - Naver News API for Korean news with enhanced sorting options
+   - Content crawling capabilities for deep article analysis
+6. **Enhanced Prompts & Tool Descriptions**: Autonomous reasoning guided by detailed system prompts and crystal-clear tool descriptions
+7. **Package Structure**: Complete refactored module with expanded capabilities
+
+#### 🚀 **READY FOR PRODUCTION**
+- **Full Integration**: NewsAgent is now part of the multi-agent system
+- **Supervisor Handoff**: Users can request news analysis through Supervisor
+- **Test Coverage**: Test script available at `backend/agents/news_agent/test.py`
+- **Documentation**: Complete architecture documentation and implementation guide
+
+This documentation provides a comprehensive view of the current system with the fully implemented SearchAgent, showcasing a production-ready multi-agent architecture with autonomous search capabilities. 
