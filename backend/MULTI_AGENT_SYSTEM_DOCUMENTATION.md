@@ -537,8 +537,8 @@ graph TB
         
         subgraph "Search Agent Tools"
             TavilyTool[tavily_web_search<br/>🌐 Global Web Search]
-            NaverRelevance[search_naver_news_by_relevance<br/>📰 Korean News (Relevance)]
-            NaverDate[search_naver_news_by_date<br/>📅 Korean News (Latest)]
+            NaverRelevance[search_naver_news_by_relevance<br/>📰 Korean News Relevance]
+            NaverDate[search_naver_news_by_date<br/>📅 Korean News Latest]
             ContentCrawl[Content Crawling<br/>🔗 Deep article analysis]
         end
     end
