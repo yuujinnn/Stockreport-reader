@@ -35,6 +35,12 @@ class SupervisorAgent:
         from ..stock_price_agent.agent import StockPriceAgent
         self.stock_price_agent = StockPriceAgent()
         
+        ################################################
+        # Import and initialize Search Agent (formerly News Agent)
+        from ..news_agent.agent import SearchAgent
+        self.search_agent = SearchAgent()
+        ################################################
+        
         # Get formatted prompt with dates
         self.formatted_prompt = self._format_prompt_with_dates()
         
@@ -126,10 +132,35 @@ class SupervisorAgent:
             except Exception as e:
                 return f"Error calling Stock Price Agent: {str(e)}"
         
+        ########################################################################################
+        # Create handoff tool for Search Agent (comprehensive search capabilities)
+        @tool("call_search_agent")
+        def call_search_agent(
+            request: str,
+            state: Annotated[Dict[str, Any], InjectedState]
+        ) -> str:
+            """
+            Call Search Agent for comprehensive search, news analysis, and web research
+            
+            Args:
+                request: The search/analysis request (can be web search, Korean news, or combined)
+                state: Current graph state (injected automatically)
+            """
+            try:
+                print(f"🔍 Calling Search Agent: {request}")
+                
+                # Call Search Agent with enhanced capabilities
+                result = self.search_agent.run(request)
+                return result
+                
+            except Exception as e:
+                return f"Error calling Search Agent: {str(e)}"
+        ########################################################################################
+        
         # Create supervisor agent with handoff tools (name 파라미터 제거 - ChatClovaX 호환성)
         self.supervisor_agent = create_react_agent(
             self.supervisor_llm,
-            tools=[call_stock_price_agent],
+            tools=[call_stock_price_agent, call_search_agent], ########################################################################################
             prompt=self.formatted_prompt
         )
         

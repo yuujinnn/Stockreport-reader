@@ -42,5 +42,9 @@ langchain-experimental>=0.3.0,<0.4  # Experimental LangChain features
 # Naver CLOVA X Support
 langchain-naver>=0.1.0  # CLOVA X integration for LangChain 
 
+# Search and Web Crawling
+langchain-tavily>=0.1.0  # Official LangChain Tavily Search integration
+beautifulsoup4>=4.12.0  # HTML parsing for content extraction
+
 # PDF Processing
 PyPDF2>=3.0.0  # For PDF page counting 

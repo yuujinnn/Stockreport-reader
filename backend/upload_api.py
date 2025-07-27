@@ -18,8 +18,8 @@ from pydantic import BaseModel
 import PyPDF2
 
 # Configuration
-UPLOAD_DIR = Path("uploads")
-PROCESSED_DIR = Path("processed")
+UPLOAD_DIR = Path("data/uploads")
+PROCESSED_DIR = Path("data/processed")
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
 
 # Ensure directories exist
