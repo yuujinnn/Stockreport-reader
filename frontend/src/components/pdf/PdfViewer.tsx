@@ -66,10 +66,13 @@ export function PdfViewer() {
 
   const onPageLoadSuccess = (page: any) => {
     console.log('✅ Page loaded successfully:', page.pageNumber);
-    // 페이지 크기 저장
+    console.log('📐 Page dimensions - Original:', page.originalWidth, 'x', page.originalHeight);
+    console.log('📐 Page dimensions - Rendered:', page.width, 'x', page.height);
+    
+    // 실제 렌더링된 크기를 사용 (스케일 적용된 크기)
     setPageSize({
-      width: page.originalWidth,
-      height: page.originalHeight
+      width: page.width,
+      height: page.height
     });
   };
 

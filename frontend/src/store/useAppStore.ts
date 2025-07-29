@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { Message, ChunkInfo } from '../types';
+import type { ChunkInfo, Message } from '../types';
+import type { ExistingFile } from '../api/upload';
 
 interface AppState {
   // PDF state
@@ -18,6 +19,10 @@ interface AppState {
   messages: Message[];
   isStreaming: boolean;
 
+  // Existing files state
+  existingFiles: ExistingFile[];
+  isLoadingFiles: boolean;
+
   // Actions
   setPdfData: (fileId: string, pdfUrl: string, filename: string, pages: number | null) => void;
   setCurrentPage: (page: number) => void;
@@ -28,10 +33,14 @@ interface AppState {
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   updateMessage: (id: string, updates: Partial<Message>) => void;
   setIsStreaming: (isStreaming: boolean) => void;
+  setExistingFiles: (files: ExistingFile[]) => void;
+  setIsLoadingFiles: (loading: boolean) => void;
+  loadExistingFile: (file: ExistingFile) => void;
   reset: () => void;
 }
 
-const initialState = {
+export const useAppStore = create<AppState>((set, get) => ({
+  // Initial state
   fileId: null,
   pdfUrl: null,
   filename: null,
@@ -42,11 +51,10 @@ const initialState = {
   hasBBox: false,
   messages: [],
   isStreaming: false,
-};
+  existingFiles: [],
+  isLoadingFiles: false,
 
-export const useAppStore = create<AppState>((set) => ({
-  ...initialState,
-
+  // Actions
   setPdfData: (fileId, pdfUrl, filename, pages) =>
     set({
       fileId,
@@ -54,6 +62,9 @@ export const useAppStore = create<AppState>((set) => ({
       filename,
       pages,
       currentPage: 1,
+      chunks: [],
+      pinnedChunks: [],
+      hasBBox: false,
     }),
 
   setCurrentPage: (page) => set({ currentPage: page }),
@@ -71,18 +82,13 @@ export const useAppStore = create<AppState>((set) => ({
         : [...state.pinnedChunks, chunkId],
     })),
 
-  pinAllChunksInPage: (page) =>
-    set((state) => {
-      // 해당 페이지의 모든 청크 ID 수집
-      const pageChunkIds = state.chunks
-        .filter((chunk) => chunk.page === page)
-        .map((chunk) => chunk.chunk_id);
-      
-      // 이미 인용된 청크들과 새로 추가할 청크들을 합침 (중복 제거)
-      const newPinnedChunks = [...new Set([...state.pinnedChunks, ...pageChunkIds])];
-      
-      return { pinnedChunks: newPinnedChunks };
-    }),
+  pinAllChunksInPage: (page) => {
+    const state = get();
+    const pageChunks = state.chunks.filter((chunk) => chunk.page === page);
+    const pageChunkIds = pageChunks.map((chunk) => chunk.chunk_id);
+    const newPinnedChunks = [...new Set([...state.pinnedChunks, ...pageChunkIds])];
+    set({ pinnedChunks: newPinnedChunks });
+  },
 
   clearPinnedChunks: () => set({ pinnedChunks: [] }),
 
@@ -92,7 +98,7 @@ export const useAppStore = create<AppState>((set) => ({
         ...state.messages,
         {
           ...message,
-          id: crypto.randomUUID(),
+          id: Date.now().toString(),
           timestamp: new Date(),
         },
       ],
@@ -105,5 +111,35 @@ export const useAppStore = create<AppState>((set) => ({
 
   setIsStreaming: (isStreaming) => set({ isStreaming }),
 
-  reset: () => set(initialState),
+  setExistingFiles: (files) => set({ existingFiles: files }),
+
+  setIsLoadingFiles: (loading) => set({ isLoadingFiles: loading }),
+
+  loadExistingFile: (file) => {
+    const pdfUrl = `http://localhost:9000${file.download_url}`;
+    set({
+      fileId: file.file_id,
+      pdfUrl,
+      filename: file.filename,
+      pages: file.pages,
+      currentPage: 1,
+      chunks: [],
+      pinnedChunks: [],
+      hasBBox: false,
+    });
+  },
+
+  reset: () =>
+    set({
+      fileId: null,
+      pdfUrl: null,
+      filename: null,
+      pages: null,
+      currentPage: 1,
+      chunks: [],
+      pinnedChunks: [],
+      hasBBox: false,
+      messages: [],
+      isStreaming: false,
+    }),
 })); 
