@@ -21,7 +21,12 @@ export function useChunks() {
       }
     },
     enabled: !!fileId,
-    refetchInterval: 5000, // Poll every 5 seconds for updates
+    // 자동 refetch 비활성화 - 청크는 한 번 로드되면 변경되지 않음
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    staleTime: Infinity, // 데이터를 항상 fresh로 간주
   });
 
   // Handle data updates

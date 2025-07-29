@@ -12,48 +12,43 @@ interface ChunkOverlayProps {
 }
 
 export function ChunkOverlay({ chunk, pageWidth, pageHeight, scale }: ChunkOverlayProps) {
-  const { pinnedChunks, togglePinChunk } = useAppStore();
+  const { pinnedChunks, togglePinChunk, isCitationMode } = useAppStore();
   const [isHovered, setIsHovered] = React.useState(false);
 
   const isPinned = pinnedChunks.includes(chunk.chunk_id);
   
-  // 두 가지 방법으로 좌표 계산 시도
-  let left: number, top: number, right: number, bottom: number;
-  
-  if (chunk.bbox_pixels && chunk.page_width && chunk.page_height) {
-    // 방법 1: 원본 픽셀 좌표를 프론트엔드에서 직접 정규화
-    const [pixelLeft, pixelTop, pixelRight, pixelBottom] = chunk.bbox_pixels;
-    
-    // 백엔드 크기 기준으로 정규화한 후 프론트엔드 크기로 변환
-    left = pixelLeft / chunk.page_width;
-    top = pixelTop / chunk.page_height;
-    right = pixelRight / chunk.page_width;
-    bottom = pixelBottom / chunk.page_height;
-    
-    console.log(`🔄 Direct normalization for ${chunk.chunk_id}: Pixels [${pixelLeft},${pixelTop},${pixelRight},${pixelBottom}] / Backend ${chunk.page_width}x${chunk.page_height} = [${left.toFixed(3)},${top.toFixed(3)},${right.toFixed(3)},${bottom.toFixed(3)}]`);
-  } else {
-    // 방법 2: 기존의 정규화된 좌표 사용
-    [left, top, right, bottom] = chunk.bbox_norm;
-    console.log(`📋 Using pre-normalized for ${chunk.chunk_id}: [${left.toFixed(3)},${top.toFixed(3)},${right.toFixed(3)},${bottom.toFixed(3)}]`);
+  // 페이지 크기가 유효하지 않으면 렌더링하지 않음
+  if (pageWidth <= 0 || pageHeight <= 0) {
+    console.warn(`⚠️ Invalid page size for chunk ${chunk.chunk_id}: ${pageWidth}x${pageHeight}`);
+    return null;
   }
 
-  // 프론트엔드의 실제 렌더링된 크기를 사용
+  // 이전 파란색 박스 방식으로 복원 (200% 확대시 완벽했던 방식)
+  // chunk.bbox_norm을 사용하고 2배 스케일 적용
+  const [left, top, right, bottom] = chunk.bbox_norm;
+  
+  // 2배 스케일을 고정으로 적용 (사용자 확대/축소와 무관)
+  const effectiveScale = 2;
+  
   const style = {
-    left: `${left * pageWidth * scale}px`,
-    top: `${top * pageHeight * scale}px`,
-    width: `${(right - left) * pageWidth * scale}px`,
-    height: `${(bottom - top) * pageHeight * scale}px`,
+    position: 'absolute' as const,
+    left: `${left * pageWidth * effectiveScale}px`,
+    top: `${top * pageHeight * effectiveScale}px`,
+    width: `${(right - left) * pageWidth * effectiveScale}px`,
+    height: `${(bottom - top) * pageHeight * effectiveScale}px`,
   };
-
-  // 디버깅용 로그 (개발 중에만)
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`📐 Chunk ${chunk.chunk_id}: Pixels=${chunk.bbox_pixels?.join(',')}, Norm=${chunk.bbox_norm.join(',')}, Final=${left.toFixed(3)},${top.toFixed(3)},${right.toFixed(3)},${bottom.toFixed(3)}`);
+  
+  console.log(`🎯 Chunk ${chunk.chunk_id} (BLUE BOX METHOD WITH FIXED 2X SCALE):`);
+  console.log(`  📐 Frontend page size: ${pageWidth}x${pageHeight}, scale: ${scale}`);
+  console.log(`  🔄 bbox_norm: [${left.toFixed(4)}, ${top.toFixed(4)}, ${right.toFixed(4)}, ${bottom.toFixed(4)}]`);
+  console.log(`  🔵 Fixed scale (2x): ${effectiveScale}`);
+  console.log(`  ✅ Final pixels: left=${(left * pageWidth * effectiveScale).toFixed(1)}px, top=${(top * pageHeight * effectiveScale).toFixed(1)}px, width=${((right - left) * pageWidth * effectiveScale).toFixed(1)}px, height=${((bottom - top) * pageHeight * effectiveScale).toFixed(1)}px`);
+  if (chunk.bbox_pixels) {
+    console.log(`  📊 Compare with backend pixels: [${chunk.bbox_pixels.join(', ')}] (page: ${chunk.page_width}x${chunk.page_height})`);
   }
 
   // 청크 타입별 색상 설정
   const getChunkColors = () => {
-    const baseClasses = 'absolute border-2 transition-all cursor-pointer group';
-    
     if (isPinned) {
       return {
         text: 'border-green-500 bg-green-200 bg-opacity-40',
@@ -77,37 +72,58 @@ export function ChunkOverlay({ chunk, pageWidth, pageHeight, scale }: ChunkOverl
     }[chunk.chunk_type];
   };
 
+  const handleChunkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // 인용 모드가 활성화되어 있을 때만 클릭 동작
+    if (!isCitationMode) {
+      console.log(`🚫 Citation mode is disabled, ignoring click on chunk ${chunk.chunk_id}`);
+      return;
+    }
+    
+    console.log(`🖱️ Chunk ${chunk.chunk_id} clicked! Current pinned state: ${isPinned}`);
+    togglePinChunk(chunk.chunk_id);
+    console.log(`✅ togglePinChunk called for ${chunk.chunk_id}`);
+  };
+
   return (
     <div
-      className={classNames(
-        'absolute border-2 transition-all cursor-pointer group',
-        getChunkColors()
-      )}
-      style={style}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => togglePinChunk(chunk.chunk_id)}
+      className={`absolute border-2 transition-all group ${getChunkColors()} ${
+        isCitationMode ? 'cursor-pointer' : 'cursor-default'
+      }`}
+      style={{
+        left: style.left,
+        top: style.top,
+        width: style.width,
+        height: style.height,
+        zIndex: 1000, // 높은 z-index 설정
+        pointerEvents: 'auto', // 클릭 이벤트 활성화
+      }}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        console.log(`🖱️ Mouse entered chunk ${chunk.chunk_id}`);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        console.log(`🖱️ Mouse left chunk ${chunk.chunk_id}`);
+      }}
+      onClick={handleChunkClick}
     >
-      <button
-        className={classNames(
-          'absolute -top-8 right-0 px-2 py-1 text-xs font-medium rounded shadow-sm transition-all',
-          'flex items-center gap-1',
-          {
-            'bg-white text-gray-700 hover:bg-gray-50': !isPinned,
-            'bg-green-500 text-white hover:bg-green-600': isPinned && chunk.chunk_type === 'text',
-            'bg-purple-500 text-white hover:bg-purple-600': isPinned && chunk.chunk_type === 'image',
-            'bg-orange-500 text-white hover:bg-orange-600': isPinned && chunk.chunk_type === 'table',
-            'opacity-0 group-hover:opacity-100': !isPinned,
-          },
-        )}
-      >
-        <Pin className="w-3 h-3" />
-        {isPinned ? '인용됨' : `+ ${chunk.chunk_type === 'text' ? '텍스트' : chunk.chunk_type === 'image' ? '이미지' : '테이블'}`}
-      </button>
-      {chunk.label && (
-        <div className="absolute -bottom-6 left-0 px-1 py-0.5 text-xs bg-gray-800 text-white rounded">
-          {chunk.label}
-        </div>
+      {/* 인용 모드가 활성화되어 있을 때만 버튼 표시 */}
+      {isCitationMode && (
+        <button
+          className={`absolute -top-8 right-0 p-1 rounded shadow-sm transition-all ${
+            isPinned 
+              ? 'bg-green-500 text-white hover:bg-green-600' 
+              : 'bg-blue-500 text-white hover:bg-blue-600'
+          }`}
+          style={{
+            zIndex: 1001, // 버튼의 z-index를 더 높게
+          }}
+          onClick={handleChunkClick}
+        >
+          <Pin className="w-3 h-3" />
+        </button>
       )}
     </div>
   );

@@ -15,6 +15,9 @@ interface AppState {
   pinnedChunks: string[];
   hasBBox: boolean;
 
+  // Citation mode state
+  isCitationMode: boolean;
+
   // Chat state
   messages: Message[];
   isStreaming: boolean;
@@ -28,8 +31,9 @@ interface AppState {
   setCurrentPage: (page: number) => void;
   setChunks: (chunks: ChunkInfo[]) => void;
   togglePinChunk: (chunkId: string) => void;
-  pinAllChunksInPage: (page: number) => void;
+  togglePageCitation: (page: number) => void;  // 페이지 전체 인용 토글로 변경
   clearPinnedChunks: () => void;
+  setCitationMode: (enabled: boolean) => void;  // 인용 모드 토글
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   updateMessage: (id: string, updates: Partial<Message>) => void;
   setIsStreaming: (isStreaming: boolean) => void;
@@ -49,6 +53,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   chunks: [],
   pinnedChunks: [],
   hasBBox: false,
+  isCitationMode: false,
   messages: [],
   isStreaming: false,
   existingFiles: [],
@@ -82,13 +87,26 @@ export const useAppStore = create<AppState>((set, get) => ({
         : [...state.pinnedChunks, chunkId],
     })),
 
-  pinAllChunksInPage: (page) => {
+  togglePageCitation: (page: number) => {
     const state = get();
     const pageChunks = state.chunks.filter((chunk) => chunk.page === page);
     const pageChunkIds = pageChunks.map((chunk) => chunk.chunk_id);
-    const newPinnedChunks = [...new Set([...state.pinnedChunks, ...pageChunkIds])];
-    set({ pinnedChunks: newPinnedChunks });
+    
+    // 페이지의 모든 청크가 이미 인용되어 있는지 확인
+    const allPageChunksPinned = pageChunkIds.every(id => state.pinnedChunks.includes(id));
+    
+    if (allPageChunksPinned) {
+      // 페이지 전체 인용 해제
+      const newPinnedChunks = state.pinnedChunks.filter(id => !pageChunkIds.includes(id));
+      set({ pinnedChunks: newPinnedChunks });
+    } else {
+      // 페이지 전체 인용 추가
+      const newPinnedChunks = [...new Set([...state.pinnedChunks, ...pageChunkIds])];
+      set({ pinnedChunks: newPinnedChunks });
+    }
   },
+
+  setCitationMode: (enabled) => set({ isCitationMode: enabled }),
 
   clearPinnedChunks: () => set({ pinnedChunks: [] }),
 
