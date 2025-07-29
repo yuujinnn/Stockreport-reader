@@ -267,7 +267,7 @@ export function PdfViewer() {
                 loading={
                   <div className="flex items-center justify-center p-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600">PDF 로딩 중...</span>
+                    <span className="ml-3 text-gray-600">PDF 로딩 중... (RAG 구축 중...)</span>
                   </div>
                 }
                 error={

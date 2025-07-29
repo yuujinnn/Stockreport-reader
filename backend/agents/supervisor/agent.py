@@ -50,8 +50,8 @@ class SupervisorAgent:
         self.supervisor = None
         self._create_manual_supervisor()
     
-    def _format_prompt_with_dates(self, user_query: str = "사용자 질문이 제공되지 않았습니다") -> str:
-        """Format prompt with current date information and tool information"""
+    def _format_prompt_with_dates(self, user_query: str = "사용자 질문이 제공되지 않았습니다", context: str = "") -> str:
+        """Format prompt with current date information, tool information, and context"""
         today = datetime.now()
         
         # Calculate date ranges
@@ -74,7 +74,9 @@ class SupervisorAgent:
             # Tool-related variables (동적 생성)
             'tool_names': ', '.join([tool.name for tool in getattr(self, 'tools', [])]),
             'user_query': user_query,
-            'tools': '\n'.join([f"- {tool.name}: {tool.description}" for tool in getattr(self, 'tools', [])])
+            'tools': '\n'.join([f"- {tool.name}: {tool.description}" for tool in getattr(self, 'tools', [])]),
+            # Context information
+            'context': context if context.strip() else "인용된 문서가 없습니다."
         }
         
         return SUPERVISOR_PROMPT.format(**date_info)
@@ -271,8 +273,31 @@ class SupervisorAgent:
             if self.supervisor is None:
                 raise ValueError("Supervisor not initialized")
             
-            # Invoke supervisor
-            result = self.supervisor.invoke({"messages": state["messages"]})
+            # 사용자 질문과 컨텍스트 추출
+            user_query = state.get("user_query", "사용자 질문이 제공되지 않았습니다")
+            context = state.get("context", "")
+            
+            # 동적으로 프롬프트 생성 (컨텍스트 포함)
+            dynamic_prompt = self._format_prompt_with_dates(user_query, context)
+            
+            # Create new supervisor agent with updated prompt
+            from langgraph.prebuilt import create_react_agent
+            updated_supervisor_agent = create_react_agent(
+                self.supervisor_llm,
+                tools=self.tools, 
+                prompt=dynamic_prompt
+            )
+            
+            # Create temporary graph with updated supervisor
+            from langgraph.graph import StateGraph, START, END
+            temp_workflow = StateGraph(MessagesState)
+            temp_workflow.add_node("supervisor", updated_supervisor_agent)
+            temp_workflow.add_edge(START, "supervisor")
+            temp_workflow.add_edge("supervisor", END)
+            temp_supervisor = temp_workflow.compile()
+            
+            # Invoke updated supervisor
+            result = temp_supervisor.invoke({"messages": state["messages"]})
             
             # Update state
             updated_state = state.copy()
@@ -283,6 +308,7 @@ class SupervisorAgent:
                 updated_state["metadata"] = {}
             updated_state["metadata"]["supervisor_processed"] = True
             updated_state["metadata"]["pattern"] = "langgraph_supervisor"
+            updated_state["metadata"]["context_used"] = bool(context and context.strip())
             
             return updated_state
             

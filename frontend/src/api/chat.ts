@@ -5,13 +5,21 @@ export const chatApi = {
   async* streamQuery(request: QueryRequest): AsyncGenerator<QueryStreamChunk, void, unknown> {
     console.log('Sending query request:', request);
     
+    // 백엔드 API 형식에 맞게 요청 객체 변환
+    const apiRequest = {
+      query: request.query,
+      pinned_chunks: request.pinChunks,
+      pdf_filename: request.pdfFilename,
+      session_id: undefined, // 필요시 추가
+    };
+    
     try {
       const response = await fetch(`${config.queryApiUrl}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request),
+        body: JSON.stringify(apiRequest),
       });
 
       if (!response.ok) {

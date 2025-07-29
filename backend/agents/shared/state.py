@@ -16,6 +16,7 @@ class MessagesState(TypedDict):
     Attributes:
         messages: 대화 기록 (LangGraph의 add_messages로 관리)
         user_query: 사용자의 원본 질문
+        context: 인용된 문서 컨텍스트 정보
         extracted_info: 추출된 정보 (종목, 기간, 차트 유형 등)
         stock_data: Stock Price Agent로부터 받은 주식 데이터
         error: 오류 정보 (있는 경우)
@@ -26,6 +27,9 @@ class MessagesState(TypedDict):
     
     # 사용자 질문 관련
     user_query: Optional[str]
+    
+    # 인용된 문서 컨텍스트
+    context: Optional[str]
     
     # 추출된 정보
     extracted_info: Optional[Dict[str, Any]]

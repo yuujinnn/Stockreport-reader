@@ -13,11 +13,12 @@
 7. [API Integration](#api-integration)
 8. [Upload API System Analysis](#upload-api-system-analysis)
 9. [Chunk-based Document Reference System](#chunk-based-document-reference-system)
-10. [Technology Stack](#technology-stack)
-11. [Extension Points](#extension-points)
-12. [Testing & Quality Assurance](#testing--quality-assurance)
-13. [Change Log](#change-log)
-14. [Next Steps & Roadmap](#next-steps--roadmap)
+10. [Context Injection & Citation System](#context-injection--citation-system)
+11. [Technology Stack](#technology-stack)
+12. [Extension Points](#extension-points)
+13. [Testing & Quality Assurance](#testing--quality-assurance)
+14. [Change Log](#change-log)
+15. [Next Steps & Roadmap](#next-steps--roadmap)
 
 ---
 
@@ -30,6 +31,7 @@ This is a comprehensive multi-agent system built with **ChatClovaX (HCX-005)** a
 - **Backend**: FastAPI + LangGraph + ChatClovaX Multi-Agent System
 - **Agent Architecture**: Supervisor + 3 Specialized Worker Agents
 - **RAG Integration**: PDF Processing + Chunk-based Citation + Context Injection
+- **Citation System**: Interactive chunk selection with real-time context injection
 - **Data Sources**: Kiwoom API, DART Open API, Tavily Search, Naver News, PDF Documents
 
 ### RAG Pipeline Integration
@@ -38,6 +40,7 @@ The system features advanced **RAG (Retrieval-Augmented Generation)** capabiliti
 - **Intelligent PDF Processing**: Automatic extraction of text, image, and table chunks with precise bounding box coordinates
 - **Interactive Chunk Citation**: Users can visually select and cite specific document sections through the PDF viewer
 - **Context Injection**: Selected chunks are automatically injected into the Supervisor's system prompt as `{context}`
+- **Real-time Context Processing**: Dynamic prompt generation based on user-selected document sections
 - **Multi-Modal Analysis**: Agents can analyze uploaded documents alongside real-time data sources
 - **Chunk Metadata Storage**: `processed_states.json` maintains chunk relationships and enables precise source attribution
 
@@ -1045,6 +1048,150 @@ graph LR
 
 ---
 
+## Context Injection & Citation System
+
+### Real-time Context Processing Flow
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant PDF as PDF Viewer
+    participant UI as Chat Interface
+    participant API as Supervisor API
+    participant Extractor as Context Extractor
+    participant States as processed_states.json
+    participant Agent as Supervisor Agent
+    
+    Note over User,Agent: Context Selection & Processing
+    User->>PDF: Select chunks via citation mode
+    PDF->>UI: Update pinnedChunks state
+    User->>UI: Enter question with selected chunks
+    
+    Note over User,Agent: API Request Processing  
+    UI->>API: POST /query with pinned_chunks & pdf_filename
+    API->>Extractor: get_chunk_context(pdf_filename, chunks)
+    Extractor->>States: Load chunk data by file and IDs
+    States-->>Extractor: Raw chunk content
+    Extractor-->>API: Formatted context string
+    
+    Note over User,Agent: Dynamic Prompt Generation
+    API->>Agent: create_initial_state(query, context)
+    Agent->>Agent: _format_prompt_with_dates(query, context)
+    Agent->>Agent: Inject context into {context} placeholder
+    
+    Note over User,Agent: Context-Aware Analysis
+    Agent->>Agent: Process with document evidence
+    Agent-->>API: Enhanced analysis response
+    API-->>UI: Context-aware answer
+```
+
+### Context Extraction Architecture
+
+```mermaid
+graph TB
+    subgraph "Frontend Selection"
+        CitationMode[Citation Mode Toggle<br/>ON/OFF Control]
+        ChunkSelection[Chunk Selection<br/>Visual PDF Overlay]
+        PinnedState[Pinned Chunks State<br/>Array of chunk_ids]
+    end
+    
+    subgraph "API Processing"
+        QueryRequest[QueryRequest<br/>+ pinned_chunks<br/>+ pdf_filename]
+        ContextExtractor[get_chunk_context()<br/>Smart chunk retrieval]
+        ContextFormatter[Context Formatter<br/>Structured output]
+    end
+    
+    subgraph "Data Sources"
+        ProcessedStates[processed_states.json<br/>Multi-file chunk storage]
+        ChunkTypes[Chunk Types<br/>text_element_output<br/>image_summary<br/>table_summary]
+        ChunkContent[Chunk Content<br/>[page, bbox, content]]
+    end
+    
+    subgraph "Agent Integration"
+        PromptTemplate[SUPERVISOR_PROMPT<br/>with {context} placeholder]
+        DynamicPrompt[Dynamic Prompt Generation<br/>Real-time context injection]
+        ContextAwareAgent[Context-Aware Supervisor<br/>Document-grounded analysis]
+    end
+    
+    CitationMode --> ChunkSelection
+    ChunkSelection --> PinnedState
+    PinnedState --> QueryRequest
+    QueryRequest --> ContextExtractor
+    ContextExtractor --> ProcessedStates
+    ProcessedStates --> ChunkTypes
+    ChunkTypes --> ChunkContent
+    ChunkContent --> ContextFormatter
+    ContextFormatter --> PromptTemplate
+    PromptTemplate --> DynamicPrompt
+    DynamicPrompt --> ContextAwareAgent
+    
+    style CitationMode fill:#fef3c7
+    style ContextExtractor fill:#dbeafe  
+    style ProcessedStates fill:#f3e8ff
+    style ContextAwareAgent fill:#dcfce7
+```
+
+### Context Format & Structure
+
+```yaml
+Context Format Example:
+"[텍스트 #5 (페이지 1)]
+카카오페이는 1Q25 연결기준 영업수익(매출) 및 영업이익 각각 2,119억원(+20% YoY)과 44억원(흑전)을 기록했다.
+
+[이미지 #2 (페이지 1)]  
+카카오페이 1Q25 실적 및 NDR 후기 - 제목과 요약 정보가 포함된 이미지 분석 결과
+
+[테이블 #1 (페이지 2)]
+카카오페이 밸류에이션 분석 - 12MF Fwd SPS: 6,857원, 목표 P/S: 5.6, 목표 주가: 38,500원"
+```
+
+### Multi-File Context Support
+
+```mermaid
+graph LR
+    subgraph "Multiple PDF Files"
+        PDF1[Document A.pdf<br/>Financial Report]
+        PDF2[Document B.pdf<br/>Market Analysis]  
+        PDF3[Document C.pdf<br/>Company Overview]
+    end
+    
+    subgraph "processed_states.json"
+        FileA[A.pdf: chunks_data]
+        FileB[B.pdf: chunks_data]
+        FileC[C.pdf: chunks_data]
+    end
+    
+    subgraph "Context Extraction"
+        FileResolver[File Resolver<br/>Match pdf_filename]
+        ChunkFilter[Chunk Filter<br/>Filter by chunk_ids]
+        ContentExtractor[Content Extractor<br/>Extract chunk content]
+    end
+    
+    subgraph "Supervisor Integration"
+        ContextInjection[Context Injection<br/>{context} in prompt]
+        MultiFileAnalysis[Multi-File Analysis<br/>Cross-document insights]
+    end
+    
+    PDF1 --> FileA
+    PDF2 --> FileB  
+    PDF3 --> FileC
+    
+    FileA --> FileResolver
+    FileB --> FileResolver
+    FileC --> FileResolver
+    
+    FileResolver --> ChunkFilter
+    ChunkFilter --> ContentExtractor
+    ContentExtractor --> ContextInjection
+    ContextInjection --> MultiFileAnalysis
+    
+    style FileResolver fill:#dbeafe
+    style ContextInjection fill:#dcfce7
+    style MultiFileAnalysis fill:#fef3c7
+```
+
+---
+
 ## Technology Stack
 
 ### 14. Technology Stack Overview
@@ -1413,6 +1560,48 @@ chmod +x smoke_test.sh
 ---
 
 ## Change Log
+
+### 2025-01-25: Context Injection & Citation System Enhancement (v2.1.0)
+
+#### ✅ **Major Features Added**
+- **Enhanced Context Injection**: Real-time document context integration into Supervisor prompts
+- **Dynamic Prompt Generation**: User-selected chunks automatically injected as `{context}` in agent prompts
+- **Multi-file Support**: Context extraction from multiple PDF files in `processed_states.json`
+- **Improved API Interface**: Extended `/query` endpoint with `pinned_chunks` and `pdf_filename` parameters
+- **Smart Context Processing**: Intelligent chunk type detection (text, image, table) with formatted output
+
+#### 🔧 **Technical Improvements**  
+- **Context Extraction Pipeline**: `get_chunk_context()` function for retrieving specific chunk content
+- **Enhanced State Management**: Added `context` field to `MessagesState` for chunk information
+- **Dynamic Supervisor Configuration**: Real-time prompt generation based on user selections
+- **API Parameter Expansion**: Extended QueryRequest with citation metadata
+- **Frontend-Backend Integration**: Seamless chunk information flow from UI to agents
+
+#### 📊 **Architecture Updates**
+- **Prompt Template Enhancement**: Added `{context}` placeholder with fallback handling
+- **State Flow Optimization**: Context information preserved throughout agent processing
+- **API Schema Evolution**: New fields for document citation and context injection
+- **Cross-Component Communication**: Improved data flow between PDF viewer and chat system
+
+#### 🚀 **Production Enhancements**
+- **Context-Aware Analysis**: Agents now prioritize user-cited document sections
+- **Improved Accuracy**: Supervisor responses based on specific document evidence
+- **Better User Experience**: Visual feedback for selected chunks and their impact on analysis
+- **Scalable Architecture**: Support for multiple documents and complex citation patterns
+
+**Files Modified**:
+- `backend/agents/supervisor/api.py`: Added context extraction and enhanced QueryRequest
+- `backend/agents/supervisor/prompt.py`: Integrated {context} placeholder for document injection
+- `backend/agents/supervisor/agent.py`: Dynamic prompt generation with context support
+- `backend/agents/shared/state.py`: Added context field to MessagesState
+- `backend/agents/shared/graph.py`: Context handling in initial state creation
+- `frontend/src/types/index.ts`: Extended QueryRequest interface
+- `frontend/src/api/chat.ts`: API request format adaptation for backend compatibility
+- `frontend/src/components/chat/ChatInput.tsx`: Context information inclusion in queries
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
 
 ### 2025-01-25: DART Agent Integration (v2.0.0)
 

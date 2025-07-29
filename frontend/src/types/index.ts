@@ -32,6 +32,7 @@ export interface QueryRequest {
   query: string;
   pinChunks?: string[];
   fileId?: string;
+  pdfFilename?: string;
 }
 
 export interface QueryStreamChunk {

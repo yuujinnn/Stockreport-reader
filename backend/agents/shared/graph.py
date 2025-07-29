@@ -65,30 +65,41 @@ def create_supervisor_graph():
         raise
 
 
-def create_initial_state(user_query: str) -> MessagesState:
+def create_initial_state(user_query: str, context: str = "") -> MessagesState:
     """
     초기 상태를 생성합니다.
     
     Args:
         user_query: 사용자 질문
+        context: 인용된 문서 컨텍스트 (선택사항)
         
     Returns:
         MessagesState: 초기 상태
     """
     initial_message = HumanMessage(content=user_query)
     
+    metadata = {
+        "system": "ChatClovaX_Supervisor",
+        "model": "HCX-005",
+        "pattern": "langgraph_supervisor",
+        "created_at": os.getenv("REQUEST_TIME", "unknown")
+    }
+    
+    # 컨텍스트 정보가 있으면 메타데이터에 추가
+    if context and context.strip():
+        metadata["has_context"] = True
+        metadata["context_length"] = len(context)
+    else:
+        metadata["has_context"] = False
+    
     return MessagesState(
         messages=[initial_message],
         user_query=user_query,
+        context=context,
         extracted_info=None,
         stock_data=None,
         error=None,
-        metadata={
-            "system": "ChatClovaX_Supervisor",
-            "model": "HCX-005",
-            "pattern": "langgraph_supervisor",
-            "created_at": os.getenv("REQUEST_TIME", "unknown")
-        }
+        metadata=metadata
     )
 
 
