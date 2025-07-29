@@ -3,7 +3,7 @@ Supervisor Agent 프롬프트 정의
 LangGraph 공식 Tool-calling Supervisor 패턴 적용
 """
 
-SUPERVISOR_PROMPT_CLOVAX = """
+SUPERVISOR_PROMPT = """
 **현재 날짜 정보** :
 - **오늘**: {today_date}
 - **어제**: {yesterday_date}  

@@ -11,7 +11,7 @@ from langchain_naver import ChatClovaX
 from langgraph_supervisor import create_supervisor
 from langgraph.prebuilt import create_react_agent
 
-from .prompt import SUPERVISOR_PROMPT_CLOVAX
+from .prompt import SUPERVISOR_PROMPT
 from ..shared.state import MessagesState
 
 
@@ -45,16 +45,13 @@ class SupervisorAgent:
         self.dart_agent = DartAgent()
         ################################################
         
-        # Get formatted prompt with dates
-        self.formatted_prompt = self._format_prompt_with_dates()
-        
         # ChatClovaX는 langgraph-supervisor와 호환성 문제가 있으므로 수동 구현 사용
         print("🔧 ChatClovaX 호환성을 위해 수동 Supervisor 구현 사용")
         self.supervisor = None
         self._create_manual_supervisor()
     
-    def _format_prompt_with_dates(self) -> str:
-        """Format prompt with current date information"""
+    def _format_prompt_with_dates(self, user_query: str = "사용자 질문이 제공되지 않았습니다") -> str:
+        """Format prompt with current date information and tool information"""
         today = datetime.now()
         
         # Calculate date ranges
@@ -73,10 +70,14 @@ class SupervisorAgent:
             'last_year_start': today.replace(year=today.year-1, month=1, day=1).strftime('%Y%m%d'),
             'last_year_end': today.replace(year=today.year-1, month=12, day=31).strftime('%Y%m%d'),
             'current_year': str(today.year),
-            'last_year': str(today.year - 1)
+            'last_year': str(today.year - 1),
+            # Tool-related variables (동적 생성)
+            'tool_names': ', '.join([tool.name for tool in getattr(self, 'tools', [])]),
+            'user_query': user_query,
+            'tools': '\n'.join([f"- {tool.name}: {tool.description}" for tool in getattr(self, 'tools', [])])
         }
         
-        return SUPERVISOR_PROMPT_CLOVAX.format(**date_info)
+        return SUPERVISOR_PROMPT.format(**date_info)
     
     def _get_month_end(self, date):
         """Get the last day of the month"""
@@ -112,6 +113,9 @@ class SupervisorAgent:
         from langgraph.types import Command
         from langgraph.prebuilt import InjectedState
         from typing import Any
+        
+        # Initialize tools list
+        self.tools = []
         
         # Create handoff tool for Stock Price Agent
         @tool("call_stock_price_agent")
@@ -150,7 +154,9 @@ class SupervisorAgent:
                 
                 return f"Stock Price Agent 호출에 실패했습니다. Kiwoom API 접근에 문제가 있을 수 있습니다. 오류: {str(e)}"
         
-        ########################################################################################
+        # Add to tools list
+        self.tools.append(call_stock_price_agent)
+        
         # Create handoff tool for Search Agent (comprehensive search capabilities)
         @tool("call_search_agent")
         def call_search_agent(
@@ -187,7 +193,9 @@ class SupervisorAgent:
                         continue
                 
                 return f"Search Agent 호출에 실패했습니다. 웹 검색 또는 뉴스 API 접근에 문제가 있을 수 있습니다. 오류: {str(e)}"
-        ########################################################################################
+        
+        # Add to tools list
+        self.tools.append(call_search_agent)
         
         # Create handoff tool for DART Agent
         @tool("call_dart_agent")
@@ -226,11 +234,17 @@ class SupervisorAgent:
                 
                 return f"DART Agent 호출에 실패했습니다. 전자공시 시스템 접근에 문제가 있을 수 있습니다. 오류: {str(e)}"
         
+        # Add to tools list
+        self.tools.append(call_dart_agent)
+        
         # Create supervisor agent with handoff tools (name 파라미터 제거 - ChatClovaX 호환성)
+        # 기본 프롬프트로 초기화 (user_query는 실행 시점에서 동적으로 설정)
+        default_prompt = self._format_prompt_with_dates("사용자 질문을 기다리는 중입니다...")
+        
         self.supervisor_agent = create_react_agent(
             self.supervisor_llm,
-            tools=[call_stock_price_agent, call_search_agent, call_dart_agent], ########################################################################################
-            prompt=self.formatted_prompt
+            tools=self.tools, 
+            prompt=default_prompt
         )
         
         # Create simple graph
