@@ -9,6 +9,8 @@ export interface ChunkInfo {
   chunk_id: string;
   page: number;
   bbox_norm: [number, number, number, number]; // [left, top, right, bottom]
+  chunk_type: 'text' | 'image' | 'table';
+  content: string;
   label?: string;
 }
 
