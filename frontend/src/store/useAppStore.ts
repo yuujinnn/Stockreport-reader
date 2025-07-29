@@ -124,7 +124,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   updateMessage: (id, updates) =>
     set((state) => ({
-      messages: state.messages.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg)),
+      messages: state.messages.map((msg) => 
+        (msg.id === id && msg.role === 'assistant') ? { ...msg, ...updates } : msg
+      ),
     })),
 
   setIsStreaming: (isStreaming) => set({ isStreaming }),

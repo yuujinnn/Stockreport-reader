@@ -1561,6 +1561,81 @@ chmod +x smoke_test.sh
 
 ## Change Log
 
+### 2025-01-25: RAG Pipeline Directory Structure Refactoring (v2.2.0)
+
+#### ✅ **Major Architectural Changes**
+- **Directory Structure Refactoring**: RAG pipeline now uses separated processing directories for better organization
+- **Processing UID System**: Each PDF processing session gets a unique identifier for isolated processing
+- **Clean Data Separation**: Original PDFs separate from processing artifacts
+- **Enhanced File Management**: Better organization of processing outputs and metadata
+
+#### 🔧 **Technical Improvements**  
+- **Unique Processing Sessions**: Each PDF processing gets a UUID-based processing_uid
+- **Isolated Processing Directories**: Processing artifacts stored in `data/logs/{uid}/` structure
+- **Enhanced GraphState**: Added `processing_uid` field for session tracking
+- **Improved File Organization**: Clear separation between input and output data
+
+#### 📊 **New Directory Structure**
+```
+backend/rag/data/
+├── pdf/                          # Original PDF files (input only)
+│   ├── document1.pdf
+│   ├── document2.pdf
+│   └── ...
+├── logs/{processing_uid}/        # Processing artifacts per session
+│   ├── split/                    # Split PDF files
+│   │   ├── document1_0000_0009.pdf
+│   │   ├── document1_0010_0019.pdf
+│   │   └── ...
+│   ├── images/                   # Cropped image chunks
+│   │   ├── img_001.png
+│   │   ├── img_002.png
+│   │   └── ...
+│   ├── tables/                   # Cropped table chunks
+│   │   ├── table_001.png
+│   │   ├── table_002.png
+│   │   └── ...
+│   └── metadata/                 # Processing metadata (future)
+└── vectordb/                     # Vector database & states
+    ├── processed_states.json
+    ├── chroma.sqlite3
+    └── ...
+```
+
+#### 🚀 **Benefits**
+- **Better Organization**: Clear separation of original files and processing outputs
+- **Parallel Processing**: Multiple PDFs can be processed simultaneously without conflicts
+- **Easier Cleanup**: Processing artifacts can be cleaned up per session
+- **Debugging Support**: Each processing session has isolated artifacts for troubleshooting
+- **Scalability**: Better handling of large numbers of processed documents
+
+#### 🔧 **Modified Components**
+- **GraphState Enhancement**: Added `processing_uid` field for session tracking
+- **ImageCropperNode**: Output path changed to `data/logs/{uid}/images/`
+- **TableCropperNode**: Output path changed to `data/logs/{uid}/tables/`
+- **SplitPDFFilesNode**: Output path changed to `data/logs/{uid}/split/`
+- **Parser Integration**: Enhanced `process_single_pdf()` with UID parameter
+- **Processing Pipeline**: UUID generation and propagation throughout workflow
+- **Upload API**: Updated to support new directory structure
+
+#### 📋 **API Changes**
+- **Enhanced State Tracking**: `processed_states.json` now includes `processing_uid` metadata
+- **Backward Compatibility**: Existing processed files continue to work
+- **Future-Ready**: Structure prepared for advanced processing features
+
+**Files Modified**:
+- `backend/rag/src/graphparser/state.py`: Added processing_uid field to GraphState
+- `backend/rag/src/graphparser/core.py`: Updated ImageCropperNode and TableCropperNode output paths
+- `backend/rag/src/graphparser/pdf.py`: Updated SplitPDFFilesNode output path
+- `backend/rag/src/parser.py`: Enhanced process_single_pdf with UID parameter
+- `backend/rag/scripts/process_pdfs.py`: Added UUID generation and propagation
+- `backend/upload_api.py`: Updated for new directory structure support
+- `backend/MULTI_AGENT_SYSTEM_DOCUMENTATION.md`: Architecture documentation updates
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
+
 ### 2025-01-25: Context Injection & Citation System Enhancement (v2.1.0)
 
 #### ✅ **Major Features Added**

@@ -298,14 +298,18 @@ async def process_pdf_with_rag(file_id: str, saved_filename: str):
     try:
         logger.info(f"🚀 Starting RAG processing for {saved_filename}")
         
+        # Extract UUID from file_id (format: uuid_filename)
+        processing_uid = file_id.split('_')[0] if '_' in file_id else file_id
+        logger.info(f"📋 Using processing UID: {processing_uid}")
+        
         # Change to RAG directory for execution
         original_cwd = os.getcwd()
         os.chdir(RAG_BASE_DIR)
         
         try:
-            # Execute RAG processing with the specific file
+            # Execute RAG processing with the specific file and processing UID
             result = subprocess.run(
-                ["python", "scripts/process_pdfs.py", "--limit", "1"],
+                ["python", "scripts/process_pdfs.py", "--limit", "1", "--processing-uid", processing_uid, "--filename", saved_filename],
                 capture_output=True,
                 text=True,
                 timeout=600  # 10 minutes timeout
@@ -598,6 +602,12 @@ async def get_chunks(file_id: str):
     logger.info(f"✅ Found processed data for: {saved_filename}")
     
     file_data = processed_states[saved_filename]
+    processing_uid = file_data.get("processing_uid")
+    
+    if not processing_uid:
+        logger.warning(f"❌ No processing_uid found for {saved_filename}")
+        return []
+    
     chunks = []
     
     # PDF 파일 경로 구성
