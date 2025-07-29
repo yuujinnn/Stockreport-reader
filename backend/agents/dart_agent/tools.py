@@ -243,8 +243,8 @@ class ExtractReportThenSectionTextTool(BaseTool):
 
         return "\n\n".join(results)
 
-def get_stock_tools():
-    """Get list of stock-related tools"""
+def get_dart_tools():
+    """Get list of DART-related tools"""
     dart_llm = get_dart_llm()
     return [
         DartReportTypeTool(llm = dart_llm, prompt_template = DART_REPORT_TYPE_PROMPT),

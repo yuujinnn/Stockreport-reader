@@ -39,6 +39,10 @@ class SupervisorAgent:
         # Import and initialize Search Agent (formerly News Agent)
         from ..search_agent.agent import SearchAgent
         self.search_agent = SearchAgent()
+        
+        # Import and initialize DART Agent
+        from ..dart_agent.agent import DartAgent
+        self.dart_agent = DartAgent()
         ################################################
         
         # Get formatted prompt with dates
@@ -130,7 +134,21 @@ class SupervisorAgent:
                 return result
                 
             except Exception as e:
-                return f"Error calling Stock Price Agent: {str(e)}"
+                error_msg = f"Error calling Stock Price Agent: {str(e)}"
+                print(f"❌ {error_msg}")
+                # 재시도 로직 (지수 백오프)
+                import time
+                for retry_count in range(2):
+                    try:
+                        print(f"🔄 Retrying Stock Price Agent call (attempt {retry_count + 1}/2)")
+                        time.sleep(2 ** retry_count)  # 1초, 2초 백오프
+                        result = self.stock_price_agent.run(request)
+                        return result
+                    except Exception as retry_e:
+                        print(f"❌ Retry {retry_count + 1} failed: {retry_e}")
+                        continue
+                
+                return f"Stock Price Agent 호출에 실패했습니다. Kiwoom API 접근에 문제가 있을 수 있습니다. 오류: {str(e)}"
         
         ########################################################################################
         # Create handoff tool for Search Agent (comprehensive search capabilities)
@@ -154,13 +172,64 @@ class SupervisorAgent:
                 return result
                 
             except Exception as e:
-                return f"Error calling Search Agent: {str(e)}"
+                error_msg = f"Error calling Search Agent: {str(e)}"
+                print(f"❌ {error_msg}")
+                # 재시도 로직 (지수 백오프)
+                import time
+                for retry_count in range(2):
+                    try:
+                        print(f"🔄 Retrying Search Agent call (attempt {retry_count + 1}/2)")
+                        time.sleep(2 ** retry_count)  # 1초, 2초 백오프
+                        result = self.search_agent.run(request)
+                        return result
+                    except Exception as retry_e:
+                        print(f"❌ Retry {retry_count + 1} failed: {retry_e}")
+                        continue
+                
+                return f"Search Agent 호출에 실패했습니다. 웹 검색 또는 뉴스 API 접근에 문제가 있을 수 있습니다. 오류: {str(e)}"
         ########################################################################################
+        
+        # Create handoff tool for DART Agent
+        @tool("call_dart_agent")
+        def call_dart_agent(
+            request: str,
+            state: Annotated[Dict[str, Any], InjectedState]
+        ) -> str:
+            """
+            Call DART Agent for corporate disclosure and financial report analysis
+            
+            Args:
+                request: The DART analysis request (corporate filings, financial reports, disclosure documents)
+                state: Current graph state (injected automatically)
+            """
+            try:
+                print(f"📈 Calling DART Agent: {request}")
+                
+                # Call DART Agent
+                result = self.dart_agent.run(request)
+                return result
+                
+            except Exception as e:
+                error_msg = f"Error calling DART Agent: {str(e)}"
+                print(f"❌ {error_msg}")
+                # 재시도 로직 (지수 백오프)
+                import time
+                for retry_count in range(2):
+                    try:
+                        print(f"🔄 Retrying DART Agent call (attempt {retry_count + 1}/2)")
+                        time.sleep(2 ** retry_count)  # 1초, 2초 백오프
+                        result = self.dart_agent.run(request)
+                        return result
+                    except Exception as retry_e:
+                        print(f"❌ Retry {retry_count + 1} failed: {retry_e}")
+                        continue
+                
+                return f"DART Agent 호출에 실패했습니다. 전자공시 시스템 접근에 문제가 있을 수 있습니다. 오류: {str(e)}"
         
         # Create supervisor agent with handoff tools (name 파라미터 제거 - ChatClovaX 호환성)
         self.supervisor_agent = create_react_agent(
             self.supervisor_llm,
-            tools=[call_stock_price_agent, call_search_agent], ########################################################################################
+            tools=[call_stock_price_agent, call_search_agent, call_dart_agent], ########################################################################################
             prompt=self.formatted_prompt
         )
         
