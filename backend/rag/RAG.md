@@ -96,7 +96,7 @@ backend/rag/
 ## 3. Required Environment Variables & API Keys
 
 ### Environment Configuration
-Create a `.env` file in `backend/rag/` with the following variables:
+Create a `.env` file in `backend/secrets/` with the following variables:
 
 ```env
 # Layout Analysis (Upstage Document AI)
@@ -106,7 +106,7 @@ UPSTAGE_API_KEY=your_upstage_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 
 # Text Embeddings (Clova Studio)
-CLOVA_API_KEY=your_clova_api_key_here
+CLOVASTUDIO_API_KEY=your_clovastudio_api_key_here
 ```
 
 ### API Key Usage Mapping
@@ -115,7 +115,7 @@ CLOVA_API_KEY=your_clova_api_key_here
 |---------|--------|-------|
 | `UPSTAGE_API_KEY` | `src/graphparser/core.py::LayoutAnalyzerNode` | PDF layout analysis and element detection |
 | `OPENAI_API_KEY` | `src/graphparser/core.py::CreatePageSummaryNode`<br>`src/graphparser/core.py::CreateImageSummaryNode`<br>`src/graphparser/core.py::CreateTableSummaryNode` | Text, image, and table summarization |
-| `CLOVA_API_KEY` | `src/utils/clova_embeddings.py::ClovaEmbeddings` | Text embedding generation for vector search |
+| `CLOVASTUDIO_API_KEY` | `src/utils/clova_embeddings.py::ClovaEmbeddings` | Text embedding generation for vector search |
 
 ## 4. Module Responsibilities & Pipeline Flow
 
@@ -261,10 +261,11 @@ pip install -r requirements.txt
 
 2. **Configure API Keys**
 ```bash
-# Create .env file with required API keys
-echo "UPSTAGE_API_KEY=your_key" >> .env
-echo "OPENAI_API_KEY=your_key" >> .env  
-echo "CLOVA_API_KEY=your_key" >> .env
+# Create .env file in secrets directory with required API keys
+mkdir -p ../secrets
+echo "UPSTAGE_API_KEY=your_key" >> ../secrets/.env
+echo "OPENAI_API_KEY=your_key" >> ../secrets/.env  
+echo "CLOVASTUDIO_API_KEY=your_key" >> ../secrets/.env
 ```
 
 3. **Place PDF Files**

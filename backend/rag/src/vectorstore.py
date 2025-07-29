@@ -27,10 +27,10 @@ class VectorStore:
             collection_name (str): 사용할 컬렉션 이름 (기본값: "pdf_collection")
             model_name (str): HuggingFace 임베딩 모델 이름
         """
-        # .env 파일 로드
-        load_dotenv()
+        project_root = Path(__file__).resolve().parents[3]  # Stockreport-reader/
+        load_dotenv(project_root / "backend/secrets/.env")
 
-        self.api_key = os.getenv("CLOVA_API_KEY")
+        self.api_key = os.getenv("CLOVASTUDIO_API_KEY")
 
         self.collection_name = collection_name
         self.persist_directory = persist_directory

@@ -15,7 +15,8 @@ from langchain.schema import Document
 sys.stdin.reconfigure(encoding="utf-8")
 sys.stdout.reconfigure(encoding="utf-8")
 
-load_dotenv(verbose=True)
+project_root = Path(__file__).resolve().parents[3]  # Stockreport-reader/
+load_dotenv(project_root / "backend/secrets/.env", verbose=True)
 
 
 # 환경 변수 확인을 위한 디버그 출력 추가
