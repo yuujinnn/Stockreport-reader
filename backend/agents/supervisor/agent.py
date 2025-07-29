@@ -37,7 +37,7 @@ class SupervisorAgent:
         
         ################################################
         # Import and initialize Search Agent (formerly News Agent)
-        from ..news_agent.agent import SearchAgent
+        from ..search_agent.agent import SearchAgent
         self.search_agent = SearchAgent()
         ################################################
         
