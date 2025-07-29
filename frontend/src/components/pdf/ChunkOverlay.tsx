@@ -17,6 +17,11 @@ export function ChunkOverlay({ chunk, pageWidth, pageHeight, scale }: ChunkOverl
 
   const isPinned = pinnedChunks.includes(chunk.chunk_id);
   
+  // 인용 모드가 비활성화되어 있으면 아예 렌더링하지 않음
+  if (!isCitationMode) {
+    return null;
+  }
+  
   // 페이지 크기가 유효하지 않으면 렌더링하지 않음
   if (pageWidth <= 0 || pageHeight <= 0) {
     console.warn(`⚠️ Invalid page size for chunk ${chunk.chunk_id}: ${pageWidth}x${pageHeight}`);
@@ -74,13 +79,6 @@ export function ChunkOverlay({ chunk, pageWidth, pageHeight, scale }: ChunkOverl
 
   const handleChunkClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    // 인용 모드가 활성화되어 있을 때만 클릭 동작
-    if (!isCitationMode) {
-      console.log(`🚫 Citation mode is disabled, ignoring click on chunk ${chunk.chunk_id}`);
-      return;
-    }
-    
     console.log(`🖱️ Chunk ${chunk.chunk_id} clicked! Current pinned state: ${isPinned}`);
     togglePinChunk(chunk.chunk_id);
     console.log(`✅ togglePinChunk called for ${chunk.chunk_id}`);
@@ -88,9 +86,7 @@ export function ChunkOverlay({ chunk, pageWidth, pageHeight, scale }: ChunkOverl
 
   return (
     <div
-      className={`absolute border-2 transition-all group ${getChunkColors()} ${
-        isCitationMode ? 'cursor-pointer' : 'cursor-default'
-      }`}
+      className={`absolute border-2 transition-all cursor-pointer group ${getChunkColors()}`}
       style={{
         left: style.left,
         top: style.top,
@@ -109,22 +105,20 @@ export function ChunkOverlay({ chunk, pageWidth, pageHeight, scale }: ChunkOverl
       }}
       onClick={handleChunkClick}
     >
-      {/* 인용 모드가 활성화되어 있을 때만 버튼 표시 */}
-      {isCitationMode && (
-        <button
-          className={`absolute -top-8 right-0 p-1 rounded shadow-sm transition-all ${
-            isPinned 
-              ? 'bg-green-500 text-white hover:bg-green-600' 
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
-          style={{
-            zIndex: 1001, // 버튼의 z-index를 더 높게
-          }}
-          onClick={handleChunkClick}
-        >
-          <Pin className="w-3 h-3" />
-        </button>
-      )}
+      {/* 인용 버튼 */}
+      <button
+        className={`absolute -top-8 right-0 p-1 rounded shadow-sm transition-all ${
+          isPinned 
+            ? 'bg-green-500 text-white hover:bg-green-600' 
+            : 'bg-blue-500 text-white hover:bg-blue-600'
+        }`}
+        style={{
+          zIndex: 1001, // 버튼의 z-index를 더 높게
+        }}
+        onClick={handleChunkClick}
+      >
+        <Pin className="w-3 h-3" />
+      </button>
     </div>
   );
 } 
