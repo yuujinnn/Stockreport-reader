@@ -23,6 +23,7 @@ interface AppState {
   setCurrentPage: (page: number) => void;
   setChunks: (chunks: ChunkInfo[]) => void;
   togglePinChunk: (chunkId: string) => void;
+  pinAllChunksInPage: (page: number) => void;
   clearPinnedChunks: () => void;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
   updateMessage: (id: string, updates: Partial<Message>) => void;
@@ -69,6 +70,19 @@ export const useAppStore = create<AppState>((set) => ({
         ? state.pinnedChunks.filter((id) => id !== chunkId)
         : [...state.pinnedChunks, chunkId],
     })),
+
+  pinAllChunksInPage: (page) =>
+    set((state) => {
+      // 해당 페이지의 모든 청크 ID 수집
+      const pageChunkIds = state.chunks
+        .filter((chunk) => chunk.page === page)
+        .map((chunk) => chunk.chunk_id);
+      
+      // 이미 인용된 청크들과 새로 추가할 청크들을 합침 (중복 제거)
+      const newPinnedChunks = [...new Set([...state.pinnedChunks, ...pageChunkIds])];
+      
+      return { pinnedChunks: newPinnedChunks };
+    }),
 
   clearPinnedChunks: () => set({ pinnedChunks: [] }),
 

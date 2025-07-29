@@ -47,6 +47,11 @@ def print_system_info():
     print(f"  • CLOVASTUDIO_API_KEY: {clova_api}")
     print(f"  • LANGSMITH_API_KEY: {langsmith_api}")
     
+    # 디버깅 모드 설정
+    print(f"\n🐛 Debug Mode: ENABLED")
+    print(f"  • 모든 API 요청/응답이 로그에 표시됩니다")
+    print(f"  • Supervisor Agent 처리 과정을 추적할 수 있습니다")
+    
     # LangSmith 정보
     if os.getenv('LANGSMITH_API_KEY'):
         project = os.getenv('LANGSMITH_PROJECT', 'ChatClovaX_StockAnalysis')

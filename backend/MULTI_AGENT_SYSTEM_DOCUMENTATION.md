@@ -10,8 +10,9 @@
 4. [Data Flow Analysis](#data-flow-analysis)
 5. [API Integration](#api-integration)
 6. [State Management](#state-management)
-7. [Technology Stack](#technology-stack)
-8. [Extension Points](#extension-points)
+7. [Upload API System Analysis](#upload-api-system-analysis)
+8. [Technology Stack](#technology-stack)
+9. [Extension Points](#extension-points)
 
 ---
 
@@ -466,9 +467,177 @@ sequenceDiagram
 
 ---
 
+## Upload API System Analysis
+
+### 10. Upload API Service Architecture
+
+The Upload API (`backend/upload_api.py`) serves as a critical integration point between frontend PDF handling and backend RAG processing, operating on port 9000.
+
+```mermaid
+graph TB
+    subgraph "Upload API Service (Port 9000)"
+        UploadAPI[Upload API<br/>FastAPI Application]
+        
+        subgraph "Core Endpoints"
+            Upload[POST /upload<br/>PDF Upload & Validation]
+            Status[GET /status/{file_id}<br/>Processing Status]
+            Download[GET /file/{file_id}/download<br/>PDF Streaming]
+            Summaries[GET /summaries/{file_id}<br/>RAG Results]
+            Health[GET /health<br/>System Health Check]
+        end
+        
+        subgraph "Background Processing"
+            BGTask[Background Tasks<br/>process_pdf_with_rag()]
+            RAGCall[RAG Script Executor<br/>subprocess calls]
+        end
+        
+        subgraph "Data Management"
+            Metadata[File Metadata<br/>JSON storage]
+            FileStorage[PDF Storage<br/>rag/data/pdf/]
+        end
+    end
+    
+    subgraph "RAG Integration"
+        RAGScript[process_pdfs.py<br/>RAG Pipeline Script]
+        RAGResults[RAG Results<br/>JSON output files]
+        VectorDB[Vector Database<br/>ChromaDB storage]
+    end
+    
+    subgraph "Frontend Integration"
+        PDFDropzone[PdfDropzone Component<br/>File Upload UI]
+        PDFViewer[PdfViewer Component<br/>Document Display]
+        StatusPolling[Status Polling<br/>Processing Updates]
+    end
+    
+    PDFDropzone -->|POST /upload| Upload
+    PDFViewer -->|GET /file/download| Download
+    StatusPolling -->|GET /status| Status
+    
+    Upload --> BGTask
+    BGTask --> RAGCall
+    RAGCall --> RAGScript
+    RAGScript --> RAGResults
+    RAGScript --> VectorDB
+    
+    Upload --> Metadata
+    Upload --> FileStorage
+    Status --> RAGResults
+    
+    style UploadAPI fill:#e8f5e8
+    style BGTask fill:#fff3e0
+    style RAGScript fill:#e1f5fe
+    style PDFDropzone fill:#f3e5f5
+```
+
+### Key Features:
+- **FastAPI-based Service**: Robust web framework with automatic OpenAPI documentation
+- **RAG Pipeline Integration**: Automatic background processing with `rag/scripts/process_pdfs.py`
+- **File Management**: UUID-based file identification with metadata persistence
+- **Background Processing**: Non-blocking uploads with 10-minute processing timeout
+- **Status Monitoring**: Real-time processing status with completion detection
+- **CORS Support**: Full frontend integration with streaming file downloads
+- **✅ Chunk-based Document Analysis**: Bounding box extraction from `processed_states.json`
+- **✅ Multi-type Chunk Support**: Text, image, and table chunks with type-specific styling
+- **✅ Interactive PDF Overlays**: Visual chunk selection with normalized coordinates
+- **✅ Page-level Citation**: Bulk selection of all chunks on a page
+
+### File Processing Flow:
+1. **Upload**: PDF validation, unique ID generation, file storage to `backend/rag/data/pdf/`
+2. **Metadata**: JSON metadata storage with page count and timestamps
+3. **Background Task**: Queued RAG processing via subprocess execution
+4. **RAG Processing**: Creation of `processed_states.json` with chunk data and bounding boxes
+5. **Status Tracking**: Monitoring through JSON result file detection
+6. **✅ Chunk Extraction**: Parse chunks from `processed_states.json` with coordinate normalization
+7. **✅ Frontend Display**: Interactive PDF overlays with type-specific chunk visualization
+8. **Result Access**: Structured summaries (text/image/table) via API endpoints
+
+### Integration Points:
+- **Directory Structure**: Unified with RAG system (`backend/rag/data/pdf/`)
+- **Environment Variables**: Shared secrets from `backend/secrets/.env`
+- **Multi-Agent Connection**: Processed documents available for agent consumption
+- **Vector Database**: ChromaDB integration through RAG pipeline
+- **✅ Chunk Data Source**: `backend/rag/data/vectordb/processed_states.json`
+- **✅ Frontend Integration**: Real-time chunk polling via `/chunks/{file_id}` endpoint
+- **✅ Interactive UI**: PDF viewer with visual chunk selection and page-level citation
+- **✅ Query Integration**: Selected chunks passed to chat API for contextual responses
+
+---
+
+## Chunk-based Document Reference System
+
+### Interactive PDF Analysis Flow
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant PDF as PDF Viewer
+    participant API as Upload API
+    participant RAG as RAG System
+    participant FS as File System
+    participant Chat as Chat System
+    
+    Note over User,Chat: Document Upload & Processing
+    User->>API: POST /upload (PDF)
+    API->>RAG: Background processing
+    RAG->>FS: Create processed_states.json
+    
+    Note over User,Chat: Chunk Visualization
+    PDF->>API: GET /chunks/{fileId} (every 5s)
+    API->>FS: Load processed_states.json
+    API->>API: Parse & normalize coordinates
+    API-->>PDF: ChunkInfo[] (text/image/table)
+    PDF->>PDF: Render interactive overlays
+    
+    Note over User,Chat: Interactive Selection
+    User->>PDF: Click chunk overlay
+    PDF->>PDF: Toggle chunk selection
+    User->>PDF: Click "페이지 전체 인용"
+    PDF->>PDF: Select all page chunks
+    
+    Note over User,Chat: Query with Context
+    User->>Chat: Enter question
+    Chat->>API: query + pinChunks[]
+    API->>Chat: Context-aware response
+    
+    style PDF fill:#e8f5e8
+    style API fill:#fff3e0
+    style RAG fill:#e1f5fe
+    style Chat fill:#f3e5f5
+```
+
+### Chunk Type Visualization
+
+```mermaid
+graph LR
+    subgraph "PDF Page"
+        TextChunk[📝 Text Chunk<br/>Blue Border<br/>Green when pinned]
+        ImageChunk[🖼️ Image Chunk<br/>Purple Border<br/>Purple when pinned]
+        TableChunk[📊 Table Chunk<br/>Orange Border<br/>Orange when pinned]
+    end
+    
+    subgraph "Pinned Chips"
+        TextChip[📝 텍스트 청크<br/>Green chip]
+        ImageChip[🖼️ 이미지 청크<br/>Purple chip]
+        TableChip[📊 테이블 청크<br/>Orange chip]
+    end
+    
+    TextChunk -->|User clicks| TextChip
+    ImageChunk -->|User clicks| ImageChip
+    TableChunk -->|User clicks| TableChip
+    
+    style TextChunk fill:#dbeafe
+    style ImageChunk fill:#ede9fe
+    style TableChunk fill:#fed7aa
+    style TextChip fill:#dcfce7
+    style ImageChip fill:#f3e8ff
+    style TableChip fill:#ffedd5
+```
+
+---
+
 ## Technology Stack
 
-### 10. Technology Stack Overview
+### 11. Technology Stack Overview
 
 ```mermaid
 graph TB
@@ -521,7 +690,7 @@ graph TB
 
 ## Extension Points
 
-### 11. Implemented Search Agent Architecture
+### 12. Implemented Search Agent Architecture
 
 ```mermaid
 graph TB
@@ -567,7 +736,7 @@ graph TB
     style SupervisorTools fill:#fff3e0
 ```
 
-### 12. Future Multi-Agent Expansion
+### 13. Future Multi-Agent Expansion
 
 ```mermaid
 graph TB

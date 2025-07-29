@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FileText } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { PdfDropzone } from '../pdf/PdfDropzone';
@@ -7,10 +7,15 @@ import { ChatPane } from '../chat/ChatPane';
 import { useChunks } from '../../hooks/useChunks';
 
 export function MainLayout() {
-  const { pdfUrl, filename } = useAppStore();
+  const { pdfUrl, filename, fileId } = useAppStore();
   
   // Fetch chunks data
   useChunks();
+
+  // 디버깅: 상태 변화 추적
+  useEffect(() => {
+    console.log('🏠 MainLayout state:', { fileId, pdfUrl: !!pdfUrl, filename });
+  }, [fileId, pdfUrl, filename]);
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">

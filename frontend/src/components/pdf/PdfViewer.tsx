@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, BookmarkPlus } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { ChunkOverlay } from './ChunkOverlay';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -21,11 +21,12 @@ if (typeof window !== 'undefined') {
 }
 
 export function PdfViewer() {
-  const { pdfUrl, pages, currentPage, setCurrentPage, chunks } = useAppStore();
+  const { pdfUrl, pages, currentPage, setCurrentPage, chunks, pinAllChunksInPage } = useAppStore();
   const [scale, setScale] = useState(1.0);
   const [numPages, setNumPages] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pageSize, setPageSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
 
   console.log('PdfViewer render - pdfUrl:', pdfUrl);
 
@@ -65,6 +66,11 @@ export function PdfViewer() {
 
   const onPageLoadSuccess = (page: any) => {
     console.log('✅ Page loaded successfully:', page.pageNumber);
+    // 페이지 크기 저장
+    setPageSize({
+      width: page.originalWidth,
+      height: page.originalHeight
+    });
   };
 
   const onPageLoadError = (error: any) => {
@@ -72,6 +78,21 @@ export function PdfViewer() {
   };
 
   const currentPageChunks = chunks.filter((chunk: any) => chunk.page === currentPage);
+  
+  // 현재 페이지 청크 통계
+  const chunkStats = currentPageChunks.reduce((acc, chunk) => {
+    acc[chunk.chunk_type] = (acc[chunk.chunk_type] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // 디버깅 로그
+  useEffect(() => {
+    console.log(`📖 PdfViewer - Page ${currentPage}: ${chunks.length} total chunks, ${currentPageChunks.length} on current page`);
+    if (currentPageChunks.length > 0) {
+      console.log(`📊 Current page chunk stats:`, chunkStats);
+      console.log(`📋 Current page chunks:`, currentPageChunks);
+    }
+  }, [currentPage, chunks.length, currentPageChunks.length, chunkStats]);
 
   return (
     <div className="flex-1 flex flex-col bg-gray-100">
@@ -99,22 +120,44 @@ export function PdfViewer() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleZoom(-0.2)}
-            className="p-2 rounded-md bg-gray-100 hover:bg-gray-200"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <span className="text-sm font-medium min-w-[60px] text-center">
-            {Math.round(scale * 100)}%
-          </span>
-          <button
-            onClick={() => handleZoom(0.2)}
-            className="p-2 rounded-md bg-gray-100 hover:bg-gray-200"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-4">
+          {/* 청크 통계 및 페이지 전체 인용 */}
+          {currentPageChunks.length > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-gray-600">
+                청크: {currentPageChunks.length}개
+                {chunkStats.text && ` (텍스트 ${chunkStats.text})`}
+                {chunkStats.image && ` (이미지 ${chunkStats.image})`}
+                {chunkStats.table && ` (테이블 ${chunkStats.table})`}
+              </div>
+              <button
+                onClick={() => pinAllChunksInPage(currentPage)}
+                className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+              >
+                <BookmarkPlus className="w-3 h-3" />
+                페이지 전체 인용
+              </button>
+            </div>
+          )}
+          
+          {/* 줌 컨트롤 */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleZoom(-0.2)}
+              className="p-2 rounded-md bg-gray-100 hover:bg-gray-200"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-medium min-w-[60px] text-center">
+              {Math.round(scale * 100)}%
+            </span>
+            <button
+              onClick={() => handleZoom(0.2)}
+              className="p-2 rounded-md bg-gray-100 hover:bg-gray-200"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -166,8 +209,8 @@ export function PdfViewer() {
                     <ChunkOverlay
                       key={chunk.chunk_id}
                       chunk={chunk}
-                      pageWidth={0}
-                      pageHeight={0}
+                      pageWidth={pageSize.width}
+                      pageHeight={pageSize.height}
                       scale={scale}
                     />
                   ))}

@@ -1,50 +1,57 @@
-# Core LangChain packages (v0.3 stable)
-langchain>=0.3.23,<0.4
-langchain-core>=0.3.52,<0.4
+# --------------------------
+# Core runtime (agent first)
+# --------------------------
+pandas>=2.2.2
+numpy==1.26.4
+requests>=2.31.0
+python-dotenv>=1.0.1
+tqdm>=4.65.0
+tenacity==8.3.0
+
+# LangChain ecosystem
+langchain>=0.3.23
+langchain-community>=0.3.0
 langchain-openai>=0.3.12
-langchain-community>=0.3.0,<0.4
+langchain-upstage>=0.1
+langgraph>=0.2.50
+langchain-experimental>=0.3.0
 
-# OpenAI and LangSmith
-openai>=1.51.0,<2.0
-langsmith>=0.1.17,<0.2
+# Vector store
+chromadb==0.4.24
+langchain-chroma>=0.1
 
-# Web framework
-fastapi>=0.104.1,<0.106
-uvicorn[standard]>=0.24.0,<0.32
+# RAG multi-agent
+langgraph-supervisor
+langchain-tavily>=0.1.0
+sentence-transformers>=2.2.0
 
-# Data validation and utilities
-pydantic>=2.5.0,<3.0
-requests>=2.31.0,<3.0
-python-dotenv>=1.0.0,<2.0
-pandas>=2.0.0
-pandas_ta
-numpy<2.0
+# PDF & parsing
+pymupdf>=1.24.1
+pypdf>=4.2.0
+pdfplumber>=0.11.1
+pdfminer-six>=20231228
 
-# Optional dependencies for better performance
-tenacity>=8.1.0,<9.0
-aiohttp>=3.8.3,<4.0
+# Web/API stack
+fastapi>=0.110.0
+starlette>=0.36.3
+uvicorn[standard]>=0.27.1
+python-multipart
+Jinja2>=3.1.2
 
-# Testing and development
-httpx>=0.24.0,<0.28
-pytest>=7.4.0,<8.0
-pytest-asyncio>=0.21.0,<0.24
-swagger-ui-bundle>=1.1.0,<2.0
+# Cloud / storage
+boto3>=1.34.0
+pymongo[srv]>=4.6.1
+s3fs>=2024.2.0
 
-# Additional FastAPI utilities
-python-multipart>=0.0.6,<0.1  # For form data support
-Jinja2>=3.1.2,<4.0  # For HTML templates
+# Optional crawl / scrape
+beautifulsoup4>=4.12.0
 
-# LangGraph and Multi-Agent Support
-langgraph>=0.2.50,<0.3  # LangGraph for multi-agent workflows
-langgraph-supervisor  # LangGraph Supervisor for multi-agent systems
-langchain-experimental>=0.3.0,<0.4  # Experimental LangChain features 
-
-# Naver CLOVA X Support
-langchain-naver>=0.1.0  # CLOVA X integration for LangChain 
-
-# Search and Web Crawling
-langchain-tavily>=0.1.0  # Official LangChain Tavily Search integration
-beautifulsoup4>=4.12.0  # HTML parsing for content extraction
-
-# PDF Processing
-PyPDF2>=3.0.0  # For PDF page counting 
+# Misc
+openai>=1.51.0
+tiktoken>=0.7
+pillow>=10.3.0
+matplotlib
+rank_bm25
+click>=7.0
+psutil
+pytz==2024.1
