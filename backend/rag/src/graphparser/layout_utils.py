@@ -19,7 +19,8 @@ class LayoutAnalyzer:
 
     def _upstage_layout_analysis(self, input_file):
         """
-        Upstage의 레이아웃 분석 API를 호출하여 문서 분석을 수행합니다.
+        Upstage의 최신 Document Parse API (document-digitization)를 호출하여 문서 분석을 수행합니다.
+        응답은 기존 layout-analysis 형식과 호환되도록 변환됩니다.
 
         :param input_file: 분석할 PDF 파일의 경로
         :return: 분석 결과가 저장된 JSON 파일의 경로
@@ -27,13 +28,19 @@ class LayoutAnalyzer:
         # API 요청 헤더 설정
         headers = {"Authorization": f"Bearer {self.api_key}"}
 
-        # API 요청 데이터 설정 (OCR 비활성화)
-        data = {"ocr": False}
+        # API 요청 데이터 설정 (최신 Document Parse API 파라미터)
+        data = {
+            "model": "document-parse",
+            "ocr": "force",  # OCR 강제 실행
+            "chart_recognition": True,
+            "coordinates": True,
+            "output_formats": '["html", "markdown"]',
+        }
 
         # 분석할 PDF 파일 열기
         files = {"document": open(input_file, "rb")}
 
-        # API 요청 보내기
+        # API 요청 보내기 (새로운 document-digitization 엔드포인트 사용)
         response = requests.post(
             "https://api.upstage.ai/v1/document-digitization",
             headers=headers,
@@ -43,17 +50,136 @@ class LayoutAnalyzer:
 
         # API 응답 처리 및 결과 저장
         if response.status_code == 200:
+            # 새 API 응답을 구 형식으로 변환
+            new_response = response.json()
+            legacy_response = self._convert_to_legacy_format(new_response)
+            
             # 분석 결과를 저장할 JSON 파일 경로 생성
             output_file = os.path.splitext(input_file)[0] + ".json"
 
-            # 분석 결과를 JSON 파일로 저장
+            # 변환된 분석 결과를 JSON 파일로 저장
             with open(output_file, "w", encoding="utf-8") as f:
-                json.dump(response.json(), f, ensure_ascii=False)
+                json.dump(legacy_response, f, ensure_ascii=False)
 
             return output_file
         else:
             # API 요청이 실패한 경우 예외 발생
-            raise ValueError(f"API 요청 실패. 상태 코드: {response.status_code}")
+            raise ValueError(f"API 요청 실패. 상태 코드: {response.status_code}, 응답: {response.text}")
+
+    def _convert_to_legacy_format(self, new_response):
+        """
+        새로운 document-digitization API 응답을 기존 layout-analysis 형식으로 변환합니다.
+        
+        :param new_response: 새 API 응답 JSON
+        :return: 구 형식으로 변환된 JSON
+        """
+        # PDF 페이지 크기 정보 가져오기 (PyMuPDF를 사용해서 실제 페이지 크기 추출)
+        pdf_metadata = self._extract_pdf_metadata()
+        
+        # 기본 구조 생성
+        legacy_response = {
+            "api": "2.0",
+            "billed_pages": new_response.get("usage", {}).get("pages", 1),
+            "elements": [],
+            "html": new_response.get("content", {}).get("html", ""),
+            "metadata": pdf_metadata,
+            "mimetype": "multipart/form-data",  # 구 버전과 동일한 값
+            "model": new_response.get("model", "document-parse"),
+            "text": new_response.get("content", {}).get("text", "")
+        }
+        
+        # elements 변환
+        for element in new_response.get("elements", []):
+            legacy_element = self._convert_element_to_legacy(element, pdf_metadata)
+            legacy_response["elements"].append(legacy_element)
+        
+        return legacy_response
+    
+    def _extract_pdf_metadata(self):
+        """
+        현재 처리 중인 PDF 파일에서 페이지 크기 정보를 추출합니다.
+        
+        :return: 페이지 메타데이터
+        """
+        if not hasattr(self, 'current_pdf_file') or not self.current_pdf_file:
+            # 기본값 반환 (A4 기준 DPI 150)
+            return {
+                "pages": [
+                    {"height": 1754, "page": 1, "width": 1241},
+                    {"height": 1754, "page": 2, "width": 1241}
+                ]
+            }
+        
+        try:
+            # PyMuPDF를 사용해서 실제 PDF 페이지 크기 추출
+            pages_metadata = []
+            
+            with pymupdf.open(self.current_pdf_file) as doc:
+                for page_num, page in enumerate(doc, 1):
+                    # 페이지 크기를 150 DPI 기준으로 픽셀 단위로 변환
+                    # (구 API가 150 DPI 기준으로 좌표를 제공했던 것으로 보임)
+                    rect = page.rect
+                    dpi = 150
+                    width = int(rect.width * dpi / 72)  # 72 DPI가 기본
+                    height = int(rect.height * dpi / 72)
+                    
+                    pages_metadata.append({
+                        "height": height,
+                        "page": page_num,
+                        "width": width
+                    })
+            
+            return {"pages": pages_metadata}
+            
+        except Exception as e:
+            print(f"⚠️ PDF 메타데이터 추출 실패: {e}")
+            # 오류 발생 시 기본값 반환
+            return {
+                "pages": [
+                    {"height": 1754, "page": 1, "width": 1241},
+                    {"height": 1754, "page": 2, "width": 1241}
+                ]
+            }
+    
+    def _convert_element_to_legacy(self, element, pdf_metadata):
+        """
+        개별 element를 구 형식으로 변환합니다.
+        
+        :param element: 새 API의 element
+        :param pdf_metadata: PDF 메타데이터 (페이지 크기 정보)
+        :return: 구 형식의 element
+        """
+        page_num = element.get("page", 1)
+        page_info = None
+        
+        # 해당 페이지의 크기 정보 찾기
+        for page_meta in pdf_metadata.get("pages", []):
+            if page_meta["page"] == page_num:
+                page_info = page_meta
+                break
+        
+        # 페이지 정보가 없으면 기본값 사용
+        if not page_info:
+            page_info = {"width": 1241, "height": 1754}
+        
+        # 상대좌표를 절대좌표로 변환
+        bounding_box = []
+        for coord in element.get("coordinates", []):
+            abs_x = int(coord["x"] * page_info["width"])
+            abs_y = int(coord["y"] * page_info["height"])
+            bounding_box.append({"x": abs_x, "y": abs_y})
+        
+        # 구 형식 element 생성
+        legacy_element = {
+            "bounding_box": bounding_box,
+            "category": element.get("category", ""),
+            "html": element.get("content", {}).get("html", ""),
+            "id": element.get("id", 0),
+            "page": page_num,
+            "text": element.get("content", {}).get("text", "")
+        }
+        
+        return legacy_element
 
     def execute(self, input_file):
         """
@@ -62,6 +188,8 @@ class LayoutAnalyzer:
         :param input_file: 분석할 PDF 파일의 경로
         :return: 분석 결과가 저장된 JSON 파일의 경로
         """
+        # PDF 파일 경로를 인스턴스 변수로 저장 (메타데이터 추출용)
+        self.current_pdf_file = input_file
         return self._upstage_layout_analysis(input_file)
 
 

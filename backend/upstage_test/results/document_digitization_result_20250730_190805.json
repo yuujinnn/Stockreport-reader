@@ -1,0 +1,11 @@
+{
+  "endpoint": "document-digitization",
+  "status_code": 400,
+  "processing_time_seconds": 0.18,
+  "timestamp": "2025-07-30T19:08:05.225483",
+  "success": false,
+  "error": {
+    "status_code": 400,
+    "error_message": "{\"error\":{\"message\":\"The requested model is invalid or no longer supported. You can find the list of available models on our models page at https://console.upstage.ai/docs/models.\",\"type\":\"invalid_request_error\",\"param\":\"\",\"code\":\"invalid_request_body\"}}"
+  }
+}

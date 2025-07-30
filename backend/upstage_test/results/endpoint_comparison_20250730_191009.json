@@ -1,0 +1,64 @@
+{
+  "comparison_timestamp": "2025-07-30T19:10:09.299485",
+  "test_file": "C:\\Users\\junseok\\Documents\\.VAULT\\.github\\Stockreport-reader\\backend\\upstage_test\\20250730_SOOP (067160_매도) (2p).pdf",
+  "summary": {
+    "success_rates": {
+      "layout_analysis": true,
+      "document_digitization": true
+    },
+    "performance": {
+      "layout_analysis_time": "6.27s",
+      "document_digitization_time": "3.23s",
+      "faster_endpoint": "document_digitization",
+      "time_difference": "3.04s"
+    },
+    "response_sizes": {
+      "layout_analysis_kb": 21.15,
+      "document_digitization_kb": 43.99,
+      "larger_response": "document_digitization"
+    },
+    "response_structure": {
+      "layout_analysis_keys": [
+        "api",
+        "billed_pages",
+        "elements",
+        "html",
+        "metadata",
+        "mimetype",
+        "model",
+        "text"
+      ],
+      "document_digitization_keys": [
+        "api",
+        "content",
+        "elements",
+        "merged_elements",
+        "model",
+        "ocr",
+        "usage"
+      ],
+      "common_keys": [
+        "elements",
+        "model",
+        "api"
+      ],
+      "unique_to_layout": [
+        "html",
+        "text",
+        "mimetype",
+        "billed_pages",
+        "metadata"
+      ],
+      "unique_to_digitization": [
+        "ocr",
+        "merged_elements",
+        "usage",
+        "content"
+      ]
+    }
+  },
+  "recommendation": {
+    "preferred_endpoint": "document-digitization",
+    "reason": "최신 Document Parse API로 HTML/Markdown 구조화된 출력 제공, 더 고급 기능 지원"
+  }
+}
