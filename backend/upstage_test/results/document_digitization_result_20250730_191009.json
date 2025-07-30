@@ -1,0 +1,372 @@
+{
+  "endpoint": "document-digitization",
+  "status_code": 200,
+  "processing_time_seconds": 3.23,
+  "timestamp": "2025-07-30T19:10:09.299485",
+  "success": true,
+  "response_data": {
+    "api": "2.0",
+    "content": {
+      "html": "<figure id='0' data-category='chart'><img data-coord=\"top-left:(73,1186); bottom-right:(351,1358)\" /><figcaption><p>Chart Type: line</p></figcaption><table><thead><tr><td></td><td>Red</td><td>Green</td><td>Blue</td></tr></thead><tbody><tr><td>item_01</td><td>55%</td><td>30%</td><td>25%</td></tr></tbody></table></figure>\n<header id='1' style='font-size:18px'>SOOP</header>\n<br><header id='2' style='font-size:18px'>2025.7.30</header>\n\n<br><p id='4' data-category='paragraph' style='font-size:22px'>(십억원)</p>\n<br><table id='5' style='font-size:14px'><thead><tr><td></td><td>1Q24</td><td>2Q24</td><td>3Q24</td><td>4Q24</td><td>1Q25</td><td>2Q25</td><td>3Q25F</td><td>4Q25F</td><td>2023</td><td>2024</td><td>2025F</td><td>2026F</td></tr></thead><tbody><tr><td>매출액</td><td>94</td><td>101</td><td>106</td><td>112</td><td>108</td><td>117</td><td>122</td><td>130</td><td>348</td><td>413</td><td>477</td><td>510</td></tr><tr><td>(% YoY)</td><td>29.8%</td><td>17.1%</td><td>20.2%</td><td>11.3%</td><td>14.1%</td><td>15.2%</td><td>15.9%</td><td>16.1%</td><td>10.4%</td><td>18.9%</td><td>15.4%</td><td>6.9%</td></tr><tr><td>플랫폼 서비스</td><td>79</td><td>83</td><td>83</td><td>82</td><td>85</td><td>85</td><td>86</td><td>86</td><td>259</td><td>327</td><td>342</td><td>356</td></tr><tr><td>기부경제선물</td><td>76</td><td>80</td><td>80</td><td>80</td><td>82</td><td>82</td><td>84</td><td>84</td><td>249</td><td>316</td><td>332</td><td>346</td></tr><tr><td>기능성 아이템</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td><td>8</td><td>9</td><td>8</td><td>8</td></tr><tr><td>플랫폼-기타</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>2</td><td>1</td><td>1</td><td>1</td></tr><tr><td>광고</td><td>15</td><td>18</td><td>22</td><td>28</td><td>22</td><td>31</td><td>34</td><td>42</td><td>83</td><td>82</td><td>129</td><td>148</td></tr><tr><td>플랫폼광고</td><td>2</td><td>3</td><td>4</td><td>4</td><td>3</td><td>3</td><td>4</td><td>5</td><td>15</td><td>13</td><td>15</td><td>17</td></tr><tr><td>콘텐츠형광고</td><td>8</td><td>9</td><td>10</td><td>18</td><td>11</td><td>14</td><td>13</td><td>22</td><td>54</td><td>46</td><td>60</td><td>67</td></tr><tr><td>광고기타</td><td>5</td><td>5</td><td>8</td><td>6</td><td>7</td><td>14</td><td>17</td><td>15</td><td>14</td><td>23</td><td>53</td><td>64</td></tr><tr><td>기타</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>2</td><td>2</td><td>2</td><td>6</td><td>5</td><td>6</td><td>7</td></tr><tr><td>영업비용</td><td>66</td><td>68</td><td>82</td><td>84</td><td>75</td><td>87</td><td>91</td><td>100</td><td>257</td><td>300</td><td>353</td><td>380</td></tr><tr><td>인건비</td><td>22</td><td>23</td><td>23</td><td>24</td><td>25</td><td>30</td><td>31</td><td>31</td><td>77</td><td>92</td><td>117</td><td>129</td></tr><tr><td>지급수수료 (중계권+기타)</td><td>6</td><td>6</td><td>9</td><td>9</td><td>8</td><td>9</td><td>9</td><td>10</td><td>25</td><td>30</td><td>36</td><td>39</td></tr><tr><td>지급수수료 (광고)</td><td>6</td><td>7</td><td>8</td><td>15</td><td>6</td><td>9</td><td>10</td><td>17</td><td>36</td><td>36</td><td>43</td><td>46</td></tr><tr><td>과금수수료</td><td>12</td><td>14</td><td>14</td><td>13</td><td>14</td><td>15</td><td>15</td><td>15</td><td>39</td><td>53</td><td>58</td><td>61</td></tr><tr><td>회선사용료</td><td>4</td><td>4</td><td>5</td><td>5</td><td>5</td><td>6</td><td>6</td><td>6</td><td>14</td><td>18</td><td>22</td><td>24</td></tr><tr><td>스트리머지원금</td><td>2</td><td>3</td><td>3</td><td>3</td><td>2</td><td>3</td><td>3</td><td>3</td><td>7</td><td>11</td><td>10</td><td>11</td></tr><tr><td>콘텐츠제작비</td><td>2</td><td>2</td><td>3</td><td>3</td><td>4</td><td>2</td><td>4</td><td>3</td><td>20</td><td>9</td><td>13</td><td>14</td></tr><tr><td>유무형감가상각비</td><td>5</td><td>5</td><td>5</td><td>5</td><td>5</td><td>6</td><td>6</td><td>6</td><td>20</td><td>21</td><td>24</td><td>25</td></tr><tr><td>지급임차료</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td></tr><tr><td>행사비</td><td>1</td><td>1</td><td>0</td><td>4</td><td>0</td><td>0</td><td>1</td><td>4</td><td>2</td><td>5</td><td>4</td><td>5</td></tr><tr><td>기타</td><td>4</td><td>4</td><td>12</td><td>4</td><td>5</td><td>6</td><td>7</td><td>6</td><td>18</td><td>24</td><td>23</td><td>25</td></tr><tr><td>영업이익</td><td>29</td><td>33</td><td>24</td><td>28</td><td>33</td><td>30</td><td>31</td><td>30</td><td>90</td><td>114</td><td>124</td><td>130</td></tr><tr><td>(% YoY)</td><td>55.2%</td><td>40.9%</td><td>9.0%</td><td>5.3%</td><td>14.8%</td><td>-9.9%</td><td>30.1%</td><td>7.2%</td><td>9.6%</td><td>25.7%</td><td>8.9%</td><td>4.9%</td></tr><tr><td>영업이익률</td><td>30.2%</td><td>32.8%</td><td>22.6%</td><td>24.9%</td><td>30.4%</td><td>25.7%</td><td>25.4%</td><td>23.0%</td><td>26.0%</td><td>27.5%</td><td>25.9%</td><td>25.4%</td></tr><tr><td>지배주주순이익</td><td>25</td><td>27</td><td>24</td><td>25</td><td>27</td><td>22</td><td>24</td><td>23</td><td>75</td><td>101</td><td>95</td><td>99</td></tr><tr><td>순이익률</td><td>26.1%</td><td>27.1%</td><td>22.6%</td><td>22.6%</td><td>24.8%</td><td>18.8%</td><td>19.4%</td><td>17.6%</td><td>21.4%</td><td>24.5%</td><td>20.0%</td><td>19.4%</td></tr></tbody><caption id='3' style='font-size:20px'>표 1. 분기 및 연간 실적 전망</caption></table>\n<br><p id='6' data-category='paragraph' style='font-size:16px'>자료: 미래에셋증권 리서치센터</p>\n<p id='7' data-category='paragraph' style='font-size:20px'>표 2. 연간 실적 추정치 변경</p>\n<br><p id='8' data-category='paragraph' style='font-size:20px'>(십억원)</p>\n<table id='9' style='font-size:14px'><thead><tr><td rowspan=\"2\"></td><td>변경전</td><td colspan=\"2\">변경후</td><td colspan=\"2\">변경률</td><td colspan=\"2\">컨센서스</td><td colspan=\"2\">괴리율</td><td rowspan=\"2\">변경 사유</td></tr><tr><td>2025F 2026F</td><td></td><td>2025F</td><td>2026F</td><td>2025F 2026F</td><td></td><td>2025F 2026F</td><td>2025F</td><td>2026F</td></tr></thead><tbody><tr><td>매출액</td><td>479 522</td><td></td><td>477</td><td>510</td><td>0% -2%</td><td></td><td>485 537</td><td>-2% -5%</td><td></td><td rowspan=\"5\">기부경제선물 매출 하향 인건비 추정치 상향</td></tr><tr><td>영업이익</td><td></td><td>122 132</td><td>124</td><td>130</td><td>1% -2%</td><td></td><td>130 142</td><td></td><td>-5% -8%</td></tr><tr><td>지배주주순이익</td><td>99</td><td>109</td><td>95</td><td>99</td><td>-4%</td><td>-9%</td><td>108 118</td><td></td><td>-11% -16%</td></tr><tr><td>영업이익률</td><td>25.5%</td><td>25.3%</td><td>25.9%</td><td>25.4%</td><td>-</td><td>-</td><td>26.8% 26.4%</td><td></td><td>- -</td></tr><tr><td>순이익률</td><td>20.7%</td><td>20.9%</td><td>20.0%</td><td>19.4%</td><td>-</td><td>-</td><td>22.1% 21.9%</td><td></td><td>- -</td></tr></tbody><caption id='3' style='font-size:20px'>표 1. 분기 및 연간 실적 전망</caption></table>\n<br><p id='10' data-category='paragraph' style='font-size:16px'>자료: 미래에셋증권 리서치센터</p>\n<footer id='11' style='font-size:18px'>2 Mirae Asset Securities Research</footer>",
+      "markdown": "![image](/image/placeholder)\n- Chart Type: line\n|  | Red | Green | Blue |\n| --- | --- | --- | --- |\n| item_01 | 55% | 30% | 25% |\n\n\nSOOP\n\n2025.7.30\n\n표 1. 분기 및 연간 실적 전망\n\n(십억원)\n\n|  | 1Q24 | 2Q24 | 3Q24 | 4Q24 | 1Q25 | 2Q25 | 3Q25F | 4Q25F | 2023 | 2024 | 2025F | 2026F |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 매출액 | 94 | 101 | 106 | 112 | 108 | 117 | 122 | 130 | 348 | 413 | 477 | 510 |\n| (% YoY) | 29.8% | 17.1% | 20.2% | 11.3% | 14.1% | 15.2% | 15.9% | 16.1% | 10.4% | 18.9% | 15.4% | 6.9% |\n| 플랫폼 서비스 | 79 | 83 | 83 | 82 | 85 | 85 | 86 | 86 | 259 | 327 | 342 | 356 |\n| 기부경제선물 | 76 | 80 | 80 | 80 | 82 | 82 | 84 | 84 | 249 | 316 | 332 | 346 |\n| 기능성 아이템 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 8 | 9 | 8 | 8 |\n| 플랫폼-기타 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 1 | 1 | 1 |\n| 광고 | 15 | 18 | 22 | 28 | 22 | 31 | 34 | 42 | 83 | 82 | 129 | 148 |\n| 플랫폼광고 | 2 | 3 | 4 | 4 | 3 | 3 | 4 | 5 | 15 | 13 | 15 | 17 |\n| 콘텐츠형광고 | 8 | 9 | 10 | 18 | 11 | 14 | 13 | 22 | 54 | 46 | 60 | 67 |\n| 광고기타 | 5 | 5 | 8 | 6 | 7 | 14 | 17 | 15 | 14 | 23 | 53 | 64 |\n| 기타 | 1 | 1 | 1 | 1 | 1 | 2 | 2 | 2 | 6 | 5 | 6 | 7 |\n| 영업비용 | 66 | 68 | 82 | 84 | 75 | 87 | 91 | 100 | 257 | 300 | 353 | 380 |\n| 인건비 | 22 | 23 | 23 | 24 | 25 | 30 | 31 | 31 | 77 | 92 | 117 | 129 |\n| 지급수수료 (중계권+기타) | 6 | 6 | 9 | 9 | 8 | 9 | 9 | 10 | 25 | 30 | 36 | 39 |\n| 지급수수료 (광고) | 6 | 7 | 8 | 15 | 6 | 9 | 10 | 17 | 36 | 36 | 43 | 46 |\n| 과금수수료 | 12 | 14 | 14 | 13 | 14 | 15 | 15 | 15 | 39 | 53 | 58 | 61 |\n| 회선사용료 | 4 | 4 | 5 | 5 | 5 | 6 | 6 | 6 | 14 | 18 | 22 | 24 |\n| 스트리머지원금 | 2 | 3 | 3 | 3 | 2 | 3 | 3 | 3 | 7 | 11 | 10 | 11 |\n| 콘텐츠제작비 | 2 | 2 | 3 | 3 | 4 | 2 | 4 | 3 | 20 | 9 | 13 | 14 |\n| 유무형감가상각비 | 5 | 5 | 5 | 5 | 5 | 6 | 6 | 6 | 20 | 21 | 24 | 25 |\n| 지급임차료 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 |\n| 행사비 | 1 | 1 | 0 | 4 | 0 | 0 | 1 | 4 | 2 | 5 | 4 | 5 |\n| 기타 | 4 | 4 | 12 | 4 | 5 | 6 | 7 | 6 | 18 | 24 | 23 | 25 |\n| 영업이익 | 29 | 33 | 24 | 28 | 33 | 30 | 31 | 30 | 90 | 114 | 124 | 130 |\n| (% YoY) | 55.2% | 40.9% | 9.0% | 5.3% | 14.8% | -9.9% | 30.1% | 7.2% | 9.6% | 25.7% | 8.9% | 4.9% |\n| 영업이익률 | 30.2% | 32.8% | 22.6% | 24.9% | 30.4% | 25.7% | 25.4% | 23.0% | 26.0% | 27.5% | 25.9% | 25.4% |\n| 지배주주순이익 | 25 | 27 | 24 | 25 | 27 | 22 | 24 | 23 | 75 | 101 | 95 | 99 |\n| 순이익률 | 26.1% | 27.1% | 22.6% | 22.6% | 24.8% | 18.8% | 19.4% | 17.6% | 21.4% | 24.5% | 20.0% | 19.4% |\n\n\n자료: 미래에셋증권 리서치센터\n\n표 2. 연간 실적 추정치 변경\n\n(십억원)\n\n|  | 변경전 | 변경후 | 변경후 | 변경률 | 변경률 | 컨센서스 | 컨센서스 | 괴리율 | 괴리율 | 변경 사유 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2025F 2026F |  | 2025F | 2026F | 2025F 2026F |  | 2025F 2026F | 2025F | 2026F |  | 변경 사유 |\n| 매출액 | 479 522 |  | 477 | 510 | 0% -2% |  | 485 537 | -2% -5% |  | 기부경제선물 매출 하향 인건비 추정치 상향 |\n| 영업이익 |  | 122 132 | 124 | 130 | 1% -2% |  | 130 142 |  | -5% -8% | 기부경제선물 매출 하향 인건비 추정치 상향 |\n| 지배주주순이익 | 99 | 109 | 95 | 99 | -4% | -9% | 108 118 |  | -11% -16% | 기부경제선물 매출 하향 인건비 추정치 상향 |\n| 영업이익률 | 25.5% | 25.3% | 25.9% | 25.4% | - | - | 26.8% 26.4% |  | - - | 기부경제선물 매출 하향 인건비 추정치 상향 |\n| 순이익률 | 20.7% | 20.9% | 20.0% | 19.4% | - | - | 22.1% 21.9% |  | - - | 기부경제선물 매출 하향 인건비 추정치 상향 |\n\n\n자료: 미래에셋증권 리서치센터\n\n2 Mirae Asset Securities Research",
+      "text": ""
+    },
+    "elements": [
+      {
+        "base64_encoding": "/9j/2wCEAAIBAQEBAQIBAQECAgICAgQDAgICAgUEBAMEBgUGBgYFBgYGBwkIBgcJBwYGCAsICQoKCgoKBggLDAsKDAkKCgoBAgICAgICBQMDBQoHBgcKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCv/AABEIAKwBFgMBIgACEQEDEQH/xAGiAAABBQEBAQEBAQAAAAAAAAAAAQIDBAUGBwgJCgsQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+gEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoLEQACAQIEBAMEBwUEBAABAncAAQIDEQQFITEGEkFRB2FxEyIygQgUQpGhscEJIzNS8BVictEKFiQ04SXxFxgZGiYnKCkqNTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqCg4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2dri4+Tl5ufo6ery8/T19vf4+fr/2gAMAwEAAhEDEQA/AP3PkkjhjaWaRURVLM7HAAHU59Kxbf4k/D670DQ/Fdt410uTTPEzW48O36XyGHUzPH5sIgfOJd8fzrtzleRxWnqukaRr2mT6Nrml295Z3KFbi0vIllilU/wsrAhuPUV414f/AGcNdsfgN8FfAup6VpEuvfDlPDyXt0QrCBbS2iiuhbyFMgMU7Y3ADOOKAPT9H+Kfwz8Q+M9Q+HWg/EDRb3X9Kj36notrqcUl1ar8mTJErbkx5kecjjzEzjcud6vDvhV8Ffib4a+MFlPruj2kGi+HdY8Yajba5Dfhn1Qa3qn26G3WIDdGsSu6y7yAZIISm9WYp7jQAZzwKK5D4EP4k1D4UaF4j8W+NL/XL7V9ItL6ae/gto/KeWBGZEFtDEoTdkjcGPOM4rr6ACiio7y6gsLWW+u5AkUMbSSORnaoGSePYUpSjCLlJ2S38hpOUlFbvYkorzn/AIa0/Z85H/Cw046j+zbrj/yFR/w1p+z3/wBFDT/wW3X/AMarx3xHw8nZ4yl/4Mh/mewuHeIGrrB1f/Bc/wDI9Gorzn/hrT9nv/ooaf8Agtuv/jVaHhb9ov4M+Nteg8MeFvGqXV9dEi3gFlOu8gEnlkA6A96qnxBkNWahDF0m3slUi2/xIqZBntGDnUwtRJbtwkkvnY7bvj2oHPP614P4j/bE1HwJ8SPEOj+P/DmlaTovh5dTnlsru/lg1e4sLKwlu21K1iliWK/ifyymy3dzEGVnYFZI4rHiX9pf4sfCyW10v4t/CnRl1bxBon2nwvp2ieIJJV+3G+sLBNNuZZIFCA3Gp2gFzGrKVEzGNfLXzPXPJ3PcBz0o96+f/iX+1n8QPg5eT+DPiPovgrT9YjvtGCa1e+JJbbRltNQa+jWSWSWIPFIklhKhX5lcSQsGBZo09P8AgP8AE3U/jB8M7Xx3q3h6HTZZ769t1S0u3uLe4jt7ua3jureV4o2eCdY1mjYoAySqQWBDsAdjRRRQAUUUdeAKACiuB8S/tP8AwL8Ia9deGPEXjxLa+spDHcwfYLh9jDtlYyD+BNUv+Gwv2cf+ikx/+Cy6/wDjVAHpdFeaf8Nhfs4/9FJj/wDBZdf/ABqlT9r/APZzlcRx/EiMsxwo/s26HP18qgD0oc9CD75o7Z9fWvHfjR+1rp3wp+L+nfAyy0G21DxJ4l0mCbwla3Go/Z47u6kuJYW85yjCC3jCKzzHcxaSOKOOSaWGKQm/aK+IEcsnjy38D6Q/gi38dReFZbs6pKuoyznUk0qW8SIxeWsUd8zxmNn3NFE0obO2JgD2L3xRg+lfOI/bQ+IUen+IZLvwB4dt9U021eS38MX2tT2uqae/9pQWUIu7eaAPJFIJzKLq3Dw5jKK0oaOR+g8X/tO/EP4faX4r8J+Kfh1oc3jbSLbRj4d06w8RSDT9Xk1a6ns7ESTSW4ktgLi1nM2IpfLhQSgvlkQA9u/zmj6/lXkGkftFeMvi4dGh/Z98J6RcyXvgqy8TalJ4p1OW1W1hvGlS1tCIIpW813t7tJG58gwcpIX2j0D4UfECw+K3wv8ADvxR0rT5rO28R6Ha6nDZ3JUyQLPEsgjfbwWXcFOCRkdTQBv0UUUAFFFFABRRRQAUfXj61V1nWtI8O6Xca5r+pwWdnaRGS6urmQLHEg6lieAK4HVv2tPgZovgTw18R9Q8R3x0fxZ4bPiDS7m30G7mZdKWKCWS+uFSItbQRpcwF3lCBDIA2CCAAekc9MH8qK43wx8evhl4x+INz8M9B1W7k1O2+2BHl0i5itbl7SZILxILh4xFO0MsiRyBHYq5ZeqOF7MgjrQByfwH/wCSG+DP+xU07/0mjrq65X4Dg/8ACjfBhwf+RU07nHrbR11WOcdfXBzQHWwUoIB/rmkGe3alJB/qadug07AdvCqOBwO2B2H8qXa3of8AvqkLEcZyKMr/AHf1pO19V/X4ien9f8MG1u659s0chjgngnnP6/l9OtGV/u4/GgkHqfxoWjul/X4ButTzfUf2XvA+teLh4g8ReIdc1PSI9VvNTtvB+o3MM2lw3t3bT21zOA0XnsHiurkeS0pgDTswiDBStW0/ZM+H02n3Gm+MvE/ibxNGdCbRtJk1zV8zaPYtJDL5dtNCscvmCW2tnFzI0lzvtonMxZc16kMd/SkoG22eeaN+zd4StNZj8W+KPFGu+JNfTUrK7Ou61PAsz/ZFuFtofLtoYoVij+13LBVjUs0zsxYsTXoffv8Aien+eaKKBBRRRQAUYB4I/Oig/KMnjigA6jBPuR7+tFABIDDkHoQfbNFHS4bMKOtFFAHIeOPgd8O/iRfarqHjHS5rp9Z0CPSLsLdNGVhjmaeN42XDRTJK29JkIdGRGUqygjGi/Zj8IR6/HqU3i7xDNpn9tW+t3fhqS7h+wXWrwtHIl+yiLzFfzoo52iSRIGmBlMRkZmb0iigDyG9/Yz8B6pby2WreP/Ft5bwaTNpvhyG61CB/+Eftpbm2uWS2cwb5MSWdrg3LTlVhCKQrMrXm/ZG+Eut6nDr/AMTFvvGuopfRXdxeeLWhuftTxW9xb26PCkSQCOJLu6KRJGsYkneTaZGLV6hRQB5Hq37GfwzOh/2F8PvFHifwOhF9C8/grVVspfst3dteS2qny2EcYuJJJInjCS2/mSLDJGkjqfRPh34J0j4Z/D/Qvhx4eklaw8P6PbabYtMEDmGCFYo93lqiZ2oM7VVc9ABxWxRQAUUUUAFFA5/PH40AhhlSDx2oAKKKKAFyQMA/TPbvnr+mK+efFX7HXji4+DnhP4X+FPG+lLNpnwfuvh3rt7f2chDWlzb2UL30ChjmWP7ISsLYV/O+ZxsG76Fox/OgDx/4a/s5eKvBPxOtdW1HxHp0/hzQNU8R6loEMEMgvJrjWb5ruQTknaqQebcRpt3eYJEY7DF+89gckKWU/N2oAJ6Dp19qXCgbm4A60muaLV7FRunex8UfshftIp8DvD938PfF1nqd2t5psur6VNeKyR2ohtJ5DCxfny2S2jMZQMv7xh2Ir6d/Z3+OuhftCfD0eNdDspbYw3ItL6CUghbhYY3cIwJyo8zAPGfSvmH9qj4R694n+EPwn8e2UcTWy+GNM0qX94RJ50sKGPAHUctn9c5r03/gnVJBa+CvEnh6CJYVttRsZzGgAG+TTrdWI7csjZ75r5DKM6rzz6rlVe7nSju4pRmm9Gne97bq9j67NcooRyKlmdGyhUlsm3KLS1TVrWvs7N/I+iyc+3H+f50leN/Ej9s/wd8OviXF8PrrwnqNzANZttNvddQhbO2mkUPKpfBy0SSRMy8E726bcH2T3/Me9fYWtofH3vqFFFZ2reLvDWg6zpnh7WdZhtr3WJZItMt5Ww1w6IZHVfcKM/8A16ANGiubuvi98NrH4kR/CS88XWsPiGW0W5i02UlXdGJwASNpY4J2Z3Y5xjmuiSSORBJHICp6MDx+dADqKKKACiiigAooooAAMnFc38a5Ba/BvxbOf4PDN+2fpbyGukrkf2g5RB8BvGkgIB/4RXUAM+9tIB/OuLM0nltZf3Jfkzuyz/kY0f8AFHp5r+rGB+yX46uPFfwe0/QNcgMGreHIItM1C3Z8khIkMUvurxFGB9SeeDXptfPfwS0w+BP2jvE+ta7Klpp138PtMv8A7VPIqp5UUUcTSMeigeW2ScYAr3fQPEfh/wAVabHrHhrWrW/tZkV47iznWRGVhkHKk9QQa8fhLFYjFZJT9unzw9x368trPbqj1OKMPRoZvOVK3LP30l05tWvky7RRRX0p86FFFFABRRRQAUZ/lmjGeP51wH7Q/wAcYPgP4W0nxHLpi3Z1TxFa6bteUqESQszycD+FEf8AHGaAO/x/LNHGcH8QR/Svmb48eN/jl8ddUvdN/Z0tLK+8NeFtSt7t9esLwiS5vYIZZmt4nDYmXcYY/lBIbHJBO2Xx/wDtZeN77xBrvgbR/CWuaE+s+GIbbwbb61pUlleT6nLP5DPHuwQE80N6fuWPpQB3XxN+I3xp1rxnrPgz4EWFgZfCmmR3WsS6nAJPt1zIqyQ2MRMihC0Qdmc8D5RxnNdn8L/i/wCB/i/oa6x4U1ZTOif8TDSrhwLvT5c4aKeInMbhgQc9xxkc0nwq+EXgz4P6K+leErKVZbpo31K9uLuWeW6mWNU8xmlZiMhR8oIA7AVv2+i6PaajPq9ppVtFd3SKtzdRwKskoXO0Ow5bGTjOcZ7ZoAs0UUUAH1rzH9ob9pzQP2eg8+teGri+trHwnq3ijXrlLqKFbHSNM+zi7mXzCPOlH2lCsQwpCvudSED+nA4Oa80/aM/Zd8DftM6fY6H4+vG/s63trq2urH+y7O4E8NwIxIUe4hd7eULHsWaFkdFlfHzbHQAXwJ+0lpfjj4kDwRB4OvrXT7y61m00DXpriJo7+40q7FrexeWCXixL5nlkjEiwSt8gCCT0w53DPJrzfwT+zdoHgj4knx9beMNWurW3udWutH8P3SwfZNOuNUulur6VGWMSuXmDsnmO3lieVF+UqF9HJB+8uaNXoB5j8NPDngv4q/s6eCrC9vYb2DTtH0i7zaXIIjuYIInQMVJxyOVODg18/fCvxhqPw/8Ahz48t9E1v+z9U1m30S10iVXCyGWe9u7R9merqiFhjptz2r6d+AljY2XwH8JLZWkUAk8K2Dv5UQXextYwWOB14618s/CXRU1f9pj4caHqVrHNp01vqF5NbyJlWuLK91fyWweDsMgIPUHoa8SrRpR4gp1Ix1lCV31drWuezCvUeS1acpNpSjZdE3e9vuPpr4Yfs6+Afhn8NL/4TiJtX0jUb64nuo9XCyGQSkDa3HzYUKM9SVB4NeT/ABB8D/G74KTyeINP+KGsnwT4SudLl8PWhvVzNHNfRRz2lwR880cUW4KX7OvJKmvoHxr438N+ANIGveK9S+y2pu4rYSmNnzLLIqIMKCcEt6cdTXM/tMeH7nxT+z94u0vTyBMdDmmgyf44l81QMd8qK9hVaMqjpqXvLddV8jypU6sYqbWj2fRndcA5wPw9fSvnnxR4G1z9q74z3PifQPFc+n+F/B1k1r4c1m3QgnWxMrPdQg4EyR7FiYltpK4Unlh1mvePPG/xW8TeGvAHw38UL4dtdb8HjxBqerQ2iz3Udu7xIkMO4lEZvMbLsGwFyBkV6F8P/Amh/DTwdp/gXw0kv2PToTHE08m+R8kszu3GWLEknA5JwAKuzZmcZ4f/AGa/DNz4OvtJ+KlwNf1fV9Z/tbVtYg32jm7XAiMJjffCsSBUQBugOfvEVy/wU1vxV8EvimP2Y73wjdL4Ze9v5PCGu3V1ktAI4bj7Koxl9hkmBcnso6qa9zIINeZ/tN/CTxD8RfDGm+JPh/tHizwpqcWo+G/NlVIpJRIm+OTPVWQHuM4APHBAOl8dfGDwN8N9f8O+GPFOpNBc+KNQNjpOyMsryjaMMf4RuZFz/ecZxXT+9fMNj/wT6u7jUvEFvrvjy4uI9S8PwrYancTNNJb6s80c1zcrH8uwM8CnhskSsM8Zr139mjWtevvh1N4W8T6i17qHhTWbvQri/cnddrbSbY5mzzuaMoTz1JPegD0Gio5Lu0huYrKa6iSacMYImkAaQKAWKjqcAjOOmakIIGcH8qV0NpoKCQBknA9TS7Seg/HtXN/EX4u/Dv4TWtpeeP8AxXbad9vuo4LOOV/3kzsyqSqDkqu4FiBhQckimI6TBBxg5BPH0rhf2nJzB+z34ybON3hy6H5oV/rWB8SP2jPEtlqOreGvgd8Kr7xnqGgzxLrE1tNEtpbk4d4Q2/dJMEJ+VAdrEbs4Irh/2pfj94w0j4Q6/wCCvif8KD4audb0CYaRcR69Fex3EglgieL5FUq4E4YZ6hD6GuXHQlVwdSCdm019514CoqOMp1GrpNP7mZvjSXSvjZ+0LpHwa8H+IoLmyl8HQ2PjY2jFmt7S3uBPJb7h0Z28uIkdPMIPORXV3PwN+Hf7PvxV+Gup/DTTZtOS81S40jVSl2+L+M2V3JGZxnEjiQZDnn5VHRQBpeBPAHhz4XftD+G/C3hzSLa2jh+F1xbO0EQQysl7bszMQMsxZmYk9SxPWvRPib8L/C/xW8Ojw74pW5jENwLixvrC5aC4s7hQQs0UikFXUMf9nk5B6V5+RQowoVIU1qptPzaS1Xk+h251KtOrSnUd04JryV3o/NdTb0/ULDV7NNR0q+hureVd0U9vIHRxzyCuQeh6elPtrq2vYUubO4jlikGUkjcMrD1BHB6GvmVbb4u/DPwnpf7HGieBNe+y3+tzWtt41s9rxxaJJdb5Jt0YPlTiOUxncE25BBPy13X7M/iXwd8P7rWv2cLnXIbLUND8S366Fo11MRK+muwuICm/l1CzYyCT8p4r2jxz2Ogc9O/T3o4PB71zfxR+KnhX4T+FLzxR4iuQ5trUyw6fBKnn3RyFCRIx+bLMq/VhmgDpMij3z+NeL+GP22/h5e3d94W8a+Fdf0PxPpfyX/h1NLlvZPMy2REbdWDp0PmEKp3qR1rCh/aK+LN3478OfEnxT8P9Y8H+B4wNM8SW+uQmIpeXJk8uf5lBMMbxwr5pCjM5GOpAB9C44yTx3IrxLVPBtp+1/wCJJr3xbZRr4D8PXl7Y6ZBHK3nateAG3kutwwscUZ8xI8AktlicACpNS+M2pftG31h4M/Zq8Y3FnYkC48T+LYbBT9hgeOVVtUWYgi4dgDkAGNQGOc4r1TwP4M0L4d+ENO8EeGLcxWGmWqwWys2WKjPzMe7Mfmb1JJoAm8N+GPD/AIO0ODw14X0i3sLC0jCW9raxBFUD2GOfU9TkknJNW5LS1luY7yS1iaWIFYpWTLIDjIB6gHA6HsKkooAKKKKACiiigA6daME9B+VH0rxX9rr9qbWP2cJtKj0fwxb6j9q0TVdVn8+K5lylk1qBATbxv9jjk+1fNfz7bW28secf3qmgD2qivIvh1+0V4o8YfFK38P6p4VsLfw/rWq+JNN0G6t7t2u0udGvjZzeehTZsmaO4kQofkWJA24yny/XaAOT+BI3fAzwauM58J6fx6/6NHXhHwI8NTT/GvwNr8dszR2ieLIpJAhKx7b9sZPQcT17V+zdr1j4h+BPhNtPt71BB4asIX+26ZPbFmFrGSVEyL5i8j5lyp7GvONC+I1/8Kf2d/EN7ol3b2+rf8J9qWmaYbiPeouZdRYDC9GKqWbB4+U9uK+ezbFUcDj6Ner8KjP10S0Vz3sswtXG4GpRp/E5w726q7t0Jv+CiepXGnfBfSZrJWMg8W2zlUPJEcFxIc/8AfGfyr2021h4j8NPZmYSW97ZtFIUwcqyFSP6V8v6/4j8QftATaX+zj4wm1K81bSfFepWeseJE0gC3Ea213DFKQmEWQK6Ns4B45zWbp3jjxz8Adeu/gX4R1WeW08K+L7bVtd1O4xvudOmNkhiwc/fknd2IOQBjPXPxNDiqlh8+q5lGnJ4esoQTTXMqkVbltr53d7abn2VfhmpiclpZfKolXpOc2mnyuEmrSv8AJWTV3daI9q/Z8/ZO8N/s/eIL/XtL8X6nq097ptvZL/aRB8lYxztPYHCgL0VVA54r1OS7tYJ4rSe4jSWYnyY3cBpCBk4HU4AJPpis3w1448M+Mp9UtfDuoG4fRr9rLUV8th5c4RXI+YDPDAZGR1GeDXz54g+Injvx7+0f4I+IQ0OK18C6Z4nudI0fV/PXN7cSxSws5XOdpeNlQ4Aww5JYCvuM04hwmAoUqkP3iqSSXLro3Zt22S7vrofF5bkWMx1epCX7twi2+bR3SbSSe7l0Su7an0yxyMHim04jGT7c+1Nr37W22PEbAZJwK8q+FHiTw94L+LfxG8Fa5r1lZNdeLrS70+O7u0iNxJd2MGEQMRuYtE4AGSSDxXqpBzgj2x/SuF8f/s3/AAl+JWt6j4p8TeHBJquoaSlgdSVyJbZUcuksR/5ZyhiCHHPygZxwXbS4t9DwX9oj462Pif8AaBa68HXs1vN8KtPnvZrqUjy7qcXNqk8OO6CNmQnIOS2BgAn225/ae8AP8P7Lxv4WsNS106rqkum6TpelWm64vLiMOWCgkDaFjLlycbcHvivCtF/Y0fxj4j8aeC9E+JlxZ3ekzx2V3qt1YLOdQF1bQT3BkUuCrNLhwwY46c9a5/8AZs8fad4V+MvgvwX4g06S3tILq4OnxRfdi1G5t4bBmIY52+ZbXY7kGTPckfEYKrLAY+WOc7Uq0pc/NryyWkWnZJJ7d/Nn2eJpU8fl8cGoXq0ox5eXTmUvekmm221v28kfX3wv+IWjfFbwHp/j/RNPubW3v0f/AEa+QJLCySNG8bgEgEOrD6iuB8L+EPDvxZ+MfxG1jxtpUWp21gYfDWnQ3UYKQ25tI5rlVHUM8kx3N1wqjjFcSPBn7XXwtm13Vfhx9nk05fGN5FoHhkwRPHPaXs80n2yVwS0YjkliwvGFjk3DBJPtnwk+Gdp8LvCCaDHfy319cytea1qlw37y/vZMebM3pnACj+FVVe1fbWS2PjdXuVPgh8DvBnwE8KzeFfBjXkyXV893eXeoz+ZPcStjlmwAMBVGAAOM9SSeD/b8+GFj4++Br6xPdiC48O3yX0DCIN5gP7t4uo2ht6nofuivbtpB5Feb/tbH/iwGvKCPnSBTn3uIxXBmdSVLL6so7pP+v6R25bCNTH0oy2cl+Zzv7S3gv4wTX2mfFP4O69Bp9xo/hm/j1C6kiSSQR7Y50SNHBBLvDsJxwrk1nfsp/tHfEjxrrVh8NPiz4UuLO/ufDK6pp2qzgI99EJWQyMgA2ggjbwMhSejCvd7Pi1iCnH7teR16V5v8Qwtl+0b8PdQQAedZaraMBxkNFFKB17eUTXymJyfEYDHUsyw2JnCMnFTp3vCV7Xdvsv0V+7PpcLm+HxeWzy7EYeE5RUnCpa042Tdr/aXk9OyvqemMqnjbzjqe/wCnH/1/y8m/a98L6bL8N4fiqtk51fwTqdrrGm3MZIZAlxGZwQOqmINkdOO1etEjbkHt09apeIND0/xNoV94a1aLzLXULSW1ukx9+ORSjAfUGvu2fGvRmRqPxT8FWvgnWfH2m69balYaHbXU149hOrkGBWLoMH72UYY9RXkfwC+A3izxR4v1T4y/tG2mn6/NrFtY3nhu3vQLgaSG3zPDErg+UEZowCp+YqSeteUeOPg2v7K3gqbwhJfwyXnjHwLqOn6he20jhLu9W/hMRAb7pFvOybQOdpPPJP2lbwQ2kEdpCm1I0CooHQAYApCGrYWKXzamtlCLloxG04jAcoCSF3Yztyc4xgfjUPiDQNE8VaJc+G/EmlwXtheQNDdWlxGGjlQ9VIPb09MVbooAzvDHhHwr4K0waJ4P8OWWl2YbcbawtliQtgDcQoGWwqjJ5IAHatGjrS7TnGKdmAlFHSggjrSBNMKKUggZIpKACiiigA6f/Wrifi7+z58M/jdJDJ49sb9ymlXmlT/2dq9xaC60+78r7TZy+S6+ZDIYIsg8jZhSu5t3bUZHqOmc57UAcZ4W+AXwz8G/EG5+Jug6ZeR6jcfbTHDLq1xJa2rXk0c128Fuz+VC00sSSSFFBZwzZy8hfs8Z4P6UdyPQ4NFAHK/Ab5vgf4NyASfCundR1/0aPj2FeF32n2ev/F61+CGuQygQ/GG812ba+A8TWkl1EQw5GWZgR9RXufwHx/wo7wYCf+ZU07/0mjryXxNo9xYf8FDNDaPAhvvDgvn/AN9I7mAfjivjOMqXPTwraunVjFro1P8A4Y+v4SqShLFKLs1SlJPqnFaW+8960nw9oWgyXcmi6Tb2rajcm5vnhiCmeYqF8xsdWwqjJ7AVwHxC/Z18O+Jr/wAa+K0mla88UeGl094FAUJJGGKSK2epIjGDwNme9el9fvdqAxHSvpMZleBx+G9jUhor28ntdW6ngYXMsXg8R7anPV2v5rR2d+mh8r/s/fAj9q3wjcT+JrTxFZ2KeMLET61Pq4eS4sbh5NzSi3IAaXbwASACfmHGK9xPwF8JD4JJ8EZJp5LJLLy0vZX/AHyzj5hcZGMSCT5xjHNduzA4Ydf5f5/+vShs8E498V5OUcJ5Vk+FeHhzSi0170nKye6Se13rffzPTzbifMs2xSxFTlhJNP3IpXcdm7b2Wi/I8c+DcvxI+F3xFk+GHxX+Ig146noEmtRXssfli2njmWOaBM/8s/LeJwMDB3cAGvXdO1HT9XsotS0q9iuLa4QPBcwSh0kU9CrDII9xXnH7QfwH/wCFy6p4UvUli8vSdaRtXhllZFudOfBng+X7wYpGNpIBGcngZd+zDbxaF4Y8ReA7UbYfDfjLULC1QAYSAus8SjpwEmUfhiufKp43K8xeXTp3o3bpzlJybVr21u7La7le5tmUcJmeAWYQmva6KcIxUUtWubSyu9NFGxa+JXxkn8D/ABc8DfDS1tIHHie4uVu5JAd0UccWUKDOBmQr1zkZwB1p/j79ojwf8PvHVp4F1HS9RuZZZbUX19bRr9n05bmUxQmZ2IwGYHgAnAzjHNeOfEPw54w1n48eKvjfbJNq9r8Pdf05oNLiufnW1jtBLdiIOQvIcMFHLEHvjPoHwL0nwb8Xbbx94r1vTrbVrPxB4oMC/bE8yOayht4TBHtY4wrO7DHO5ic5ry8PnWb4zMquEpNQlKTdPmV17OK1+96X1selXybK8LltLFVLzjGKU+V2fPJ3S17Rd7aJ2NT4B3EGteMPiJ4t00iayvfF/k210o+SXybWCJ9p/iAdWXI4JU4r5j8V/AP4keKf2q/Hsfg23kY+Ey2r6Y4ZQEmmd723jXcQDulllx2G05xX254e8OaF4R0e38O+GdHt7GwtItltaW8QVI1zngD6kn1JJzzRZeHdA0/WbzxHY6VBFf6ikMd/dxxgSTrEG8vcR97bvcD/AHq9+rkEcbkLwGJnvdtx01bvpfs/yPFoZ5PBZ2sdho/DZRUtdEra27r8znfgP441T4jfCPQvF+uEfb7izVdQIQDNymUlO0cKS6HgdK64FnbrkivHv2bfiJ4D0abWfg1ceKrOLWbPxbrAtNKaULI8H22RlKg8N1JxnO0Zxjmrnxw/aMj8HajB8PPhg1rrHjOTU4YzoTK2RCY2mfLHCKTEpABOcupxissHn2X4fIoYjEVk+X3W7pyclpay1cn238i8XkmYYjO50KNGzk3JKzUVF6p3eiiu+3merMG6sp6CvNP2tm/4sRqqA/fu7JOnrdxD+tdZ8OPiH4d+J3haLxR4dlfazmO6t5kKS2k4A8yGRSBtdScEflwRXI/tb7v+FJXSA/f1jS1/O+gFd+Z4ijiclqVaTvGUbp+pwZfQq0M4p0qitJSSa9Gek2i4t0H/AEzH8hXnP7SEcugWnh34uW9s0w8Ia+l7qKxDL/YZEeG4ZR/srIH+imvR4QREpH93qPoKo+LdKTXPCupaLMgaO80+aBkboQ8ZXH0wa0zDD+3yiUOqjdesdV+KIwFdUMyjUa0vZ+j0f4Mu2d3bX9nHfWkiyQzRiSKRDkOCAQ34g06uH/Zm1f8Atv8AZ/8ACN3KSZItBt7eQt13xIIz+q13IBIyBXXg67xWFp1XvJJv1tqc2Mo/VsTOl/K2vlc82/aT+AkHx20PRYIblIL7RNdtr22lmchDEJF85DhSTmPOBx8ypyBkj0gdf84o60uxvSunc5hKKOlABPSgAHJpxBHy475603BzinFegIPXB4/MUJJj1sB4IAOM9qCCTk9B1Oa8Bm/bPn0b4m6n8O9d8P2+9PHVto+lSh3TzbV5TFNLznc0TockED94ox1J9+LbUD7uPevKyrPMtzp1FhZ8zpu0lZqz+Z62aZNmWUKm8VDlU1eL7rT/ADA/d5/Cm15Cv7Teg+Ffj74q+G/xJ8VWWl6bZW1mdGlul8tXlZQZ139Cf3kRwegyenNeuoyyKHQ5DDKn1Fa4HNMFmPOqEk3BuLV9U13XTyOfHZdjMAoOvFpTSknbRpq+j6+YtFKAScAUbG9K720tzhs2IeleY/tPeIfinoOhaNafBzx1aaV4g13WU0nR7S90ZbyO7upQZPNf50Ijt7eG6unCnc0cDgEHbXp3PY1U1HQtE1a9sNR1TR7e5n0u5a402eeFWktJmieEyREg7HMcsqFlwdsjrnDEFiPGfhT8bvib4l+LdjaeINUsJ9F8Q6v4u0y00i307ZLp39iap9ijuPN3EyLKscjSBl+V5oVQqFYye49O5/CsDRvhR8MvDnjbUPiToPgLSLPX9URk1HWbbT447m4Vtm4M4Xcdxjj3c/N5SZztXG/QBwn7M+s6jrPwL8KvqXhLUNJMPhywiiS/lt289RbRESp5EsvyHoAxVuOVFM8SfDLWNT/aM8OfFG1hjNlpvh+8tLuVpBuV2dDEAM5Od0nOOMe4rT+A/wDyQ7wZ/wBipp3/AKTR11me+c8VyYvBYfGxjGr9mSkvVbHVhcXWwcpSp/ai4v0krMXAK5A+tNpckjBNJXXr1OUKKKKADJHIrw34i/Bzxv8AC7x5qn7R/wAM9W1LWbyTU457zwlBFhJ7V0SK4VcMSZDsR9+P4AMV7lwOSM+1OZ2PU5Pf/Pb9a8vNcpw2bUYxqNxlF3jJNpxfddH6NNHpZZmmJyurKVNKUZK0ovaS7P8AzTTPGv2QZvFvivwx4x8Y/ETRoLW/1rxfdLeWkKny18qKKBkAJPAZHX7x6Hmuu+A3wZs/gZ4NuvB2nan9pt5dYubu3bytpjjkI2IfmOSFVQTxnniu1Bwc4GfXHf8Az/nvS/KTz6VhlmR4fAUaHtH7SrSUkpuyb5nrdLudGYZzXxtWt7NKnTqOLcFqlyrSz8hcE4yO2KMAcH+Wc0BgOB6Um49Sa9zb+v1PG9f6+RwviT9nP4Xa9Y6nFb6K9hf6nqv9pvrVjcOt3DfAgrPHISSpBGQo+Xk8cmmfBT4S+Ifh/LrereO/EFrrmsanrZuo9VWxWJvLFvFCuVBwrFUbdtOPm4wOK704YjFLuwNvXtXlxyTK4YuGJhTUZRv8Oid+8VZN9m1ddD0nm+ZTws8POo5Rlb4tXp2k7yS7pPXS55P4y0bUvhX8adD8aeFdbeDTvG+vxWHiDSHgRo5JhbTlLhWI3Ix8tQQMbsc1d/at/ffC22sAObnxPpEQ+pvof8Kl/aLK21t4K1R+lr8Q9KZj7SM8JP8A5FpP2lF83RvCOnPj/SfiHoyYJ+8FuQ5A9flQn8K+fxiWFo4+jH4VyNK7sua17au130Vl5HuYVPE1sDWduZ8ybsvsbX0V9Oru7dT0dAVjUdgg/E46/wAqjuQWt3yf4D/KnqTnOODSSKzIwx/CQOelfXzj/s7j5fLY+VWtW9v8zzn9kop/wofSYAR+5uLyEDP9y6lX+lej8ngDsDXzd8Kf2oPh78G/Cun/AA21mK4vdSn8Sa1C9lpi+bNbMLyZokaNctmRmCqMdTngZI639n/9qHR/GsUvhv4lawml+Jp9euoNP0O8tjb3BtziSEFNoAOxguScnaTya+RynirIo0qODeIjz2ae1k10bvo30W77H1OZ8N537StjFQfJe6et2m2rpW1S6vZdz2XaF4Yc4pNjeleCfsy/Ff4neI/jF4n0Xx/qz3GmatLeXXhXdsCpDa3bW0iqFAx95BzydpJznJ97LMDtJ57D1r3cmzfD51g/rFKMopSlFpqzTTttro90eJm2VV8nxaw9SUZOyd07ppq+/ls/NBsOMn3x70AMMEDqMj6VwU/7TXwU07xtqfgDWfG9rp+oaXcxQTG+kEaSSuhcKjH72MYOe5FcZf8A7Z/hq3+I0sWmxWtz4OTSLgx6+XaMXWowxiYwRM3DDyio6ZLMeTiubFcUZDg1+8xEd+V2fM0+t0r2S66adTqwvDWeYpvkoS25tVZNdLN2vfpZ3fQ9x+YYK5Gf8mvJv2q/GHxI0TS/DXh34StIdb1bxArpBFIqG4gt4pLiSIFuBu2KvuCQSM159L+0j8YPid4g0f4nfBnw1qF34espoNMvvD8QX/S764tppHMshX5Y4W+zqXOB8zN3xXYeHPhj+0DL8aPDHin4meJLPWtN0+zurySe3to7f7BdzRiM2yqpzJGATtcjdjduOcZ8PGZ+uIMJLC4CFW0nFe1grRUXrzKXVeidvtJHs4bI5ZDio4jHSpKUFJ+ym225JP3XHo9t2r9G2N0P9na6+IHwXn03x1paaL4mvfEN/rNjeTwJcTaZPLdtKjAo2D8gjBAYZ6Hpmm+KPBP7W9jfS/D7w38Sjqmm6zbqZPFl3aW1vNozCUecFjTmXKZCABdu77wxmvbQwU5GadvAJGePbp/npXqS4Uy/2UYwlOEkknKE+VyXXmt7rvffluujR5i4mx3tJOpGE4ttpShzKLf8t/eSVlpzWfVM8p8L/s0QaR4Y8T6b4z8Tr4q1DxBEVXUr/TljlixZrajJ3Nl9i8uCCcn6nQ/Z/wBG+OOm6BbJ8Xp7G1Sz0q2sLPSbMrK5aJArXUsy9Xf+4vyqB3NeiZBPzUcf3u3pXZhuH8uwVaFTD80eVWspPXW/vN3cte8vW5yYjPMbi6U4VuV8zTvyrSyt7qVlFW7R9BXzTaX5R2zxRlf7v617im4q1/zPHUbrRfkvzE6daMH0PB9KBwc8/gK+Zf2/Piv47+HXiDRLbTNek0zQo/A/iLVpJrTxW+k3N7q1o+niytLWRYZRPdMk12YraVXilbl4phFtEgfTXHr3xRXzd8EPiX4g1z9pE6HP8Q72/wBan1LxfD4x8LT6mzRaTp9pqiRaNN9l3bbJntTAUKqn2lLqSVvN2h0+kfpQBynwIBHwO8GAjp4U07I9P9Gjrq64T9me48U3HwL8KHxTo2n2bJ4csFtBp+pPc+ZD9liw7l4YtjE5yg3gf3jXd0AFFFFABRRRQAUUUUAFFFFABRRRQADrTxkDnjnqD0pgxnmlyBytNDvocN+0h4M1Hxz8GNc0vQzc/wBo21qL7S/sf+tN1bnzogvUkl0UY75rk9F1bxT8bviZ4Qv73wDrukaT4Yhn1C9l1qx+zLPfGMRRLGpIZsCSVskdhXsuc9Rmg4JJB9ev8/rXi4vJ4YvGKt7RqOnNGytLld1ds9bC5rLC4V0eRNrm5Za3jzKz0X4Cj5sr75pcEAbT3pCVIFINo/oa9qLtqeTonYov4W8LtqA1VvD1kbrz1ma5a1Qy+YMgPuxksATzxjJxXP8Axs+G9z8SfBE2l6BLbWurw3VteaZezocJcQSiSMkjJA4KkjkBjjrXXbjnNGScjOM+1clfBYXEYeVCcVyy0dtH9+h00MZiMNWjWg3zRd1d6aeWuh8z/GDwV8QPgF8F/CXi7w5qdpJ4p0bXbmGSeKPdCf7RaYuArj5gJWiI3DkoCRW14V+Nv7VHiz4ha94P0z4d+H/O8N2lrFqWmzaqy7pphIyzxz7CGAUKWQrzg4Oa9y13w9ofiiyTTfEOmQ3lulxHMkNwm5Q8bh0f6hlU/hT7TRNFsdQutXs9Mt4ru9CC8ukhAkn2DCb26ttGQM9Aa+X/ANVsVTx3NhsXOlR0XJF72Vm7yT1fV9eqPo/9ZMLUwXJiMNCpV958zT6yTtZNaLXppfRnl/ww/ZQ8HeF9Wl8beOEh1rXtU0yW310z26vbXE01w08smxsknLBAT0RF4659Cf4eeAm0FPCsngzSjpkblo9NNhH5CnJOQm0rnknp1JrYLDPT8aQnPG79K+gwWTZZl1L2dCkoptt6Jtt7t73v1PDxma5hj63tK9Vyat1drLZLtboU9C8N+HfC9pJYeHNJt7GCWeSd4rWEIrSu253IHGWPJP41b69uvvzSls8Uld8KdOlBRgkkuiVl9xw1JzqS5pO7fd3f3hRRRVkBRRRQAUUUUAH+etHGBnn6f0ooyPXr096ADnO7PPfHf1/WiiigDlPgP/yQ3wZ/2Kmnf+k0ddXXKfAjj4HeDB/1Kmn/APpNHXV0AFFFFABRRRQAUUUUAFFFHXoR+dABRRRQAUUUUAFFFFABRRRQAUUdaP8AODQAUUUUAFFFFABRRRQAUUUUAFFHfHf0o747+lABRRRQAcdzj3r58/bl0TxBdT6L4n8PeD7jxDfaT4c1uXRPDtx8O5fEGm6hqmbJrWG42N/obM0TxpOyhQkk2ZotuJPoM5xx1oIGeOmeAf8APH+TQB83fBDwz4ssP2kPt934M12y1tdW8Yv421290i5jtNQ02XVFfRYReOohvGS1+ziERs5t4454z5TM6n6R9+n44qHUJ3tbGe5ikhRkhZg87bYwQM5Y84UY/AdK+VvE/wC018b/AIYfAXxP4+Hii68RxahplvF4J8X6x4TMFsdR+y3c99eLb28av/ZUaQxm1MwDzuShmeN4pyAeyfCb4YfHn4Y/DnRfh1c/GLwvqkWhaVbadaXsnga6jlmigiWJXl/4mbb5WCZYjaMk/KK6L+yvjZnH/Cw/C30/4RC5/wDlhWVq3jy11L9mv/hbOp+P7zw7a/8ACJRa3f8AiHTrGNpbWBIFuZZFinikX/VqwKshIBOMHBGj8CYPidB8J9Gk+MOry3niK4ge51HzoYI5LbzZHkjtX+zqkbvDGyQtIiqJGiZwqhtqgEv9lfG3/ooXhb/wj7n/AOWFH9lfG3/ooXhb/wAI+5/+WFdRRQBy/wDZXxt/6KF4W/8ACPuf/lhR/ZXxt/6KF4W/8I+5/wDlhXUUUAcv/ZXxt/6KF4W/8I+5/wDlhR/ZXxt/6KF4W/8ACPuf/lhXUUYzxjNAHLnSPjb0PxA8L89j4Ouf/lhVHUPCPxu1HV9P1QfFTw9F9hkkdoIvCdyEn3xsgDj+0OQN2R7iuB8T/Fv4i+FfjFreuWfiXUvEHhfw19rm8XaLpPhxJLbSbGPTfOihimCeddatJc+WfIR3jS3lw0cbGF5tn9jX41+LPjp8NNY8TeOr2xl1Gw8YanYTRadaSwwW0cc2Y4AZQDL5cbqhmwPMKliqbtqgHZ/2V8bO3xC8LdM/8ifc/wDywoOk/G0HB+IPhfIPI/4Q+5/+WFeS+Kfi58fdH/Zl+MHjqHxxoJ8S+BtR11tP1AeGW+z/AGa0tRPHGkBuTtkwdvmO8gDZYoynZX0EMbMY4H3Rjj6e34elAHL/ANlfG3/ooXhb/wAI+5/+WFH9lfG3/ooXhb/wj7n/AOWFdRRQBy/9lfG3/ooXhb/wj7n/AOWFH9lfG3/ooXhb/wAI+5/+WFdRRQBy/wDZXxt/6KF4W/8ACPuf/lhSf2V8bP8AooXhf/wj7n/5YV1NZPj7VbzQvAuta3p2taZptxZ6TczwajrbEWVq6RMyy3BDKRCpAZ8MDtB5HWgDB1/wr8btd0G90RPij4dtTeWkkAurbwlcrJCXQrvU/wBocMM5HuKns9B+NlnZxWp+JHhmQRRKpll8IXO58DG4n+0OSfWvGU8b/tQXfhizs/DGueI9St9R8Zsmj6rqFro+j67f6LHpMks0iW15EsSj7eqoga3WXyiS4VcTt6de/EUeO/gH4d8efDzx/NpR8Vadpt3o2o3ltaLfXcU8cc/kwxXBW3F5LFlUDgxq7BipVSpAN06V8bQcH4heFx7f8Ifc/wDywo/sr42/9FC8Lf8AhH3P/wAsKzP2Z/HfiP4jfBfSvFHjCRzqy3F9Y6ok0SJNDc2t5PayRTiImIzo0LJKYSYGkSRoi0ZQnu6AOX/sr42/9FC8Lf8AhH3P/wAsKP7K+Nv/AEULwt/4R9z/APLCuoooA5f+yvjb/wBFC8Lf+Efc/wDywo/sr42/9FC8Lf8AhH3P/wAsK6iigDl/7K+Nn/RQvC3/AISFz/8ALCkOl/GwAk/EHwsMdc+D7n/5YV1Occ5xivIf2g/FvxY0zxtpHhv4Q+MZl1d7aOaw8L2GkRXAvGNwiyTalPKhFpYJEGG5GimdtwjMjqsLAHUSeD/jc/iJNf8A+FpeHgkdi9t9j/4RK58ltzq3mFf7Q+8NuAc9Ca6Dw3Z+OrV5j4x8R6TfKQPIXTtGltShycli9xLuyMYwF/HNeX/Av4p+PNX+LOpeFPiTqOqNJrR1zUPCUUVzpVxpkml2OqJaq0b2imdJhFc2RZJpHyZH+6yuiai6h8Qb39qn/hFNA+KOoS6HpmgLqviTQ7qxsjbxLcmW3soIHWAT5eS2u53cytsECqVInBjAPUqKKKACiiigCK+sbHVLGbTNTs4ri2uImiuLeeMOkqMMMrKeGBBIIPBBrA8I/B34R/D/AEu80PwH8LPDmiWWpIE1Gz0nRLe2iulCldsiRoA42kjkdGI6GukooAyrnwH4HvBfLeeDdJl/tPS4tM1PzNNjb7ZYxed5dtLkfPCvnzbY2yq+c+AN7Vq89+eByaKKACiiigAooooAKP8APNFFAHOad8HPhDo/jSX4kaT8K/Ddr4iuJHefXoNCt0vZGddrs0ypvLMOGOeR65NaX/CHeETdW18fC2nefZ6lJqNnP9hj3wXkkUkT3KHb8szRzTI0gwzLI4JwxFaNFAFCfwr4XudM1DRbjw3p72ereYdUs2s0MV55i7ZPNUjEm5eG3ZyODkcVfPJJ9ffP4UUUAFFFFABRRRQAVV1zQ9E8T6LeeGvEuj2uo6dqNrJbahp99brNBcwSKUkikjcFXRlJUqQQQSCMVaooA4xv2cv2en8Mt4Kf4EeDTozXv2xtJ/4Re0+zG52GMT+UY9nmeWSm/bnaSuccVq6x8LPhl4h02+0bXvh1oN7Z6mLcajaXWjwyRXQt8GDzEZSJPLKqU3Z2bRjGK3qKAKfh/wAPaB4T0S18M+FdDs9M02xhWGy0/T7ZYYbeNeAiIoCoo7AAD6VcoooAKKKKACiiigABwciub8U/Bv4QeOfENt4s8bfCrw3rGqWUaR2ep6roVvcXECIxdFSSRGZQHZmABGCSRgk10lFAHMwfBX4N20mt3Fv8JfDMcniVWXxG6aFbhtVDszOLkhMzgs7sQ+cl2POTnet9J0u11C51a202CO7vQgvLlIVEk+wEJvYDLbQSBknGeO9WKKACiiigD//Z",
+        "category": "chart",
+        "content": {
+          "html": "<figure id='0' data-category='chart'><img data-coord=\"top-left:(73,1186); bottom-right:(351,1358)\" /><figcaption><p>Chart Type: line</p></figcaption><table><thead><tr><td></td><td>Red</td><td>Green</td><td>Blue</td></tr></thead><tbody><tr><td>item_01</td><td>55%</td><td>30%</td><td>25%</td></tr></tbody></table></figure>",
+          "markdown": "![image](/image/placeholder)\n- Chart Type: line\n|  | Red | Green | Blue |\n| --- | --- | --- | --- |\n| item_01 | 55% | 30% | 25% |\n",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.0594,
+            "y": 0.6765
+          },
+          {
+            "x": 0.2832,
+            "y": 0.6765
+          },
+          {
+            "x": 0.2832,
+            "y": 0.7745
+          },
+          {
+            "x": 0.0594,
+            "y": 0.7745
+          }
+        ],
+        "id": 0,
+        "page": 1
+      },
+      {
+        "category": "header",
+        "content": {
+          "html": "<header id='1' style='font-size:18px'>SOOP</header>",
+          "markdown": "SOOP",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.0672,
+            "y": 0.0398
+          },
+          {
+            "x": 0.1114,
+            "y": 0.0398
+          },
+          {
+            "x": 0.1114,
+            "y": 0.054
+          },
+          {
+            "x": 0.0672,
+            "y": 0.054
+          }
+        ],
+        "id": 1,
+        "page": 2
+      },
+      {
+        "category": "header",
+        "content": {
+          "html": "<br><header id='2' style='font-size:18px'>2025.7.30</header>",
+          "markdown": "2025.7.30",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.8627,
+            "y": 0.0406
+          },
+          {
+            "x": 0.93,
+            "y": 0.0406
+          },
+          {
+            "x": 0.93,
+            "y": 0.0538
+          },
+          {
+            "x": 0.8627,
+            "y": 0.0538
+          }
+        ],
+        "id": 2,
+        "page": 2
+      },
+      {
+        "category": "paragraph",
+        "content": {
+          "html": "<p id='3' data-category='paragraph' style='font-size:20px'>표 1. 분기 및 연간 실적 전망</p>",
+          "markdown": "표 1. 분기 및 연간 실적 전망",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.0687,
+            "y": 0.1035
+          },
+          {
+            "x": 0.2573,
+            "y": 0.1035
+          },
+          {
+            "x": 0.2573,
+            "y": 0.1176
+          },
+          {
+            "x": 0.0687,
+            "y": 0.1176
+          }
+        ],
+        "id": 3,
+        "page": 2
+      },
+      {
+        "category": "paragraph",
+        "content": {
+          "html": "<br><p id='4' data-category='paragraph' style='font-size:22px'>(십억원)</p>",
+          "markdown": "(십억원)",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.8845,
+            "y": 0.1046
+          },
+          {
+            "x": 0.9293,
+            "y": 0.1046
+          },
+          {
+            "x": 0.9293,
+            "y": 0.1178
+          },
+          {
+            "x": 0.8845,
+            "y": 0.1178
+          }
+        ],
+        "id": 4,
+        "page": 2
+      },
+      {
+        "category": "table",
+        "content": {
+          "html": "<br><table id='5' style='font-size:14px'><thead><tr><td></td><td>1Q24</td><td>2Q24</td><td>3Q24</td><td>4Q24</td><td>1Q25</td><td>2Q25</td><td>3Q25F</td><td>4Q25F</td><td>2023</td><td>2024</td><td>2025F</td><td>2026F</td></tr></thead><tbody><tr><td>매출액</td><td>94</td><td>101</td><td>106</td><td>112</td><td>108</td><td>117</td><td>122</td><td>130</td><td>348</td><td>413</td><td>477</td><td>510</td></tr><tr><td>(% YoY)</td><td>29.8%</td><td>17.1%</td><td>20.2%</td><td>11.3%</td><td>14.1%</td><td>15.2%</td><td>15.9%</td><td>16.1%</td><td>10.4%</td><td>18.9%</td><td>15.4%</td><td>6.9%</td></tr><tr><td>플랫폼 서비스</td><td>79</td><td>83</td><td>83</td><td>82</td><td>85</td><td>85</td><td>86</td><td>86</td><td>259</td><td>327</td><td>342</td><td>356</td></tr><tr><td>기부경제선물</td><td>76</td><td>80</td><td>80</td><td>80</td><td>82</td><td>82</td><td>84</td><td>84</td><td>249</td><td>316</td><td>332</td><td>346</td></tr><tr><td>기능성 아이템</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td><td>8</td><td>9</td><td>8</td><td>8</td></tr><tr><td>플랫폼-기타</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>2</td><td>1</td><td>1</td><td>1</td></tr><tr><td>광고</td><td>15</td><td>18</td><td>22</td><td>28</td><td>22</td><td>31</td><td>34</td><td>42</td><td>83</td><td>82</td><td>129</td><td>148</td></tr><tr><td>플랫폼광고</td><td>2</td><td>3</td><td>4</td><td>4</td><td>3</td><td>3</td><td>4</td><td>5</td><td>15</td><td>13</td><td>15</td><td>17</td></tr><tr><td>콘텐츠형광고</td><td>8</td><td>9</td><td>10</td><td>18</td><td>11</td><td>14</td><td>13</td><td>22</td><td>54</td><td>46</td><td>60</td><td>67</td></tr><tr><td>광고기타</td><td>5</td><td>5</td><td>8</td><td>6</td><td>7</td><td>14</td><td>17</td><td>15</td><td>14</td><td>23</td><td>53</td><td>64</td></tr><tr><td>기타</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td><td>2</td><td>2</td><td>2</td><td>6</td><td>5</td><td>6</td><td>7</td></tr><tr><td>영업비용</td><td>66</td><td>68</td><td>82</td><td>84</td><td>75</td><td>87</td><td>91</td><td>100</td><td>257</td><td>300</td><td>353</td><td>380</td></tr><tr><td>인건비</td><td>22</td><td>23</td><td>23</td><td>24</td><td>25</td><td>30</td><td>31</td><td>31</td><td>77</td><td>92</td><td>117</td><td>129</td></tr><tr><td>지급수수료 (중계권+기타)</td><td>6</td><td>6</td><td>9</td><td>9</td><td>8</td><td>9</td><td>9</td><td>10</td><td>25</td><td>30</td><td>36</td><td>39</td></tr><tr><td>지급수수료 (광고)</td><td>6</td><td>7</td><td>8</td><td>15</td><td>6</td><td>9</td><td>10</td><td>17</td><td>36</td><td>36</td><td>43</td><td>46</td></tr><tr><td>과금수수료</td><td>12</td><td>14</td><td>14</td><td>13</td><td>14</td><td>15</td><td>15</td><td>15</td><td>39</td><td>53</td><td>58</td><td>61</td></tr><tr><td>회선사용료</td><td>4</td><td>4</td><td>5</td><td>5</td><td>5</td><td>6</td><td>6</td><td>6</td><td>14</td><td>18</td><td>22</td><td>24</td></tr><tr><td>스트리머지원금</td><td>2</td><td>3</td><td>3</td><td>3</td><td>2</td><td>3</td><td>3</td><td>3</td><td>7</td><td>11</td><td>10</td><td>11</td></tr><tr><td>콘텐츠제작비</td><td>2</td><td>2</td><td>3</td><td>3</td><td>4</td><td>2</td><td>4</td><td>3</td><td>20</td><td>9</td><td>13</td><td>14</td></tr><tr><td>유무형감가상각비</td><td>5</td><td>5</td><td>5</td><td>5</td><td>5</td><td>6</td><td>6</td><td>6</td><td>20</td><td>21</td><td>24</td><td>25</td></tr><tr><td>지급임차료</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td></tr><tr><td>행사비</td><td>1</td><td>1</td><td>0</td><td>4</td><td>0</td><td>0</td><td>1</td><td>4</td><td>2</td><td>5</td><td>4</td><td>5</td></tr><tr><td>기타</td><td>4</td><td>4</td><td>12</td><td>4</td><td>5</td><td>6</td><td>7</td><td>6</td><td>18</td><td>24</td><td>23</td><td>25</td></tr><tr><td>영업이익</td><td>29</td><td>33</td><td>24</td><td>28</td><td>33</td><td>30</td><td>31</td><td>30</td><td>90</td><td>114</td><td>124</td><td>130</td></tr><tr><td>(% YoY)</td><td>55.2%</td><td>40.9%</td><td>9.0%</td><td>5.3%</td><td>14.8%</td><td>-9.9%</td><td>30.1%</td><td>7.2%</td><td>9.6%</td><td>25.7%</td><td>8.9%</td><td>4.9%</td></tr><tr><td>영업이익률</td><td>30.2%</td><td>32.8%</td><td>22.6%</td><td>24.9%</td><td>30.4%</td><td>25.7%</td><td>25.4%</td><td>23.0%</td><td>26.0%</td><td>27.5%</td><td>25.9%</td><td>25.4%</td></tr><tr><td>지배주주순이익</td><td>25</td><td>27</td><td>24</td><td>25</td><td>27</td><td>22</td><td>24</td><td>23</td><td>75</td><td>101</td><td>95</td><td>99</td></tr><tr><td>순이익률</td><td>26.1%</td><td>27.1%</td><td>22.6%</td><td>22.6%</td><td>24.8%</td><td>18.8%</td><td>19.4%</td><td>17.6%</td><td>21.4%</td><td>24.5%</td><td>20.0%</td><td>19.4%</td></tr></tbody></table>",
+          "markdown": "|  | 1Q24 | 2Q24 | 3Q24 | 4Q24 | 1Q25 | 2Q25 | 3Q25F | 4Q25F | 2023 | 2024 | 2025F | 2026F |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 매출액 | 94 | 101 | 106 | 112 | 108 | 117 | 122 | 130 | 348 | 413 | 477 | 510 |\n| (% YoY) | 29.8% | 17.1% | 20.2% | 11.3% | 14.1% | 15.2% | 15.9% | 16.1% | 10.4% | 18.9% | 15.4% | 6.9% |\n| 플랫폼 서비스 | 79 | 83 | 83 | 82 | 85 | 85 | 86 | 86 | 259 | 327 | 342 | 356 |\n| 기부경제선물 | 76 | 80 | 80 | 80 | 82 | 82 | 84 | 84 | 249 | 316 | 332 | 346 |\n| 기능성 아이템 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 8 | 9 | 8 | 8 |\n| 플랫폼-기타 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 1 | 1 | 1 |\n| 광고 | 15 | 18 | 22 | 28 | 22 | 31 | 34 | 42 | 83 | 82 | 129 | 148 |\n| 플랫폼광고 | 2 | 3 | 4 | 4 | 3 | 3 | 4 | 5 | 15 | 13 | 15 | 17 |\n| 콘텐츠형광고 | 8 | 9 | 10 | 18 | 11 | 14 | 13 | 22 | 54 | 46 | 60 | 67 |\n| 광고기타 | 5 | 5 | 8 | 6 | 7 | 14 | 17 | 15 | 14 | 23 | 53 | 64 |\n| 기타 | 1 | 1 | 1 | 1 | 1 | 2 | 2 | 2 | 6 | 5 | 6 | 7 |\n| 영업비용 | 66 | 68 | 82 | 84 | 75 | 87 | 91 | 100 | 257 | 300 | 353 | 380 |\n| 인건비 | 22 | 23 | 23 | 24 | 25 | 30 | 31 | 31 | 77 | 92 | 117 | 129 |\n| 지급수수료 (중계권+기타) | 6 | 6 | 9 | 9 | 8 | 9 | 9 | 10 | 25 | 30 | 36 | 39 |\n| 지급수수료 (광고) | 6 | 7 | 8 | 15 | 6 | 9 | 10 | 17 | 36 | 36 | 43 | 46 |\n| 과금수수료 | 12 | 14 | 14 | 13 | 14 | 15 | 15 | 15 | 39 | 53 | 58 | 61 |\n| 회선사용료 | 4 | 4 | 5 | 5 | 5 | 6 | 6 | 6 | 14 | 18 | 22 | 24 |\n| 스트리머지원금 | 2 | 3 | 3 | 3 | 2 | 3 | 3 | 3 | 7 | 11 | 10 | 11 |\n| 콘텐츠제작비 | 2 | 2 | 3 | 3 | 4 | 2 | 4 | 3 | 20 | 9 | 13 | 14 |\n| 유무형감가상각비 | 5 | 5 | 5 | 5 | 5 | 6 | 6 | 6 | 20 | 21 | 24 | 25 |\n| 지급임차료 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 |\n| 행사비 | 1 | 1 | 0 | 4 | 0 | 0 | 1 | 4 | 2 | 5 | 4 | 5 |\n| 기타 | 4 | 4 | 12 | 4 | 5 | 6 | 7 | 6 | 18 | 24 | 23 | 25 |\n| 영업이익 | 29 | 33 | 24 | 28 | 33 | 30 | 31 | 30 | 90 | 114 | 124 | 130 |\n| (% YoY) | 55.2% | 40.9% | 9.0% | 5.3% | 14.8% | -9.9% | 30.1% | 7.2% | 9.6% | 25.7% | 8.9% | 4.9% |\n| 영업이익률 | 30.2% | 32.8% | 22.6% | 24.9% | 30.4% | 25.7% | 25.4% | 23.0% | 26.0% | 27.5% | 25.9% | 25.4% |\n| 지배주주순이익 | 25 | 27 | 24 | 25 | 27 | 22 | 24 | 23 | 75 | 101 | 95 | 99 |\n| 순이익률 | 26.1% | 27.1% | 22.6% | 22.6% | 24.8% | 18.8% | 19.4% | 17.6% | 21.4% | 24.5% | 20.0% | 19.4% |\n",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.0708,
+            "y": 0.1186
+          },
+          {
+            "x": 0.9312,
+            "y": 0.1186
+          },
+          {
+            "x": 0.9312,
+            "y": 0.5662
+          },
+          {
+            "x": 0.0708,
+            "y": 0.5662
+          }
+        ],
+        "id": 5,
+        "page": 2
+      },
+      {
+        "category": "paragraph",
+        "content": {
+          "html": "<br><p id='6' data-category='paragraph' style='font-size:16px'>자료: 미래에셋증권 리서치센터</p>",
+          "markdown": "자료: 미래에셋증권 리서치센터",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.069,
+            "y": 0.5641
+          },
+          {
+            "x": 0.2127,
+            "y": 0.5641
+          },
+          {
+            "x": 0.2127,
+            "y": 0.576
+          },
+          {
+            "x": 0.069,
+            "y": 0.576
+          }
+        ],
+        "id": 6,
+        "page": 2
+      },
+      {
+        "category": "paragraph",
+        "content": {
+          "html": "<p id='7' data-category='paragraph' style='font-size:20px'>표 2. 연간 실적 추정치 변경</p>",
+          "markdown": "표 2. 연간 실적 추정치 변경",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.0691,
+            "y": 0.6099
+          },
+          {
+            "x": 0.2504,
+            "y": 0.6099
+          },
+          {
+            "x": 0.2504,
+            "y": 0.6233
+          },
+          {
+            "x": 0.0691,
+            "y": 0.6233
+          }
+        ],
+        "id": 7,
+        "page": 2
+      },
+      {
+        "category": "paragraph",
+        "content": {
+          "html": "<br><p id='8' data-category='paragraph' style='font-size:20px'>(십억원)</p>",
+          "markdown": "(십억원)",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.8846,
+            "y": 0.6106
+          },
+          {
+            "x": 0.9292,
+            "y": 0.6106
+          },
+          {
+            "x": 0.9292,
+            "y": 0.6236
+          },
+          {
+            "x": 0.8846,
+            "y": 0.6236
+          }
+        ],
+        "id": 8,
+        "page": 2
+      },
+      {
+        "category": "table",
+        "content": {
+          "html": "<table id='9' style='font-size:14px'><thead><tr><td rowspan=\"2\"></td><td>변경전</td><td colspan=\"2\">변경후</td><td colspan=\"2\">변경률</td><td colspan=\"2\">컨센서스</td><td colspan=\"2\">괴리율</td><td rowspan=\"2\">변경 사유</td></tr><tr><td>2025F 2026F</td><td></td><td>2025F</td><td>2026F</td><td>2025F 2026F</td><td></td><td>2025F 2026F</td><td>2025F</td><td>2026F</td></tr></thead><tbody><tr><td>매출액</td><td>479 522</td><td></td><td>477</td><td>510</td><td>0% -2%</td><td></td><td>485 537</td><td>-2% -5%</td><td></td><td rowspan=\"5\">기부경제선물 매출 하향 인건비 추정치 상향</td></tr><tr><td>영업이익</td><td></td><td>122 132</td><td>124</td><td>130</td><td>1% -2%</td><td></td><td>130 142</td><td></td><td>-5% -8%</td></tr><tr><td>지배주주순이익</td><td>99</td><td>109</td><td>95</td><td>99</td><td>-4%</td><td>-9%</td><td>108 118</td><td></td><td>-11% -16%</td></tr><tr><td>영업이익률</td><td>25.5%</td><td>25.3%</td><td>25.9%</td><td>25.4%</td><td>-</td><td>-</td><td>26.8% 26.4%</td><td></td><td>- -</td></tr><tr><td>순이익률</td><td>20.7%</td><td>20.9%</td><td>20.0%</td><td>19.4%</td><td>-</td><td>-</td><td>22.1% 21.9%</td><td></td><td>- -</td></tr></tbody></table>",
+          "markdown": "|  | 변경전 | 변경후 | 변경후 | 변경률 | 변경률 | 컨센서스 | 컨센서스 | 괴리율 | 괴리율 | 변경 사유 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| 2025F 2026F |  | 2025F | 2026F | 2025F 2026F |  | 2025F 2026F | 2025F | 2026F |  | 변경 사유 |\n| 매출액 | 479 522 |  | 477 | 510 | 0% -2% |  | 485 537 | -2% -5% |  | 기부경제선물 매출 하향 인건비 추정치 상향 |\n| 영업이익 |  | 122 132 | 124 | 130 | 1% -2% |  | 130 142 |  | -5% -8% | 기부경제선물 매출 하향 인건비 추정치 상향 |\n| 지배주주순이익 | 99 | 109 | 95 | 99 | -4% | -9% | 108 118 |  | -11% -16% | 기부경제선물 매출 하향 인건비 추정치 상향 |\n| 영업이익률 | 25.5% | 25.3% | 25.9% | 25.4% | - | - | 26.8% 26.4% |  | - - | 기부경제선물 매출 하향 인건비 추정치 상향 |\n| 순이익률 | 20.7% | 20.9% | 20.0% | 19.4% | - | - | 22.1% 21.9% |  | - - | 기부경제선물 매출 하향 인건비 추정치 상향 |\n",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.0698,
+            "y": 0.6259
+          },
+          {
+            "x": 0.9296,
+            "y": 0.6259
+          },
+          {
+            "x": 0.9296,
+            "y": 0.7372
+          },
+          {
+            "x": 0.0698,
+            "y": 0.7372
+          }
+        ],
+        "id": 9,
+        "page": 2
+      },
+      {
+        "category": "paragraph",
+        "content": {
+          "html": "<br><p id='10' data-category='paragraph' style='font-size:16px'>자료: 미래에셋증권 리서치센터</p>",
+          "markdown": "자료: 미래에셋증권 리서치센터",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.0686,
+            "y": 0.7354
+          },
+          {
+            "x": 0.2129,
+            "y": 0.7354
+          },
+          {
+            "x": 0.2129,
+            "y": 0.7472
+          },
+          {
+            "x": 0.0686,
+            "y": 0.7472
+          }
+        ],
+        "id": 10,
+        "page": 2
+      },
+      {
+        "category": "footer",
+        "content": {
+          "html": "<footer id='11' style='font-size:18px'>2 Mirae Asset Securities Research</footer>",
+          "markdown": "2 Mirae Asset Securities Research",
+          "text": ""
+        },
+        "coordinates": [
+          {
+            "x": 0.0677,
+            "y": 0.9537
+          },
+          {
+            "x": 0.2823,
+            "y": 0.9537
+          },
+          {
+            "x": 0.2823,
+            "y": 0.9688
+          },
+          {
+            "x": 0.0677,
+            "y": 0.9688
+          }
+        ],
+        "id": 11,
+        "page": 2
+      }
+    ],
+    "merged_elements": [],
+    "model": "document-parse-250404",
+    "ocr": true,
+    "usage": {
+      "pages": 2
+    }
+  },
+  "response_type": "dict",
+  "response_keys": [
+    "api",
+    "content",
+    "elements",
+    "merged_elements",
+    "model",
+    "ocr",
+    "usage"
+  ],
+  "response_size_chars": 42721,
+  "response_size_kb": 43.99
+}

@@ -95,16 +95,25 @@ memory = MemorySaver()
 graph = workflow.compile()
 
 
-def process_single_pdf(filepath="data/pdf/20241122_company_22650000.pdf"):
+def process_single_pdf(filepath="data/pdf/20241122_company_22650000.pdf", processing_uid=None):
     if not os.path.exists(filepath):
         raise ValueError(f"PDF 파일을 찾을 수 없습니다: {filepath}")
 
     print(f"처리할 PDF 파일: {filepath}")
+    
+    # UID가 제공되지 않은 경우에만 UUID 생성
+    if processing_uid is None:
+        import uuid
+        processing_uid = uuid.uuid4().hex  # Use hex format to match upload_api.py
+        print(f"생성된 처리 UID: {processing_uid}")
+    else:
+        print(f"사용할 처리 UID: {processing_uid}")
 
     # TypedDict에 맞춰 초기 상태 설정
     initial_state: GraphState = {
         "filepath": filepath,
         "filetype": "pdf",
+        "processing_uid": processing_uid,
         "language": "ko",
         "page_numbers": [],
         "batch_size": 10,
@@ -113,9 +122,9 @@ def process_single_pdf(filepath="data/pdf/20241122_company_22650000.pdf"):
         "page_elements": {},
         "page_metadata": {},
         "page_summary": {},
-        "images": [],
+        "images": {},  # 빈 딕셔너리로 초기화
         "image_summary": {},
-        "tables": [],
+        "tables": {},  # 빈 딕셔너리로 초기화
         "table_summary": {},
         "table_markdown": {},
         "texts": {},   

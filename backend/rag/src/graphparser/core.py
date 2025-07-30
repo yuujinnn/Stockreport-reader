@@ -169,8 +169,11 @@ class ImageCropperNode(BaseNode):
         :return: 크롭된 이미지 정보가 포함된 GraphState 객체
         """
         pdf_file = state["filepath"]  # PDF 파일 경로
+        processing_uid = state["processing_uid"]  # 처리 세션 UID
         page_numbers = state["page_numbers"]  # 처리할 페이지 번호 목록
-        output_folder = os.path.splitext(pdf_file)[0]  # 출력 폴더 경로 설정
+        
+        # 새로운 출력 폴더 구조: data/logs/{uid}/images/
+        output_folder = os.path.join("data", "logs", processing_uid, "images")
         os.makedirs(output_folder, exist_ok=True)  # 출력 폴더 생성
 
         cropped_images = dict()  # 크롭된 이미지 정보를 저장할 딕셔너리
@@ -192,7 +195,8 @@ class ImageCropperNode(BaseNode):
                     ImageCropper.crop_image(
                         pdf_image, normalized_coordinates, output_file
                     )
-                    cropped_images[element["id"]] = output_file
+                    cropped_images[element["id"]] = output_file  # 누락된 라인 추가
+
                     print(f"page:{page_num}, id:{element['id']}, path: {output_file}")
         return GraphState(
             images=cropped_images
@@ -216,8 +220,11 @@ class TableCropperNode(BaseNode):
         :return: 크롭된 표 이미지 정보가 포함된 GraphState 객체
         """
         pdf_file = state["filepath"]  # PDF 파일 경로
+        processing_uid = state["processing_uid"]  # 처리 세션 UID
         page_numbers = state["page_numbers"]  # 처리할 페이지 번호 목록
-        output_folder = os.path.splitext(pdf_file)[0]  # 출력 폴더 경로 설정
+        
+        # 새로운 출력 폴더 구조: data/logs/{uid}/tables/
+        output_folder = os.path.join("data", "logs", processing_uid, "tables")
         os.makedirs(output_folder, exist_ok=True)  # 출력 폴더 생성
 
         cropped_images = dict()  # 크롭된 표 이미지 정보를 저장할 딕셔너리

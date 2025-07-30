@@ -13,7 +13,7 @@ export function ChatPane() {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 120px)' }}>
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
@@ -27,8 +27,8 @@ export function ChatPane() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="border-t bg-white p-4">
+      {/* Input Area - 더 많은 패딩과 고정 위치 */}
+      <div className="border-t bg-white p-6 pb-8">
         <PinnedChips />
         <ChatInput disabled={isStreaming} />
       </div>

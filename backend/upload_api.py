@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
-import PyPDF2
+import pymupdf  # fitz를 대신해서 pymupdf 사용
 
 # uvicorn과 호환되는 로깅 설정
 logger = logging.getLogger("uvicorn.error")  # uvicorn의 기본 로거 사용
@@ -92,6 +92,7 @@ async def startup_event():
     print("  • Test: http://localhost:9000/test")
     print("  • Root info: http://localhost:9000/")
     print("  • Upload PDF: POST http://localhost:9000/upload")
+    print("  • Existing files: GET http://localhost:9000/files")
     print("  • Debug files: http://localhost:9000/debug/files")
     print("  • Debug uploads: http://localhost:9000/debug/uploads")
     print("  • Chunk data: http://localhost:9000/chunks/{file_id}")
@@ -100,6 +101,19 @@ async def startup_event():
     print("  1. First check: http://localhost:9000/test")
     print("  2. Then check: http://localhost:9000/debug/files")
     print("  3. Get file_id: http://localhost:9000/debug/uploads")
+    
+    # 기존 PDF 파일들을 위한 메타데이터 자동 생성
+    auto_generate_metadata_for_existing_pdfs()
+    
+    # 기존 파일 요약 출력
+    summary = get_existing_files_summary()
+    print(f"\n📊 File Summary:")
+    print(f"  • PDF files: {len(summary['pdf_files'])}")
+    print(f"  • Metadata files: {len(summary['metadata_files'])}")
+    print(f"  • Processed files: {len(summary['processed_files'])}")
+    
+    if summary['processed_files']:
+        print(f"  • Ready to use: {summary['processed_files']}")
     
     # FastAPI 앱의 등록된 엔드포인트들 확인
     print("\n📋 Registered FastAPI routes:")
@@ -133,6 +147,11 @@ class ChunkInfo(BaseModel):
     chunk_type: str  # "text", "image", "table"
     content: str  # 텍스트 내용 또는 요약
     label: Optional[str] = None
+    # 페이지 크기 정보 추가 (RAG 파이프라인에서 사용한 실제 크기)
+    page_width: Optional[float] = None
+    page_height: Optional[float] = None
+    # 원본 픽셀 좌표 추가 (디버깅 및 재계산용)
+    bbox_pixels: Optional[List[int]] = None  # [left, top, right, bottom] in pixels
 
 
 class FileMetadata(BaseModel):
@@ -145,11 +164,10 @@ class FileMetadata(BaseModel):
 
 # Helper functions
 def get_pdf_page_count(file_path: Path) -> int:
-    """Extract page count from PDF file"""
+    """Extract page count from PDF file using pymupdf"""
     try:
-        with open(file_path, 'rb') as pdf_file:
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
-            return len(pdf_reader.pages)
+        with pymupdf.open(file_path) as doc:
+            return len(doc)
     except Exception as e:
         logger.error(f"Error reading PDF: {e}")
         return 0
@@ -237,22 +255,23 @@ def normalize_bbox(bbox_points: List[Dict[str, int]], page_width: float, page_he
 
 
 def get_pdf_page_dimensions(file_path: Path, page_num: int = 0) -> tuple[float, float]:
-    """PDF 페이지의 크기를 구함 (width, height)"""
+    """PDF 페이지의 크기를 구함 (width, height) - pymupdf 사용"""
     try:
-        with open(file_path, 'rb') as pdf_file:
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
-            if page_num < len(pdf_reader.pages):
-                page = pdf_reader.pages[page_num]
-                # PyPDF2의 mediabox는 [x0, y0, x1, y1] 형태
-                mediabox = page.mediabox
-                width = float(mediabox.width)
-                height = float(mediabox.height)
+        with pymupdf.open(file_path) as doc:
+            if page_num < len(doc):
+                page = doc[page_num]
+                # pymupdf에서 get_pixmap()을 사용해서 실제 렌더링된 크기를 구함
+                # DPI 300으로 고정 (RAG 파이프라인과 동일)
+                pixmap = page.get_pixmap(dpi=300)
+                width = float(pixmap.width)
+                height = float(pixmap.height)
+                logger.info(f"📐 Page {page_num} dimensions (pymupdf): {width}x{height}")
                 return width, height
     except Exception as e:
         logger.error(f"Error getting PDF page dimensions: {e}")
     
-    # 기본값 반환 (A4 크기)
-    return 595.0, 842.0
+    # 기본값 반환 (A4 크기, 300 DPI)
+    return 2480.0, 3508.0  # A4 at 300 DPI
 
 
 def get_rag_processing_status(saved_filename: str) -> str:
@@ -279,14 +298,18 @@ async def process_pdf_with_rag(file_id: str, saved_filename: str):
     try:
         logger.info(f"🚀 Starting RAG processing for {saved_filename}")
         
+        # Extract UUID from file_id (format: uuid_filename)
+        processing_uid = file_id.split('_')[0] if '_' in file_id else file_id
+        logger.info(f"📋 Using processing UID: {processing_uid}")
+        
         # Change to RAG directory for execution
         original_cwd = os.getcwd()
         os.chdir(RAG_BASE_DIR)
         
         try:
-            # Execute RAG processing with the specific file
+            # Execute RAG processing with the specific file and processing UID
             result = subprocess.run(
-                ["python", "scripts/process_pdfs.py", "--limit", "1"],
+                ["python", "scripts/process_pdfs.py", "--limit", "1", "--processing-uid", processing_uid, "--filename", saved_filename],
                 capture_output=True,
                 text=True,
                 timeout=600  # 10 minutes timeout
@@ -317,6 +340,82 @@ async def process_pdf_with_rag(file_id: str, saved_filename: str):
     except Exception as e:
         logger.error(f"💥 RAG processing error for {saved_filename}: {str(e)}")
 
+
+def auto_generate_metadata_for_existing_pdfs():
+    """
+    서버 시작 시 기존 PDF 파일들을 스캔해서 메타데이터가 없으면 자동 생성
+    """
+    logger.info("🔍 Scanning for existing PDF files without metadata...")
+    
+    if not UPLOAD_DIR.exists():
+        logger.info("📁 Upload directory doesn't exist yet")
+        return
+    
+    pdf_files = list(UPLOAD_DIR.glob("*.pdf"))
+    logger.info(f"📄 Found {len(pdf_files)} PDF files")
+    
+    generated_count = 0
+    
+    for pdf_file in pdf_files:
+        # 메타데이터 파일이 이미 있는지 확인
+        existing_metadata = list(UPLOAD_DIR.glob(f"*_{pdf_file.stem}_metadata.json"))
+        
+        if existing_metadata:
+            logger.info(f"✅ Metadata already exists for {pdf_file.name}")
+            continue
+        
+        # 메타데이터 생성
+        try:
+            page_count = get_pdf_page_count(pdf_file)
+            file_id = f"{uuid.uuid4().hex}_{pdf_file.stem}"
+            
+            metadata = FileMetadata(
+                file_id=file_id,
+                original_filename=pdf_file.name,
+                saved_filename=pdf_file.name,
+                page_count=page_count,
+                upload_timestamp=datetime.now().isoformat()
+            )
+            
+            save_file_metadata(metadata)
+            generated_count += 1
+            
+            logger.info(f"📋 Generated metadata for {pdf_file.name} with file_id: {file_id}")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to generate metadata for {pdf_file.name}: {e}")
+    
+    if generated_count > 0:
+        logger.info(f"🎉 Generated metadata for {generated_count} existing PDF files")
+    else:
+        logger.info("✨ All existing PDF files already have metadata")
+
+
+def get_existing_files_summary():
+    """
+    기존 파일들의 요약 정보 반환
+    """
+    summary = {
+        "pdf_files": [],
+        "processed_files": [],
+        "metadata_files": []
+    }
+    
+    if UPLOAD_DIR.exists():
+        # PDF 파일들
+        pdf_files = list(UPLOAD_DIR.glob("*.pdf"))
+        summary["pdf_files"] = [f.name for f in pdf_files]
+        
+        # 메타데이터 파일들
+        metadata_files = list(UPLOAD_DIR.glob("*_metadata.json"))
+        summary["metadata_files"] = [f.name for f in metadata_files]
+    
+    # processed_states.json에서 처리된 파일들
+    processed_states = get_processed_states()
+    if processed_states:
+        summary["processed_files"] = list(processed_states.keys())
+    
+    return summary
 
 # API Endpoints
 @app.post("/upload", response_model=UploadResponse)
@@ -503,6 +602,12 @@ async def get_chunks(file_id: str):
     logger.info(f"✅ Found processed data for: {saved_filename}")
     
     file_data = processed_states[saved_filename]
+    processing_uid = file_data.get("processing_uid")
+    
+    if not processing_uid:
+        logger.warning(f"❌ No processing_uid found for {saved_filename}")
+        return []
+    
     chunks = []
     
     # PDF 파일 경로 구성
@@ -540,6 +645,11 @@ async def get_chunks(file_id: str):
                     # 바운딩박스 정규화
                     bbox_norm = normalize_bbox(bbox_points, page_width, page_height)
                     
+                    # 원본 픽셀 좌표 계산
+                    x_coords = [point['x'] for point in bbox_points]
+                    y_coords = [point['y'] for point in bbox_points]
+                    bbox_pixels = [min(x_coords), min(y_coords), max(x_coords), max(y_coords)]
+                    
                     # 라벨 생성 (청크 타입에 따라)
                     if chunk_type == "text":
                         # 텍스트의 첫 20자 또는 첫 줄을 라벨로 사용
@@ -556,7 +666,10 @@ async def get_chunks(file_id: str):
                         bbox_norm=bbox_norm,
                         chunk_type=chunk_type,
                         content=content,
-                        label=label
+                        label=label,
+                        page_width=page_width,
+                        page_height=page_height,
+                        bbox_pixels=bbox_pixels
                     )
                     chunks.append(chunk)
                     
@@ -778,6 +891,75 @@ async def debug_uploads():
                     uploads_info["uploaded_files"].append(file_path.name)
     
     return uploads_info
+
+
+@app.get("/files")
+async def get_existing_files():
+    """
+    기존에 업로드된 파일들 목록 조회
+    RAG 처리 상태와 함께 반환
+    """
+    files_info = []
+    
+    if not UPLOAD_DIR.exists():
+        return {"files": files_info, "total": 0}
+    
+    # 메타데이터 파일들을 기준으로 파일 목록 구성
+    metadata_files = list(UPLOAD_DIR.glob("*_metadata.json"))
+    processed_states = get_processed_states()
+    
+    for metadata_file in metadata_files:
+        try:
+            metadata = load_file_metadata(metadata_file.stem.replace("_metadata", ""))
+            if not metadata:
+                continue
+            
+            # RAG 처리 상태 확인
+            rag_status = "not_processed"
+            has_chunks = False
+            
+            if processed_states and metadata.saved_filename in processed_states:
+                file_data = processed_states[metadata.saved_filename]
+                # 텍스트, 이미지, 테이블 중 하나라도 있으면 처리된 것으로 간주
+                if (file_data.get("text_element_output") or 
+                    file_data.get("image_summary") or 
+                    file_data.get("table_summary")):
+                    rag_status = "completed"
+                    has_chunks = True
+                elif file_data.get("parsing_processed"):
+                    rag_status = "processing"
+            
+            file_info = {
+                "file_id": metadata.file_id,
+                "filename": metadata.original_filename,
+                "saved_filename": metadata.saved_filename,
+                "pages": metadata.page_count,
+                "upload_timestamp": metadata.upload_timestamp,
+                "rag_status": rag_status,
+                "has_chunks": has_chunks,
+                "download_url": f"/file/{metadata.file_id}/download",
+                "chunks_url": f"/chunks/{metadata.file_id}" if has_chunks else None
+            }
+            
+            files_info.append(file_info)
+            
+        except Exception as e:
+            logger.error(f"Error processing metadata file {metadata_file}: {e}")
+            continue
+    
+    # 업로드 시간순으로 정렬 (최신순)
+    files_info.sort(key=lambda x: x["upload_timestamp"], reverse=True)
+    
+    return {
+        "files": files_info,
+        "total": len(files_info),
+        "summary": {
+            "total_files": len(files_info),
+            "rag_completed": len([f for f in files_info if f["rag_status"] == "completed"]),
+            "rag_processing": len([f for f in files_info if f["rag_status"] == "processing"]),
+            "not_processed": len([f for f in files_info if f["rag_status"] == "not_processed"])
+        }
+    }
 
 
 # Note: When using uvicorn command directly, this block is not executed

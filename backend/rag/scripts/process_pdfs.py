@@ -4,6 +4,7 @@ import time
 import os
 import logging
 import argparse
+import uuid
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
@@ -52,10 +53,10 @@ def is_original_pdf(filename: str, processed_states: dict) -> bool:
     wait=wait_exponential(multiplier=1, min=4, max=10),
     retry=retry_if_exception_type((Exception, ValueError)),
 )
-def process_single_pdf_with_retry(pdf_path):
+def process_single_pdf_with_retry(pdf_path, processing_uid):
     """Process a single PDF with retry logic."""
     try:
-        state = process_single_pdf(pdf_path)
+        state = process_single_pdf(pdf_path, processing_uid)
         if state is None:
             raise ValueError(f"PDF processing failed: {pdf_path}")
         return state
@@ -157,7 +158,8 @@ def process_new_pdfs(limit: int = None):
     for pdf_file in pdf_files:
         try:
             pdf_path = os.path.join(pdf_directory, pdf_file)
-            state = process_single_pdf_with_retry(pdf_path)
+            processing_uid = str(uuid.uuid4().hex)  # Use hex format to match upload_api.py
+            state = process_single_pdf_with_retry(pdf_path, processing_uid)
 
             if state is None:
                 logger.error(f"PDF processing failed: {pdf_file}")
@@ -178,6 +180,7 @@ def process_new_pdfs(limit: int = None):
                 "table_summary": state.get("table_summary", {}),
                 "parsing_processed": True,
                 "vectorstore_processed": True,
+                "processing_uid": processing_uid,
             }
 
             # Debug: print new state
@@ -230,6 +233,8 @@ def main():
     """Main entry point with argument parsing."""
     parser = argparse.ArgumentParser(description="PDF processing script for RAG pipeline")
     parser.add_argument("--limit", type=int, help="Maximum number of PDF files to process")
+    parser.add_argument("--processing-uid", type=str, help="Specific processing UID to use")
+    parser.add_argument("--filename", type=str, help="Specific filename to process")
     args = parser.parse_args()
 
     # Validate required environment variables
@@ -239,7 +244,6 @@ def main():
     if missing_vars:
         logger.error(f"Missing required environment variables: {missing_vars}")
         logger.error("Please ensure backend/secrets/.env contains the required API keys")
-        logger.error(f"Secrets path: {secrets_path}")
         sys.exit(1)
 
     # Ensure required directories exist
@@ -247,7 +251,85 @@ def main():
     os.makedirs("./data/vectordb", exist_ok=True)
     os.makedirs("./data/logs", exist_ok=True)
 
-    process_new_pdfs(limit=args.limit)
+    if args.filename and args.processing_uid:
+        # Process specific file with specific UID
+        process_specific_pdf(args.filename, args.processing_uid)
+    else:
+        # Process new PDFs with auto-generated UIDs
+        process_new_pdfs(limit=args.limit)
+
+
+def process_specific_pdf(filename: str, processing_uid: str):
+    """Process a specific PDF file with a given processing UID."""
+    pdf_directory = "./data/pdf"
+    processed_states_path = Path("./data/vectordb/processed_states.json")
+    processed_states = load_processed_states()
+    
+    pdf_path = os.path.join(pdf_directory, filename)
+    
+    if not os.path.exists(pdf_path):
+        logger.error(f"PDF file not found: {pdf_path}")
+        return
+    
+    logger.info(f"🎯 Processing specific file: {filename} with UID: {processing_uid}")
+    
+    # Initialize VectorStore for ChromaDB storage
+    vector_store = VectorStore(persist_directory="./data/vectordb")
+    
+    try:
+        state = process_single_pdf_with_retry(pdf_path, processing_uid)
+        
+        if state is None:
+            logger.error(f"PDF processing failed: {filename}")
+            return
+        
+        # Update state information
+        state_dict = {
+            "text_summary": state.get("text_summary", {}),
+            "text_element_output": state.get("text_element_output", {}),
+            "image_summary": state.get("image_summary", {}),
+            "table_summary": state.get("table_summary", {}),
+            "parsing_processed": True,
+            "vectorstore_processed": True,
+            "processing_uid": processing_uid,
+        }
+        
+        # Merge with existing state information
+        if filename in processed_states:
+            processed_states[filename].update(state_dict)
+            logger.info(f"State merge completed for: {filename}")
+        else:
+            processed_states[filename] = state_dict
+            logger.info(f"New state added for: {filename}")
+        
+        logger.info(f"✅ Processing Completed: {filename}")
+        logger.info(f"Text summaries: {len(state_dict['text_summary'])}")
+        logger.info(f"Text elements: {len(state_dict['text_element_output'])}")
+        logger.info(f"Image summaries: {len(state_dict['image_summary'])}")
+        logger.info(f"Table summaries: {len(state_dict['table_summary'])}")
+        
+        # Store page-level text summaries in ChromaDB
+        if state.get("text_summary"):
+            documents = [
+                Document(
+                    page_content=text,
+                    metadata={"source": filename, "type": "text_summary"},
+                )
+                for text in state.get("text_summary", {}).values()
+                if text.strip()  # Only add non-empty content
+            ]
+            
+            if documents:
+                vector_store.add_documents(documents)
+                logger.info(f"Added {len(documents)} documents to ChromaDB")
+        
+        # Save state file
+        with open(processed_states_path, "w", encoding="utf-8") as f:
+            json.dump(processed_states, f, ensure_ascii=False, indent=2)
+        logger.info("State file saved successfully")
+        
+    except Exception as e:
+        logger.error(f"Processing failed ({filename}): {str(e)}")
 
 
 if __name__ == "__main__":

@@ -20,6 +20,11 @@ class SplitPDFFilesNode(BaseNode):
         """
         # PDF 파일 경로와 배치 크기 추출
         filepath = state["filepath"]
+        processing_uid = state["processing_uid"]  # 처리 세션 UID
+
+        # 분할된 PDF 저장을 위한 디렉토리 생성
+        split_output_dir = os.path.join("data", "logs", processing_uid, "split")
+        os.makedirs(split_output_dir, exist_ok=True)
 
         # PDF 파일 열기
         input_pdf = pymupdf.open(filepath)
@@ -32,9 +37,10 @@ class SplitPDFFilesNode(BaseNode):
             # 배치의 마지막 페이지 계산 (전체 페이지 수를 초과하지 않도록)
             end_page = min(start_page + self.batch_size, num_pages) - 1
 
-            # 분할된 PDF 파일명 생성
-            input_file_basename = os.path.splitext(filepath)[0]
-            output_file = f"{input_file_basename}_{start_page:04d}_{end_page:04d}.pdf"
+            # 분할된 PDF 파일명 생성 (원본 파일명 + 페이지 범위)
+            input_file_basename = os.path.basename(os.path.splitext(filepath)[0])
+            output_filename = f"{input_file_basename}_{start_page:04d}_{end_page:04d}.pdf"
+            output_file = os.path.join(split_output_dir, output_filename)
             print(f"분할 PDF 생성: {output_file}")
 
             # 새로운 PDF 파일 생성 및 페이지 삽입

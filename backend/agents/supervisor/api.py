@@ -5,7 +5,9 @@ ChatClovaX 기반 멀티 에이전트 시스템의 메인 엔드포인트
 
 import os
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+import json
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -16,6 +18,87 @@ from ..shared.graph import create_supervisor_graph, create_initial_state, extrac
 
 # 환경변수 로드
 load_dotenv("secrets/.env")
+
+
+def get_chunk_context(pdf_filename: str, pinned_chunks: List[str]) -> str:
+    """
+    processed_states.json에서 특정 파일의 특정 청크들의 텍스트 정보를 추출
+    
+    Args:
+        pdf_filename: PDF 파일명
+        pinned_chunks: 인용된 청크 ID 목록
+        
+    Returns:
+        str: 추출된 청크들의 텍스트 정보
+    """
+    if not pdf_filename or not pinned_chunks:
+        return ""
+    
+    try:
+        # processed_states.json 파일 경로 찾기
+        backend_root = Path(__file__).parent.parent.parent
+        processed_states_path = backend_root / "rag" / "data" / "vectordb" / "processed_states.json"
+        
+        if not processed_states_path.exists():
+            print(f"⚠️ processed_states.json not found at {processed_states_path}")
+            return ""
+        
+        # processed_states.json 로드
+        with open(processed_states_path, 'r', encoding='utf-8') as f:
+            processed_states = json.load(f)
+        
+        # 해당 PDF 파일 찾기
+        if pdf_filename not in processed_states:
+            print(f"⚠️ PDF file '{pdf_filename}' not found in processed_states")
+            return ""
+        
+        file_data = processed_states[pdf_filename]
+        context_parts = []
+        
+        # 각 청크 타입에서 해당 청크들 찾기
+        chunk_types = {
+            "text_element_output": "텍스트",
+            "image_summary": "이미지", 
+            "table_summary": "테이블"
+        }
+        
+        for chunk_id in pinned_chunks:
+            # 청크 ID에서 타입과 번호 분리 (예: "text_5" -> "text", "5")
+            if '_' in chunk_id:
+                chunk_type_prefix, chunk_number = chunk_id.split('_', 1)
+                
+                # 매핑된 섹션 이름 찾기
+                section_name = None
+                if chunk_type_prefix == "text":
+                    section_name = "text_element_output"
+                elif chunk_type_prefix == "image":
+                    section_name = "image_summary"
+                elif chunk_type_prefix == "table":
+                    section_name = "table_summary"
+                
+                if section_name and section_name in file_data:
+                    section_data = file_data[section_name]
+                    if chunk_number in section_data:
+                        chunk_info = section_data[chunk_number]
+                        # 청크 데이터 구조: [페이지번호, [바운딩박스좌표], "내용"]
+                        if len(chunk_info) >= 3:
+                            page_num = chunk_info[0] + 1  # 0-based를 1-based로 변환
+                            content = chunk_info[2]
+                            chunk_type_display = chunk_types.get(section_name, "알 수 없음")
+                            
+                            context_parts.append(f"[{chunk_type_display} #{chunk_number} (페이지 {page_num})]\n{content}")
+        
+        if context_parts:
+            context = "\n\n".join(context_parts)
+            print(f"✅ Extracted context for {len(pinned_chunks)} chunks from {pdf_filename}")
+            return context
+        else:
+            print(f"⚠️ No matching chunks found for {pinned_chunks} in {pdf_filename}")
+            return ""
+            
+    except Exception as e:
+        print(f"❌ Error extracting chunk context: {e}")
+        return ""
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -41,6 +124,8 @@ class QueryRequest(BaseModel):
     """질의 요청 모델"""
     query: str = Field(description="사용자의 주식 관련 질문")
     session_id: Optional[str] = Field(None, description="세션 ID (선택사항)")
+    pinned_chunks: Optional[List[str]] = Field(None, description="인용된 청크 ID 목록")
+    pdf_filename: Optional[str] = Field(None, description="현재 열려있는 PDF 파일명")
 
 
 class QueryResponse(BaseModel):
@@ -181,14 +266,31 @@ async def process_query(request: QueryRequest):
     start_time = datetime.now()
     
     try:
-        # 초기 상태 생성
+        # 인용된 청크 정보에서 컨텍스트 추출
+        context = ""
+        if request.pinned_chunks and request.pdf_filename:
+            print(f"📋 Processing pinned chunks: {request.pinned_chunks} from {request.pdf_filename}")
+            context = get_chunk_context(request.pdf_filename, request.pinned_chunks)
+            if context:
+                print(f"✅ Context extracted: {len(context)} characters")
+            else:
+                print("⚠️ No context extracted from pinned chunks")
+        
+        # 초기 상태 생성 (컨텍스트 정보 포함)
         os.environ["REQUEST_TIME"] = start_time.isoformat()
-        initial_state = create_initial_state(request.query)
+        initial_state = create_initial_state(request.query, context=context)
         
         # 세션 ID 처리
         if request.session_id:
             initial_state["metadata"] = initial_state.get("metadata", {})
             initial_state["metadata"]["session_id"] = request.session_id
+        
+        # 인용 정보를 메타데이터에 추가
+        if request.pinned_chunks and request.pdf_filename:
+            initial_state["metadata"] = initial_state.get("metadata", {})
+            initial_state["metadata"]["pdf_filename"] = request.pdf_filename
+            initial_state["metadata"]["pinned_chunks"] = request.pinned_chunks
+            initial_state["metadata"]["context_provided"] = bool(context)
         
         # LangSmith 추적 설정
         langsmith_url = None
@@ -202,6 +304,8 @@ async def process_query(request: QueryRequest):
         
         # 그래프 실행
         print(f"📝 사용자 질문: {request.query}")
+        if context:
+            print(f"📋 인용 문서 정보 포함: {len(request.pinned_chunks)}개 청크")
         print(f"🤖 ChatClovaX Supervisor 시스템 처리 시작...")
         
         final_state = supervisor_graph.invoke(initial_state)

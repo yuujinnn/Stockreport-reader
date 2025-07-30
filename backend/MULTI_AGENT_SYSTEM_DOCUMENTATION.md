@@ -6,25 +6,43 @@
 ## Table of Contents
 1. [System Overview](#system-overview)
 2. [Architecture Diagrams](#architecture-diagrams)
-3. [Agent System Structure](#agent-system-structure)
-4. [Data Flow Analysis](#data-flow-analysis)
-5. [API Integration](#api-integration)
-6. [State Management](#state-management)
-7. [Upload API System Analysis](#upload-api-system-analysis)
-8. [Technology Stack](#technology-stack)
-9. [Extension Points](#extension-points)
+3. [Multi-Agent Interaction Flows](#multi-agent-interaction-flows)
+4. [Agent System Structure](#agent-system-structure)
+5. [Data Flow Analysis](#data-flow-analysis)
+6. [RAG Pipeline Detailed Architecture](#rag-pipeline-detailed-architecture)
+7. [API Integration](#api-integration)
+8. [Upload API System Analysis](#upload-api-system-analysis)
+9. [Chunk-based Document Reference System](#chunk-based-document-reference-system)
+10. [Context Injection & Citation System](#context-injection--citation-system)
+11. [Technology Stack](#technology-stack)
+12. [Extension Points](#extension-points)
+13. [Testing & Quality Assurance](#testing--quality-assurance)
+14. [Change Log](#change-log)
+15. [Next Steps & Roadmap](#next-steps--roadmap)
 
 ---
 
 ## System Overview
 
-This is a comprehensive multi-agent system built with **ChatClovaX (HCX-005)** and **LangGraph** for analyzing stock market data and documents. The system combines PDF document processing with stock chart  analysis through a coordinated agent architecture.
+This is a comprehensive multi-agent system built with **ChatClovaX (HCX-005)** and **LangGraph** for analyzing stock market data, corporate disclosures, news information, and documents. The system combines advanced PDF document processing with intelligent chunk-based citation, multi-source data analysis, and coordinated agent orchestration.
 
 ### Core Components
-- **Frontend**: React 19 + TypeScript + Tailwind CSS
-- **Backend**: FastAPI + LangGraph + ChatClovaX
-- **Multi-Agent System**: Supervisor + Worker Agent Pattern
-- **Data Sources**: Kiwoom REST API, PDF Documents
+- **Frontend**: React 19 + TypeScript + Tailwind CSS with Interactive PDF Viewer
+- **Backend**: FastAPI + LangGraph + ChatClovaX Multi-Agent System
+- **Agent Architecture**: Supervisor + 3 Specialized Worker Agents
+- **RAG Integration**: PDF Processing + Chunk-based Citation + Context Injection
+- **Citation System**: Interactive chunk selection with real-time context injection
+- **Data Sources**: Kiwoom API, DART Open API, Tavily Search, Naver News, PDF Documents
+
+### RAG Pipeline Integration
+The system features advanced **RAG (Retrieval-Augmented Generation)** capabilities that enhance multi-agent analysis:
+
+- **Intelligent PDF Processing**: Automatic extraction of text, image, and table chunks with precise bounding box coordinates
+- **Interactive Chunk Citation**: Users can visually select and cite specific document sections through the PDF viewer
+- **Context Injection**: Selected chunks are automatically injected into the Supervisor's system prompt as `{context}`
+- **Real-time Context Processing**: Dynamic prompt generation based on user-selected document sections
+- **Multi-Modal Analysis**: Agents can analyze uploaded documents alongside real-time data sources
+- **Chunk Metadata Storage**: `processed_states.json` maintains chunk relationships and enables precise source attribution
 
 ---
 
@@ -48,12 +66,22 @@ graph TB
         subgraph "Multi-Agent System"
             SupervisorAgent[Supervisor Agent<br/>ChatClovaX HCX-005]
             StockAgent[Stock Price Agent<br/>ChatClovaX HCX-005]
+            SearchAgent[Search Agent<br/>ChatClovaX HCX-005]
+            DartAgent[DART Agent<br/>ChatClovaX HCX-005]
+        end
+        
+        subgraph "RAG Pipeline Integration"
+            ProcessedStates[processed_states.json<br/>📄 Chunk Metadata & BBox]
+            ChunkContext[Chunk Context Provider<br/>🔗 Context Injection]
         end
     end
     
     subgraph "External APIs"
         Kiwoom[Kiwoom REST API<br/>Historical Stock Chart Data]
         Clova[CLOVA Studio API<br/>ChatClovaX Models]
+        Tavily[Tavily Search API<br/>Global Web Search]
+        Naver[Naver News API<br/>Korean News Search]
+        DARTAPI[DART Open API<br/>Corporate Disclosure Data]
     end
     
     subgraph "Storage"
@@ -72,15 +100,35 @@ graph TB
     
     Supervisor --> SupervisorAgent
     SupervisorAgent --> StockAgent
+    SupervisorAgent --> SearchAgent
+    SupervisorAgent --> DartAgent
+    
     StockAgent --> Kiwoom
     StockAgent --> StockData
     
+    ProcessedStates --> ChunkContext
+    ChunkContext --> SupervisorAgent
+    
     SupervisorAgent --> Clova
     StockAgent --> Clova
+    StockAgent --> Kiwoom
+    SearchAgent --> Clova
+    SearchAgent --> Tavily
+    SearchAgent --> Naver
+    DartAgent --> Clova  
+    DartAgent --> DARTAPI
     
     style SupervisorAgent fill:#e1f5fe
     style StockAgent fill:#f3e5f5
-    style Clova fill:#fff3e0
+    style SearchAgent fill:#e8f5e8
+    style DartAgent fill:#fff3e0
+    style ProcessedStates fill:#fce4ec
+    style ChunkContext fill:#e8f5e8
+    style Clova fill:#fff8e1
+    style Kiwoom fill:#e3f2fd
+    style Tavily fill:#f1f8e9
+    style Naver fill:#fff3e0
+    style DARTAPI fill:#fce4ec
 ```
 
 ### 2. Multi-Agent System Architecture
@@ -93,9 +141,9 @@ graph TB
         end
         
         subgraph "Worker Agents"
-            StockAgent[Stock Price Agent<br/>ChatClovaX HCX-005<br/>📊 Stock Data Analysis]
-            SearchAgent[✅ Search Agent<br/>ChatClovaX HCX-005<br/>🔍 Web Search & News Analysis<br/>Tavily + Naver News]
-            DARTAgent[🔜 DART Agent<br/>ChatClovaX HCX-005<br/>📈 Corporate Filings Analysis]
+            StockAgent[Stock Price Agent<br/>ChatClovaX HCX-005<br/>📊 Stock Data Analysis<br/>Kiwoom REST API]
+            SearchAgent[Search Agent<br/>ChatClovaX HCX-005<br/>🔍 Web Search & News Analysis<br/>Tavily + Naver News]
+            DARTAgent[DART Agent<br/>ChatClovaX HCX-005<br/>📈 Corporate Filings Analysis<br/>DART API Integration]
         end
         
         subgraph "Shared Components"
@@ -105,23 +153,23 @@ graph TB
         
         subgraph "Tools & APIs"
             KiwoomTools[Kiwoom API Tools<br/>📡 Chart Data Retrieval]
-            SearchTools[✅ Search & News Tools<br/>🌐 Tavily Web Search + 📰 Naver News + 🔗 Content Crawling]
-            DARTTools[🔜 DART API Tools<br/>📊 Corporate Filings Retrieval]
+            SearchTools[Search & News Tools<br/>🌐 Tavily Web Search + 📰 Naver News + 🔗 Content Crawling]
+            DARTTools[DART API Tools<br/>📊 Corporate Filings Retrieval<br/>🔍 Report Analysis & Section Extraction]
         end
     end
     
     User[👤 User Query] --> Supervisor
     Supervisor -->|handoff| StockAgent
     Supervisor -->|handoff| SearchAgent
-    Supervisor -.->|future| DARTAgent
+    Supervisor -->|handoff| DARTAgent
     
     StockAgent --> KiwoomTools
     SearchAgent --> SearchTools
-    DARTAgent -.-> DARTTools
+    DARTAgent --> DARTTools
     
     StockAgent --> State
     SearchAgent --> State
-    DARTAgent -.-> State
+    DARTAgent --> State
     
     State --> Graph
     Graph --> Supervisor
@@ -129,12 +177,13 @@ graph TB
     style Supervisor fill:#e3f2fd
     style StockAgent fill:#f3e5f5
     style SearchAgent fill:#e8f5e8
-    style DARTAgent fill:#fff3e0,stroke-dasharray: 5 5
+    style DARTAgent fill:#fff3e0
     style State fill:#fce4ec
 ```
 
-### 3. Current Agent Interaction Flow
+### 3. Multi-Agent Interaction Flows
 
+#### A. Stock Price Agent Flow
 ```mermaid
 sequenceDiagram
     participant User
@@ -144,14 +193,14 @@ sequenceDiagram
     participant Kiwoom as Kiwoom API
     participant DataMgr as Data Manager
     
-    User->>API: POST /query {"query": "삼성전자 Q1 분석"}
+    User->>API: POST /query {"query": "삼성전자 Q1 주가 분석"}
     API->>Supervisor: invoke(initial_state)
     
-    Note over Supervisor: ChatClovaX 분석<br/>질문 파싱 & 라우팅
+    Note over Supervisor: ChatClovaX 분석<br/>주가 분석 요청 판단
     
-    Supervisor->>Supervisor: 종목: 삼성전자(005930)<br/>기간: Q1 (20250101-20250331)<br/>목적: 분석
+    Supervisor->>Supervisor: 종목: 삼성전자(005930)<br/>기간: Q1 (20250101-20250331)<br/>목적: 기술적 분석
     
-    Supervisor->>StockAgent: call_stock_price_agent(<br/>"삼성전자(005930) Q1 데이터 분석")
+    Supervisor->>StockAgent: call_stock_price_agent(<br/>"삼성전자(005930) Q1 주가 데이터 분석")
     
     Note over StockAgent: ChatClovaX + LangGraph<br/>ReAct Pattern
     
@@ -170,6 +219,94 @@ sequenceDiagram
     API-->>User: QueryResponse
 ```
 
+#### B. Search Agent Flow  
+```mermaid
+sequenceDiagram
+    participant User
+    participant API as Supervisor API
+    participant Supervisor as Supervisor Agent
+    participant SearchAgent as Search Agent
+    participant Tavily as Tavily API
+    participant Naver as Naver News API
+    participant Crawler as Content Crawler
+    
+    User->>API: POST /query {"query": "올해 삼성전자 반도체 신규 수주"}
+    API->>Supervisor: invoke(initial_state)
+    
+    Note over Supervisor: ChatClovaX 분석<br/>뉴스 검색 요청 판단
+    
+    Supervisor->>Supervisor: 삼성전자 반도체 최신 뉴스 필요
+    
+    Supervisor->>SearchAgent: call_search_agent(<br/>"삼성전자 반도체 최신 뉴스 및 수주 현황")
+    
+    Note over SearchAgent: ChatClovaX + LangGraph<br/>Autonomous Tool Selection
+    
+    SearchAgent->>SearchAgent: Thought: 한국 뉴스 최신순 검색
+    SearchAgent->>Naver: search_naver_news_by_date("삼성전자 반도체 계약")
+    Naver-->>SearchAgent: Latest News Articles
+    
+    SearchAgent->>Crawler: crawl_content(article_urls)
+    Crawler-->>SearchAgent: Full Article Content
+    
+    SearchAgent->>SearchAgent: Thought: 글로벌 정보도 확인
+    SearchAgent->>Tavily: tavily_web_search("Samsung Electronics chip deal")
+    Tavily-->>SearchAgent: Global Web Results
+    
+    SearchAgent->>SearchAgent: Final Answer: 종합 뉴스 분석 보고서
+    SearchAgent-->>Supervisor: 뉴스 동향 분석 결과
+    
+    Supervisor->>Supervisor: 결과 종합 & 최종 답변 작성
+    Supervisor-->>API: 최종 답변
+    API-->>User: QueryResponse
+```
+
+#### C. DART Agent Flow
+```mermaid
+sequenceDiagram
+    participant User
+    participant API as Supervisor API
+    participant Supervisor as Supervisor Agent
+    participant DartAgent as DART Agent
+    participant DARTAPI as DART API
+    participant XMLParser as XML Parser
+    participant SectionAnalyzer as Section Analyzer
+    
+    User->>API: POST /query {"query": "삼성전자 최근 분기보고서 분석"}
+    API->>Supervisor: invoke(initial_state)
+    
+    Note over Supervisor: ChatClovaX 분석<br/>공시 문서 분석 요청 판단
+    
+    Supervisor->>Supervisor: 삼성전자의 최근 공시자료와 25년 2분기 보고서 필요
+    
+    Supervisor->>DartAgent: call_dart_agent(<br/>"삼성전자 25년 2분기보고서 핵심 내용 분석")
+    
+    Note over DartAgent: ChatClovaX + LangGraph<br/>Autonomous DART Analysis
+    
+    DartAgent->>DartAgent: Thought: 분기보고서 유형 결정
+    DartAgent->>DartAgent: get_dart_report_type_code("분기보고서")
+    DartAgent->>DartAgent: Action: A003 (분기보고서)
+    
+    DartAgent->>DARTAPI: get_dart_report_list(005930, "A003")
+    DARTAPI-->>DartAgent: Report List
+    
+    DartAgent->>DartAgent: get_rcept_no_by_date(20250101, report_list)
+    DartAgent->>XMLParser: extract_report_then_title_list_from_xml(rcept_no)
+    XMLParser-->>DartAgent: Document Section Titles
+    
+    DartAgent->>SectionAnalyzer: recommend_section_from_titles_list(titles, query)
+    SectionAnalyzer-->>DartAgent: Recommended Sections
+    
+    DartAgent->>XMLParser: extract_report_then_section_text(sections, titles, rcept_no)
+    XMLParser-->>DartAgent: Section Content
+    
+    DartAgent->>DartAgent: Final Answer: 분기보고서 분석 보고서
+    DartAgent-->>Supervisor: 공시 분석 결과
+    
+    Supervisor->>Supervisor: 결과 종합 & 최종 답변 작성
+    Supervisor-->>API: 최종 답변
+    API-->>User: QueryResponse
+```
+
 ---
 
 ## Agent System Structure
@@ -179,14 +316,14 @@ sequenceDiagram
 ```mermaid
 flowchart TD
     subgraph "Supervisor Agent (ChatClovaX HCX-005)"
-        Prompt[System Prompt<br/>📋 Date-aware Instructions]
+        Prompt["System Prompt<br/>📋 Date-aware Instructions + Pinned Chunk(context)"]
         LLM[ChatClovaX HCX-005<br/>🧠 Core Intelligence]
         Tools[Handoff Tools<br/>🔧 Worker Agent Connectors]
         
         subgraph "Tool Registry"
             StockTool[call_stock_price_agent<br/>📊 Stock Analysis Tool]
-            NewsTool[🔜 call_news_agent<br/>📰 News Analysis Tool]
-            DARTTool[🔜 call_dart_agent<br/>📈 Corporate Filings Analysis Tool]
+            SearchTool[call_search_agent<br/>🔍 Search & News Analysis Tool]
+            DARTTool[call_dart_agent<br/>📈 Corporate Filings Analysis Tool]
         end
         
         subgraph "Manual Supervisor Implementation"
@@ -199,8 +336,8 @@ flowchart TD
     Prompt --> LLM
     LLM --> Tools
     Tools --> StockTool
-    Tools -.-> NewsTool
-    Tools -.-> DARTTool
+    Tools --> SearchTool
+    Tools --> DARTTool
     
     ReactAgent --> LLM
     ReactAgent --> Tools
@@ -208,8 +345,8 @@ flowchart TD
     
     style LLM fill:#e1f5fe
     style StockTool fill:#f3e5f5
-    style NewsTool fill:#e8f5e8,stroke-dasharray: 5 5
-    style DARTTool fill:#fff3e0,stroke-dasharray: 5 5
+    style SearchTool fill:#e8f5e8
+    style DARTTool fill:#fff3e0
 ```
 
 ### 5. Stock Price Agent Internal Architecture
@@ -264,69 +401,312 @@ flowchart TD
     style DataManager fill:#fce4ec
 ```
 
+### 6. Search Agent Internal Architecture
+
+```mermaid
+flowchart TD
+    subgraph "Search Agent (ChatClovaX HCX-005)"
+        SearchLLM[ChatClovaX HCX-005<br/>🧠 Search Analysis Intelligence]
+        SearchPrompt[Search Agent Prompt<br/>📋 Autonomous search reasoning instructions]
+        
+        subgraph "LangChain Tools"
+            TavilyTool[tavily_web_search<br/>🌐 Global Web Search]
+            NaverRelevanceTool[search_naver_news_by_relevance<br/>📰 Korean News Relevance]
+            NaverDateTool[search_naver_news_by_date<br/>📅 Korean News Latest]
+        end
+        
+        subgraph "React Agent System"
+            SearchReactEngine[create_react_agent<br/>🔄 Tool-calling Engine]
+            SearchThoughtAction[Thought → Action → Observation<br/>🤔 ReAct Loop]
+        end
+        
+        subgraph "Data Processing Layer"
+            TavilyAPI[Tavily API Client<br/>🌐 Global Web Search Access]
+            NaverAPI[Naver News API Client<br/>📰 Korean News Access]
+            ContentCrawler[Content Crawler<br/>🔗 Deep Article Analysis]
+        end
+    end
+    
+    SearchLLM --> SearchPrompt
+    SearchLLM --> SearchReactEngine
+    SearchReactEngine --> SearchThoughtAction
+    SearchThoughtAction --> TavilyTool
+    SearchThoughtAction --> NaverRelevanceTool
+    SearchThoughtAction --> NaverDateTool
+    
+    TavilyTool --> TavilyAPI
+    NaverRelevanceTool --> NaverAPI
+    NaverDateTool --> NaverAPI
+    
+    TavilyAPI --> ContentCrawler
+    NaverAPI --> ContentCrawler
+    
+    style SearchLLM fill:#e8f5e8
+    style SearchReactEngine fill:#f3e5f5
+    style TavilyAPI fill:#e1f5fe
+    style NaverAPI fill:#fff3e0
+    style ContentCrawler fill:#fce4ec
+```
+
+### 7. DART Agent Internal Architecture
+
+```mermaid
+flowchart TD
+    subgraph "DART Agent (ChatClovaX HCX-005)"
+        DARTLLm[ChatClovaX HCX-005<br/>🧠 DART Analysis Intelligence]
+        DARTPrompt[DART Analysis Prompt<br/>📋 Autonomous DART reasoning instructions]
+        
+        subgraph "LangChain Tools"
+            ReportTypeTool[get_dart_report_type_code<br/>📋 Report Type Classification]
+            ReportListTool[get_dart_report_list<br/>📄 Report List Retrieval]
+            RceptNoTool[get_rcept_no_by_date<br/>📅 Receipt Number by Date]
+            TitleListTool[extract_report_then_title_list_from_xml<br/>📑 Document Structure Analysis]
+            SectionRecommendTool[recommend_section_from_titles_list<br/>🎯 Section Recommendation]
+            SectionTextTool[extract_report_then_section_text<br/>📝 Section Content Extraction]
+        end
+        
+        subgraph "React Agent System"
+            DARTReactEngine[create_react_agent<br/>🔄 Tool-calling Engine]
+            DARTThoughtAction[Thought → Action → Observation<br/>🤔 ReAct Loop]
+        end
+        
+        subgraph "Data Processing Layer"
+            DARTAPI[DART API Client<br/>📡 Electronic Disclosure Access]
+            ReportParser[Report Parser<br/>📊 XML Processing & Section Extraction]
+            ContentAnalyzer[Content Analyzer<br/>📈 Financial Data Analysis]
+        end
+    end
+    
+    DARTLLm --> DARTPrompt
+    DARTLLm --> DARTReactEngine
+    DARTReactEngine --> DARTThoughtAction
+    DARTThoughtAction --> ReportTypeTool
+    DARTThoughtAction --> ReportListTool
+    DARTThoughtAction --> RceptNoTool
+    DARTThoughtAction --> TitleListTool
+    DARTThoughtAction --> SectionRecommendTool
+    DARTThoughtAction --> SectionTextTool
+    
+    ReportTypeTool --> DARTAPI
+    ReportListTool --> DARTAPI
+    RceptNoTool --> DARTAPI
+    TitleListTool --> DARTAPI
+    SectionRecommendTool --> ReportParser
+    SectionTextTool --> ReportParser
+    
+    DARTAPI --> ReportParser
+    ReportParser --> ContentAnalyzer
+    
+    style DARTLLm fill:#fff3e0
+    style DARTReactEngine fill:#e8f5e8
+    style DARTAPI fill:#e1f5fe
+    style ReportParser fill:#fce4ec
+```
+
 ---
 
 ## Data Flow Analysis
 
-### 6. Complete Data Flow Pipeline
+### 8. Complete Data Flow Pipeline
 
 ```mermaid
 flowchart LR
     subgraph "Input Layer"
         UserQuery[👤 User Query<br/>삼성전자 Q1 분석]
         PDFUpload[📄 PDF Upload<br/>Research Reports]
+        ChunkSelection[📌 Chunk Selection<br/>Interactive Citation]
     end
     
-    subgraph "Processing Layer"
+    subgraph "RAG Pipeline Processing"
+        subgraph "PDF Analysis (LangGraph)"
+            PDFSplit[📄 PDF Split<br/>Batch Processing]
+            LayoutAnalysis[🔍 Layout Analysis<br/>Upstage API]
+            ElementExtract[🎯 Element Extraction<br/>Text/Image/Table]
+            ContentCrop[✂️ Content Cropping<br/>Image & Table Isolation]
+            Summarization[📝 Multi-Modal Summarization<br/>OpenAI API]
+        end
+        
+        subgraph "Vector Storage"
+            VectorStore[🗃️ ChromaDB Storage<br/>Semantic Embeddings]
+            ProcessedStates[📋 processed_states.json<br/>Chunk Metadata + BBox]
+            ChunkProvider[🔗 Chunk Context Provider<br/>Selected Content Injection]
+        end
+    end
+    
+    subgraph "Multi-Agent Processing"
         subgraph "Supervisor Processing"
             Parse[🔍 Query Parsing<br/>Extract: 종목, 기간, 목적]
-            Route[🎯 Agent Routing<br/>Determine: Stock/News/DART]
-            Coordinate[🤝 Result Coordination<br/>Integrate responses]
+            Route[🎯 Agent Routing<br/>Determine: Stock/Search/DART]
+            ContextInject["💉 Context Injection<br/>Pinned Chunks → {context}"]
+            Coordinate[🤝 Result Coordination<br/>Integrate Multi-Source Responses]
         end
         
-        subgraph "Stock Agent Processing"
-            Analyze[📊 Stock Analysis<br/>Period & Chart Selection]
-            Fetch[📡 Data Fetching<br/>Kiwoom API Calls]
-            Process[⚙️ Data Processing<br/>Technical Indicators]
-            Report[📋 Analysis Report<br/>7-section format]
+        subgraph "Specialized Agents"
+            StockAnalyze[📊 Stock Analysis<br/>Kiwoom API + Technical Indicators]
+            SearchAnalyze[🔍 Search Analysis<br/>Tavily + Naver News + Crawling]
+            DartAnalyze[📈 DART Analysis<br/>Corporate Disclosure + XML Parsing]
         end
         
-        subgraph "PDF Processing"
-            Extract[📄 Text Extraction<br/>PyPDF2]
-            Chunk[🧩 Chunking<br/>BBox Creation]
-            Store[💾 Storage<br/>processed/]
+        subgraph "Data Integration"
+            Fetch[📡 Multi-Source Data Fetching<br/>Parallel API Calls]
+            Process[⚙️ Cross-Agent Synthesis<br/>Information Fusion]
+            Report[📋 Integrated Report<br/>Multi-Domain Analysis + Citations]
         end
     end
     
     subgraph "Output Layer"
-        Response[📝 Final Response<br/>Structured Analysis]
-        PDF_UI[🖥️ PDF Viewer<br/>Chunk Overlays]
-        Chat_UI[💬 Chat Interface<br/>Streaming Responses]
+        Response[📝 Final Response<br/>Contextualized Analysis]
+        PDF_UI[🖥️ Interactive PDF Viewer<br/>Chunk Overlays + Selection]
+        Chat_UI[💬 Chat Interface<br/>Streaming + Source Attribution]
     end
     
+    %% PDF Processing Flow
+    PDFUpload --> PDFSplit
+    PDFSplit --> LayoutAnalysis
+    LayoutAnalysis --> ElementExtract
+    ElementExtract --> ContentCrop
+    ContentCrop --> Summarization
+    Summarization --> VectorStore
+    Summarization --> ProcessedStates
+    
+    %% Chunk Citation Flow
+    ProcessedStates --> PDF_UI
+    PDF_UI --> ChunkSelection
+    ChunkSelection --> ChunkProvider
+    
+    %% Query Processing Flow
     UserQuery --> Parse
     Parse --> Route
-    Route --> Analyze
-    Analyze --> Fetch
+    ChunkProvider --> ContextInject
+    ContextInject --> Route
+    
+    Route --> StockAnalyze
+    Route --> SearchAnalyze
+    Route --> DartAnalyze
+    
+    StockAnalyze --> Fetch
+    SearchAnalyze --> Fetch
+    DartAnalyze --> Fetch
+    
     Fetch --> Process
     Process --> Report
     Report --> Coordinate
     Coordinate --> Response
     Response --> Chat_UI
     
-    PDFUpload --> Extract
-    Extract --> Chunk
-    Chunk --> Store
-    Store --> PDF_UI
+    %% Cross-references
+    VectorStore -.-> Process
+    ProcessedStates -.-> Coordinate
     
     style Parse fill:#e3f2fd
     style Route fill:#e3f2fd
-    style Analyze fill:#f3e5f5
-    style Process fill:#f3e5f5
-    style Extract fill:#e8f5e8
+    style ContextInject fill:#e1f5fe
+    style StockAnalyze fill:#f3e5f5
+    style SearchAnalyze fill:#e8f5e8
+    style DartAnalyze fill:#fff3e0
+    style Process fill:#fce4ec
+    style LayoutAnalysis fill:#fff8e1
+    style Summarization fill:#f0f8ff
+    style VectorStore fill:#f5f5dc
+    style ProcessedStates fill:#ffefd5
+    style ChunkProvider fill:#e6ffe6
 ```
 
-### 7. State Management Flow
+### 9. RAG Pipeline Detailed Architecture
+
+```mermaid
+flowchart TD
+    subgraph "RAG Processing Pipeline (LangGraph)"
+        subgraph "Input Processing"
+            PDFInput[PDF Document<br/>📄 Source File]
+            InitState[Initial State<br/>🗂️ GraphState Init]
+        end
+        
+        subgraph "Document Analysis"
+            SplitNode[Split PDF Node<br/>📑 Batch Processing]
+            LayoutNode[Layout Analyzer Node<br/>🔍 Upstage API]
+            ExtractNode[Extract Page Elements Node<br/>🎯 Content Identification]
+        end
+        
+        subgraph "Content Processing"
+            ImageCrop[Image Cropper Node<br/>🖼️ Visual Content Isolation]
+            TableCrop[Table Cropper Node<br/>📊 Structured Data Extraction]
+            TextExtract[Extract Page Text Node<br/>📝 Textual Content]
+        end
+        
+        subgraph "AI Summarization"
+            PageSummary[Page Summary Node<br/>📋 OpenAI GPT-4]
+            ImageSummary[Image Summary Node<br/>🖼️ Vision Analysis]
+            TableSummary[Table Summary Node<br/>📊 Structured Analysis]
+            TableMarkdown[Table Markdown Node<br/>📐 Format Conversion]
+        end
+        
+        subgraph "Storage & Indexing"
+            ProcessedState[processed_states.json<br/>📋 Metadata + BBox Coordinates]
+            ChromaDB[ChromaDB Vector Store<br/>🗃️ Semantic Embeddings]
+            EmbeddingGen[Embedding Generation<br/>🔢 CLOVA Embeddings]
+        end
+    end
+    
+    PDFInput --> InitState
+    InitState --> SplitNode
+    SplitNode --> LayoutNode
+    LayoutNode --> ExtractNode
+    
+    ExtractNode --> ImageCrop
+    ExtractNode --> TableCrop
+    ExtractNode --> TextExtract
+    
+    ImageCrop --> PageSummary
+    TableCrop --> PageSummary
+    TextExtract --> PageSummary
+    
+    PageSummary --> ImageSummary
+    PageSummary --> TableSummary
+    
+    ImageSummary --> ProcessedState
+    TableSummary --> TableMarkdown
+    TableMarkdown --> ProcessedState
+    
+    ProcessedState --> EmbeddingGen
+    EmbeddingGen --> ChromaDB
+    
+    style PDFInput fill:#e8f5e8
+    style LayoutNode fill:#fff8e1
+    style ExtractNode fill:#e3f2fd
+    style PageSummary fill:#f0f8ff
+    style ProcessedState fill:#ffefd5
+    style ChromaDB fill:#f5f5dc
+```
+
+#### RAG Pipeline Key Features
+
+##### **1. Advanced Document Processing**
+- **PDF Splitting**: Batch processing for large documents (configurable batch size)
+- **Layout Analysis**: Upstage API for precise element detection and positioning
+- **Multi-Modal Extraction**: Simultaneous text, image, and table content identification
+- **Bounding Box Precision**: Exact coordinate mapping for interactive citation
+
+##### **2. AI-Powered Content Analysis**
+- **Page Summarization**: OpenAI GPT-4 for contextual page summaries
+- **Image Analysis**: Vision-based understanding of charts, diagrams, and visual content
+- **Table Processing**: Structured data extraction with Markdown formatting
+- **Korean Language Optimization**: Specialized processing for Korean financial documents
+
+##### **3. Intelligent Storage System**
+- **Dual Storage Strategy**: 
+  - `processed_states.json`: Metadata, coordinates, and chunk relationships
+  - `ChromaDB`: Vector embeddings for semantic search
+- **CLOVA Embeddings**: Korean-optimized embedding generation
+- **Chunk-Level Granularity**: Individual element tracking for precise citation
+
+##### **4. Interactive Citation System**
+- **Visual Overlay**: Real-time chunk visualization on PDF viewer
+- **Multi-Type Support**: Text, image, and table chunks with type-specific styling
+- **Context Injection**: Selected chunks automatically injected into agent prompts
+- **Source Attribution**: Complete traceability from analysis back to source content
+
+### 10. State Management Flow
 
 ```mermaid
 stateDiagram-v2
@@ -378,7 +758,7 @@ stateDiagram-v2
 
 ## API Integration
 
-### 8. API Architecture & Endpoints
+### 11. API Architecture & Endpoints
 
 ```mermaid
 graph TB
@@ -423,53 +803,91 @@ graph TB
     style ClovaAPI fill:#fce4ec
 ```
 
-### 9. Request/Response Flow
+### 12. Multi-Agent Request/Response Flow
 
 ```mermaid
 sequenceDiagram
+    participant User as 사용자
     participant FE as Frontend
     participant Upload as Upload API<br/>:9000
     participant Query as Query API<br/>:8000
-    participant MAS as Multi-Agent<br/>System
+    participant Supervisor as Supervisor Agent
+    participant StockAgent as Stock Price Agent
+    participant SearchAgent as Search Agent  
+    participant DartAgent as DART Agent
+    participant ProcessedStates as processed_states.json
     participant Kiwoom as Kiwoom API
+    participant Tavily as Tavily API
+    participant Naver as Naver News API
+    participant DARTAPI as DART API
     participant Clova as CLOVA Studio
     
-    Note over FE,Clova: PDF Upload Flow
+    Note over User,Clova: PDF Upload & Chunk Citation Flow
+    User->>FE: Upload PDF document
     FE->>Upload: POST /upload (PDF file)
-    Upload->>Upload: Save to uploads/
-    Upload->>Upload: Create processed_states.json
+    Upload->>Upload: RAG processing & chunk extraction
+    Upload->>ProcessedStates: Save chunk metadata & bounding boxes
     Upload-->>FE: {fileId, pageCount}
     
-    FE->>Upload: GET /chunks/{fileId}
-    Upload-->>FE: [] (empty initially)
+    FE->>Upload: GET /chunks/{fileId} (polling)
+    Upload->>ProcessedStates: Load chunk data
+    Upload-->>FE: ChunkInfo[] with bbox coordinates
+    FE->>FE: Render interactive PDF overlays
     
-    Note over FE,Clova: Query Processing Flow
-    FE->>Query: POST /query {"query": "stock analysis"}
-    Query->>MAS: create_supervisor_graph().invoke()
+    User->>FE: Select chunks & cite pages
+    FE->>FE: Pin selected chunks
     
-    MAS->>Clova: Supervisor analysis request
-    Clova-->>MAS: Task routing decision
+    Note over User,Clova: Multi-Agent Query Processing Flow
+    User->>FE: "삼성전자에 대해 최근 분기보고서 분석, 뉴스 동향, 주가 흐름을 종합해서 분석해줘"
+    FE->>Query: POST /query + pinned chunks context
     
-    MAS->>MAS: call_stock_price_agent()
-    MAS->>Clova: Stock analysis request
-    Clova-->>MAS: Chart type decision
+    Query->>ProcessedStates: Load pinned chunks text content
+    Query->>Supervisor: invoke() with {context} = chunk_texts
     
-    MAS->>Kiwoom: get_day_chart() request
-    Kiwoom-->>MAS: Raw chart data
+    Note over Supervisor: ChatClovaX 분석<br/>복합 질의 → 다중 에이전트 필요
     
-    MAS->>MAS: process_chart_data()
-    MAS->>Clova: Technical analysis request
-    Clova-->>MAS: Analysis report
+    Supervisor->>Supervisor: 라우팅 결정:<br/>1) DART: 분기보고서<br/>2) Search: 뉴스 동향<br/>3) Stock: 주가 분석
     
-    MAS-->>Query: Final response
-    Query-->>FE: Streaming response (SSE)
+    par DART Agent Processing
+        Supervisor->>DartAgent: call_dart_agent("삼성전자 분기보고서")
+        DartAgent->>DARTAPI: 보고서 검색 & 분석
+        DARTAPI-->>DartAgent: 공시 문서 내용
+        DartAgent->>Clova: 재무 분석 & 요약
+        Clova-->>DartAgent: 재무 분석 결과
+        DartAgent-->>Supervisor: 공시 분석 완료
+    and Search Agent Processing  
+        Supervisor->>SearchAgent: call_search_agent("삼성전자 뉴스")
+        SearchAgent->>Naver: 한국 뉴스 검색
+        Naver-->>SearchAgent: 뉴스 기사들
+        SearchAgent->>Tavily: 글로벌 웹 검색
+        Tavily-->>SearchAgent: 글로벌 정보
+        SearchAgent->>Clova: 뉴스 동향 분석
+        Clova-->>SearchAgent: 뉴스 분석 결과
+        SearchAgent-->>Supervisor: 뉴스 분석 완료
+    and Stock Agent Processing
+        Supervisor->>StockAgent: call_stock_price_agent("삼성전자 주가")
+        StockAgent->>Kiwoom: 주가 데이터 조회
+        Kiwoom-->>StockAgent: 차트 데이터
+        StockAgent->>Clova: 기술적 분석
+        Clova-->>StockAgent: 주가 분석 결과
+        StockAgent-->>Supervisor: 주가 분석 완료
+    end
+    
+    Note over Supervisor: 모든 에이전트 결과 통합<br/>+ 인용된 PDF 컨텍스트 반영
+    
+    Supervisor->>Clova: 종합 분석 & 보고서 작성
+    Clova-->>Supervisor: 최종 통합 보고서
+    
+    Supervisor-->>Query: 종합 분석 결과
+    Query-->>FE: Streaming response with sources
+    FE-->>User: 통합 분석 보고서 + 출처 표시
 ```
 
 ---
 
 ## Upload API System Analysis
 
-### 10. Upload API Service Architecture
+### 13. Upload API Service Architecture
 
 The Upload API (`backend/upload_api.py`) serves as a critical integration point between frontend PDF handling and backend RAG processing, operating on port 9000.
 
@@ -479,16 +897,16 @@ graph TB
         UploadAPI[Upload API<br/>FastAPI Application]
         
         subgraph "Core Endpoints"
-            Upload[POST /upload<br/>PDF Upload & Validation]
-            Status[GET /status/{file_id}<br/>Processing Status]
-            Download[GET /file/{file_id}/download<br/>PDF Streaming]
-            Summaries[GET /summaries/{file_id}<br/>RAG Results]
-            Health[GET /health<br/>System Health Check]
+            Upload["POST /upload<br/>PDF Upload & Validation"]
+            Status["GET /status/{file_id}<br/>Processing Status"]
+            Download["GET /file/{file_id}/download<br/>PDF Streaming"]
+            Summaries["GET /summaries/{file_id}<br/>RAG Results"]
+            Health["GET /health<br/>System Health Check"]
         end
         
         subgraph "Background Processing"
-            BGTask[Background Tasks<br/>process_pdf_with_rag()]
-            RAGCall[RAG Script Executor<br/>subprocess calls]
+            BGTask["Background Tasks<br/>process_pdf_with_rag()"]
+            RAGCall["RAG Script Executor<br/>subprocess calls"]
         end
         
         subgraph "Data Management"
@@ -577,12 +995,12 @@ sequenceDiagram
     participant Chat as Chat System
     
     Note over User,Chat: Document Upload & Processing
-    User->>API: POST /upload (PDF)
+    User->>"API: POST /upload (PDF)"
     API->>RAG: Background processing
     RAG->>FS: Create processed_states.json
     
     Note over User,Chat: Chunk Visualization
-    PDF->>API: GET /chunks/{fileId} (every 5s)
+    PDF->>"API: GET /chunks/{fileId} (every 5s)"
     API->>FS: Load processed_states.json
     API->>API: Parse & normalize coordinates
     API-->>PDF: ChunkInfo[] (text/image/table)
@@ -598,11 +1016,6 @@ sequenceDiagram
     User->>Chat: Enter question
     Chat->>API: query + pinChunks[]
     API->>Chat: Context-aware response
-    
-    style PDF fill:#e8f5e8
-    style API fill:#fff3e0
-    style RAG fill:#e1f5fe
-    style Chat fill:#f3e5f5
 ```
 
 ### Chunk Type Visualization
@@ -635,9 +1048,153 @@ graph LR
 
 ---
 
+## Context Injection & Citation System
+
+### Real-time Context Processing Flow
+
+```mermaid
+sequenceDiagram
+    participant User as 사용자
+    participant PDF as PDF Viewer
+    participant UI as Chat Interface
+    participant API as Supervisor API
+    participant Extractor as Context Extractor
+    participant States as processed_states.json
+    participant Agent as Supervisor Agent
+    
+    Note over User,Agent: Context Selection & Processing
+    User->>PDF: Select chunks via citation mode
+    PDF->>UI: Update pinnedChunks state
+    User->>UI: Enter question with selected chunks
+    
+    Note over User,Agent: API Request Processing  
+    UI->>API: POST /query with pinned_chunks & pdf_filename
+    API->>Extractor: get_chunk_context(pdf_filename, chunks)
+    Extractor->>States: Load chunk data by file and IDs
+    States-->>Extractor: Raw chunk content
+    Extractor-->>API: Formatted context string
+    
+    Note over User,Agent: Dynamic Prompt Generation
+    API->>Agent: create_initial_state(query, context)
+    Agent->>Agent: _format_prompt_with_dates(query, context)
+    Agent->>Agent: Inject context into {context} placeholder
+    
+    Note over User,Agent: Context-Aware Analysis
+    Agent->>Agent: Process with document evidence
+    Agent-->>API: Enhanced analysis response
+    API-->>UI: Context-aware answer
+```
+
+### Context Extraction Architecture
+
+```mermaid
+graph TB
+    subgraph "Frontend Selection"
+        CitationMode[Citation Mode Toggle<br/>ON/OFF Control]
+        ChunkSelection[Chunk Selection<br/>Visual PDF Overlay]
+        PinnedState[Pinned Chunks State<br/>Array of chunk_ids]
+    end
+    
+    subgraph "API Processing"
+        QueryRequest[QueryRequest<br/>+ pinned_chunks<br/>+ pdf_filename]
+        ContextExtractor[get_chunk_context()<br/>Smart chunk retrieval]
+        ContextFormatter[Context Formatter<br/>Structured output]
+    end
+    
+    subgraph "Data Sources"
+        ProcessedStates[processed_states.json<br/>Multi-file chunk storage]
+        ChunkTypes[Chunk Types<br/>text_element_output<br/>image_summary<br/>table_summary]
+        ChunkContent[Chunk Content<br/>[page, bbox, content]]
+    end
+    
+    subgraph "Agent Integration"
+        PromptTemplate[SUPERVISOR_PROMPT<br/>with {context} placeholder]
+        DynamicPrompt[Dynamic Prompt Generation<br/>Real-time context injection]
+        ContextAwareAgent[Context-Aware Supervisor<br/>Document-grounded analysis]
+    end
+    
+    CitationMode --> ChunkSelection
+    ChunkSelection --> PinnedState
+    PinnedState --> QueryRequest
+    QueryRequest --> ContextExtractor
+    ContextExtractor --> ProcessedStates
+    ProcessedStates --> ChunkTypes
+    ChunkTypes --> ChunkContent
+    ChunkContent --> ContextFormatter
+    ContextFormatter --> PromptTemplate
+    PromptTemplate --> DynamicPrompt
+    DynamicPrompt --> ContextAwareAgent
+    
+    style CitationMode fill:#fef3c7
+    style ContextExtractor fill:#dbeafe  
+    style ProcessedStates fill:#f3e8ff
+    style ContextAwareAgent fill:#dcfce7
+```
+
+### Context Format & Structure
+
+```yaml
+Context Format Example:
+"[텍스트 #5 (페이지 1)]
+카카오페이는 1Q25 연결기준 영업수익(매출) 및 영업이익 각각 2,119억원(+20% YoY)과 44억원(흑전)을 기록했다.
+
+[이미지 #2 (페이지 1)]  
+카카오페이 1Q25 실적 및 NDR 후기 - 제목과 요약 정보가 포함된 이미지 분석 결과
+
+[테이블 #1 (페이지 2)]
+카카오페이 밸류에이션 분석 - 12MF Fwd SPS: 6,857원, 목표 P/S: 5.6, 목표 주가: 38,500원"
+```
+
+### Multi-File Context Support
+
+```mermaid
+graph LR
+    subgraph "Multiple PDF Files"
+        PDF1[Document A.pdf<br/>Financial Report]
+        PDF2[Document B.pdf<br/>Market Analysis]  
+        PDF3[Document C.pdf<br/>Company Overview]
+    end
+    
+    subgraph "processed_states.json"
+        FileA[A.pdf: chunks_data]
+        FileB[B.pdf: chunks_data]
+        FileC[C.pdf: chunks_data]
+    end
+    
+    subgraph "Context Extraction"
+        FileResolver[File Resolver<br/>Match pdf_filename]
+        ChunkFilter[Chunk Filter<br/>Filter by chunk_ids]
+        ContentExtractor[Content Extractor<br/>Extract chunk content]
+    end
+    
+    subgraph "Supervisor Integration"
+        ContextInjection[Context Injection<br/>{context} in prompt]
+        MultiFileAnalysis[Multi-File Analysis<br/>Cross-document insights]
+    end
+    
+    PDF1 --> FileA
+    PDF2 --> FileB  
+    PDF3 --> FileC
+    
+    FileA --> FileResolver
+    FileB --> FileResolver
+    FileC --> FileResolver
+    
+    FileResolver --> ChunkFilter
+    ChunkFilter --> ContentExtractor
+    ContentExtractor --> ContextInjection
+    ContextInjection --> MultiFileAnalysis
+    
+    style FileResolver fill:#dbeafe
+    style ContextInjection fill:#dcfce7
+    style MultiFileAnalysis fill:#fef3c7
+```
+
+---
+
 ## Technology Stack
 
-### 11. Technology Stack Overview
+### 14. Technology Stack Overview
 
 ```mermaid
 graph TB
@@ -663,8 +1220,16 @@ graph TB
     subgraph "Data Processing"
         Pandas[pandas<br/>📊 Data Analysis]
         PandasTA[pandas-ta<br/>📈 Technical Analysis]
-        PyPDF2[PyPDF2<br/>📄 PDF Processing]
+        PyPDF2[PyPDF2<br/>📄 Basic PDF Processing]
         Requests[requests<br/>🌐 HTTP Client]
+    end
+    
+    subgraph "RAG & Vector Processing"
+        ChromaDB[ChromaDB<br/>🗃️ Vector Database]
+        UpstageAPI[Upstage Layout API<br/>🔍 Document Analysis]
+        ClovaEmbeddings[CLOVA Embeddings<br/>🔢 Korean Optimization]
+        BeautifulSoup[BeautifulSoup<br/>🕸️ Content Crawling]
+        OpenAIVision[OpenAI GPT-4 Vision<br/>🖼️ Multi-Modal Analysis]
     end
     
     subgraph "External APIs"
@@ -678,26 +1243,34 @@ graph TB
     FastAPI --> LangChain
     LangChain --> ClovaStudio
     FastAPI --> KiwoomAPI
+    FastAPI --> ChromaDB
     LangGraph --> LangSmithAPI
+    LangGraph --> UpstageAPI
+    ChromaDB --> ClovaEmbeddings
+    UpstageAPI --> OpenAIVision
     
     style React fill:#61dafb,color:#000
     style FastAPI fill:#009688,color:#fff
     style LangGraph fill:#ff6b6b,color:#fff
     style ChatClovaX fill:#4caf50,color:#fff
+    style ChromaDB fill:#f5f5dc,color:#000
+    style UpstageAPI fill:#fff8e1,color:#000
+    style ClovaEmbeddings fill:#e6ffe6,color:#000
+    style OpenAIVision fill:#f0f8ff,color:#000
 ```
 
 ---
 
 ## Extension Points
 
-### 12. Implemented Search Agent Architecture
+### 15. Implemented Search Agent Architecture
 
 ```mermaid
 graph TB
     subgraph "Active System"
         CurrentSupervisor[Supervisor Agent<br/>✅ Active]
         CurrentStock[Stock Price Agent<br/>✅ Active]
-        CurrentSearch[Search Agent<br/>✅ Active & Integrated]
+        CurrentSearch[Search Agent<br/>✅ Active]
     end
     
     subgraph "Search Agent Capabilities"
@@ -736,7 +1309,61 @@ graph TB
     style SupervisorTools fill:#fff3e0
 ```
 
-### 13. Future Multi-Agent Expansion
+### 16. Implemented DART Agent Architecture
+
+```mermaid
+graph TB
+    subgraph "Active System"
+        CurrentSupervisor[Supervisor Agent<br/>✅ Active]
+        CurrentStock[Stock Price Agent<br/>✅ Active]
+        CurrentSearch[Search Agent<br/>✅ Active]
+        CurrentDART[DART Agent<br/>✅ Active]
+    end
+    
+    subgraph "DART Agent Capabilities"
+        DARTTools[DART API Tools<br/>📊 Corporate Disclosure Analysis Suite]
+        DARTPrompt[DART Agent Prompt<br/>📋 Autonomous reasoning instructions]
+        
+        subgraph "DART Agent Tools"
+            TypeCodeTool[get_dart_report_type_code<br/>📋 Report classification]
+            ReportListTool[get_dart_report_list<br/>📄 Corporate report lists]
+            DateTool[get_rcept_no_by_date<br/>📅 Date-based report search]
+            XMLTool[extract_report_then_title_list_from_xml<br/>📑 Document structure]
+            SectionTool[recommend_section_from_titles_list<br/>🎯 Smart section selection]
+            ContentTool[extract_report_then_section_text<br/>📝 Content extraction]
+        end
+    end
+    
+    subgraph "Integration Points"
+        SupervisorTools[Supervisor Handoff Tools<br/>🔧 call_dart_agent]
+        SharedState[MessagesState<br/>📝 Shared between agents]
+        CommonGraph[LangGraph Workflow<br/>🔄 Agent orchestration]
+        RetryLogic[Retry Logic<br/>🔄 Exponential backoff]
+    end
+    
+    CurrentSupervisor --> SupervisorTools
+    SupervisorTools --> CurrentDART
+    SupervisorTools --> RetryLogic
+    CurrentDART --> DARTTools
+    CurrentDART --> DARTPrompt
+    CurrentDART --> TypeCodeTool
+    CurrentDART --> ReportListTool
+    CurrentDART --> DateTool
+    CurrentDART --> XMLTool
+    CurrentDART --> SectionTool
+    CurrentDART --> ContentTool
+    
+    CurrentStock --> SharedState
+    CurrentSearch --> SharedState
+    CurrentDART --> SharedState
+    SharedState --> CommonGraph
+    
+    style CurrentDART fill:#fff3e0
+    style DARTTools fill:#fff3e0
+    style SupervisorTools fill:#e1f5fe
+```
+
+### 17. Future Multi-Agent Expansion
 
 ```mermaid
 graph TB
@@ -746,14 +1373,13 @@ graph TB
     
     subgraph "Current Agents"
         StockAgent[Stock Price Agent<br/>📊 ✅ Active]
-    end
-    
-    subgraph "Implemented Agents"
-        SearchAgent[Search Agent<br/>🔍 ✅ Completed]
+        SearchAgent[Search Agent<br/>🔍 ✅ Active]
+        DARTAgent[DART Agent<br/>📈 ✅ Active]
     end
     
     subgraph "Planned Agents"
-        DARTAgent[DART Agent<br/>📈 🔮 Phase 2]
+        FutureAgent1[Custom Analysis Agent<br/>🔮 Future Extension]
+        FutureAgent2[Risk Assessment Agent<br/>🔮 Future Extension]
     end
     
     subgraph "Extension Pattern"
@@ -764,7 +1390,9 @@ graph TB
     
     Supervisor --> StockAgent
     Supervisor --> SearchAgent
-    Supervisor -.-> DARTAgent
+    Supervisor --> DARTAgent
+    Supervisor -.-> FutureAgent1
+    Supervisor -.-> FutureAgent2
     
     HandoffTools --> Supervisor
     ToolRegistry --> HandoffTools
@@ -772,7 +1400,9 @@ graph TB
     
     style StockAgent fill:#f3e5f5
     style SearchAgent fill:#e8f5e8
-    style DARTAgent fill:#fff3e0,stroke-dasharray: 10 10
+    style DARTAgent fill:#fff3e0
+    style FutureAgent1 fill:#f0f0f0,stroke-dasharray: 10 10
+    style FutureAgent2 fill:#f0f0f0,stroke-dasharray: 10 10
 
 ```
 
@@ -781,16 +1411,19 @@ graph TB
 ## Current Implementation Status
 
 ### ✅ Completed Components
-- **Supervisor Agent**: ChatClovaX-based coordinator with handoff tools for both Stock and Search agents
+- **Supervisor Agent**: ChatClovaX-based coordinator with handoff tools for Stock, Search, and DART agents
 - **Stock Price Agent**: Full stock analysis with Kiwoom API integration  
 - **Search Agent**: Comprehensive search capabilities with Tavily web search and Naver News API
+- **DART Agent**: Complete DART API integration with corporate filings analysis
 - **PDF Processing**: Upload, chunking, and viewer system
 - **Frontend**: React-based UI with chat and PDF viewing
 - **APIs**: Upload service (9000) and Query service (8000)
 - **State Management**: LangGraph MessagesState and Zustand frontend state
+- **Error Handling**: Exponential backoff retry logic for all agents
+- **Testing**: E2E integration tests and smoke tests
 
 ### 🔜 Ready for Extension
-- **DART Agent**: Framework ready for corporate filings analysis
+- **Future Agents**: Framework ready for additional specialized agents
 - **Additional Tools**: Easy integration pattern established
 - **Shared Components**: Reusable state and graph infrastructure
 - **API Expansion**: Scalable FastAPI structure
@@ -814,9 +1447,391 @@ graph TB
 7. **Package Structure**: Complete refactored module with expanded capabilities
 
 #### 🚀 **READY FOR PRODUCTION**
-- **Full Integration**: NewsAgent is now part of the multi-agent system
-- **Supervisor Handoff**: Users can request news analysis through Supervisor
-- **Test Coverage**: Test script available at `backend/agents/news_agent/test.py`
+- **Full Integration**: SearchAgent is now part of the multi-agent system
+- **Supervisor Handoff**: Users can request search analysis through Supervisor
+- **Test Coverage**: Test script available at `backend/agents/search_agent/test.py`
 - **Documentation**: Complete architecture documentation and implementation guide
 
-This documentation provides a comprehensive view of the current system with the fully implemented SearchAgent, showcasing a production-ready multi-agent architecture with autonomous search capabilities. 
+### 🎯 Implementation Status for DART Agent
+
+#### ✅ **Production Implementation Completed**
+1. **Complete DART API Integration**: Full DART electronic disclosure system access
+2. **Comprehensive Tool Suite**: 
+   - `get_dart_report_type_code`: AI-powered report type classification
+   - `get_dart_report_list`: Corporate report list retrieval with filtering
+   - `get_rcept_no_by_date`: Date-based report search and selection
+   - `extract_report_then_title_list_from_xml`: Document structure analysis
+   - `recommend_section_from_titles_list`: AI-powered section recommendation
+   - `extract_report_then_section_text`: Targeted content extraction
+3. **Pure Autonomous Agent Logic**: True ReAct-style reasoning with NO hard-coded logic
+4. **Supervisor Integration**: `call_dart_agent` handoff tool fully integrated with retry logic
+5. **API Integration**: 
+   - DART Open API for corporate disclosure documents
+   - XML parsing and content extraction capabilities
+   - Multi-encoding support for Korean documents
+6. **Enhanced Prompts & Tool Descriptions**: Autonomous reasoning guided by detailed system prompts
+7. **Package Structure**: Complete modular architecture with proper abstractions
+
+#### 🚀 **READY FOR PRODUCTION**
+- **Full Integration**: DART Agent is now part of the multi-agent system
+- **Supervisor Handoff**: Users can request corporate disclosure analysis through Supervisor
+- **Test Coverage**: Test script available at `backend/agents/dart_agent/test.py`
+- **Documentation**: Complete architecture documentation and implementation guide
+- **Error Handling**: Robust retry logic and graceful failure handling
+
+This documentation provides a comprehensive view of the current system with the fully implemented SearchAgent and DART Agent, showcasing a production-ready multi-agent architecture with autonomous search and corporate disclosure analysis capabilities.
+
+---
+
+## Testing & Quality Assurance
+
+### Integration Testing
+
+#### E2E Test Suite
+**Location**: `backend/test_integrated_mas.py`
+
+**Test Coverage**:
+- **DART Agent Tests**: 4 test cases covering report analysis, filing disclosure, audit reports, and M&A announcements
+- **Search Agent Tests**: 3 test cases covering latest news, corporate trends, and industry analysis  
+- **Stock Price Agent Tests**: 2 test cases covering price analysis and technical indicators
+- **Multi-Agent Tests**: 1 complex case requiring coordination between multiple agents
+
+**Test Execution**:
+```bash
+cd backend
+python test_integrated_mas.py
+```
+
+**Expected Results**:
+- Success Rate: ≥80%
+- Average Response Time: <30 seconds per query
+- Agent Routing Accuracy: >95%
+
+#### Smoke Tests
+**Location**: `backend/smoke_test.sh`
+
+**Coverage**:
+- Health check endpoints (Upload API, Supervisor API)
+- Agent routing validation
+- Error handling verification
+- API endpoint availability
+
+**Execution**:
+```bash
+cd backend
+chmod +x smoke_test.sh
+./smoke_test.sh
+```
+
+### Tool Registry
+
+| Tool Name | Agent | Description | Input | Output |
+|-----------|--------|-------------|--------|---------|
+| `call_stock_price_agent` | Supervisor | Stock price analysis handoff | Stock query string | Analysis report |
+| `call_search_agent` | Supervisor | Web/news search handoff | Search query string | Search results & analysis |
+| `call_dart_agent` | Supervisor | Corporate disclosure handoff | DART query string | Filing analysis |
+| `get_dart_report_type_code` | DART | Report type classification | User query | Report type code |
+| `get_dart_report_list` | DART | Report list retrieval | Company code, report type | Report metadata list |
+| `get_rcept_no_by_date` | DART | Date-based report search | Target date, report list | Receipt number |
+| `extract_report_then_title_list_from_xml` | DART | Document structure analysis | Receipt number | Title list |
+| `recommend_section_from_titles_list` | DART | Section recommendation | Titles, query | Section names |
+| `extract_report_then_section_text` | DART | Content extraction | Sections, titles, receipt | Section content |
+
+### Routing Policy
+
+#### DART Agent Triggers
+- Keywords: "전자공시", "공시", "DART", "사업보고서", "분기보고서", "반기보고서", "감사보고서"
+- Financial Events: "증자", "감자", "전환사채", "합병", "분할", "M&A"
+- Corporate Actions: "임원변경", "주주총회", "대주주", "신규사업"
+
+#### Search Agent Triggers  
+- Keywords: "뉴스", "속보", "기사", "최신", "동향", "루머"
+- Web Queries: General information not in DART or stock data
+
+#### Stock Price Agent Triggers
+- Keywords: "주가", "차트", "기술적분석", "이동평균선", "RSI", "MACD"
+- Price Actions: "상승", "하락", "거래량", "변동성"
+
+#### Backup Strategy
+1. Primary routing failure → Retry with alternative agent
+2. Multiple routing failures → Supervisor provides integrated response
+3. All agent failures → Error message with troubleshooting guidance
+
+---
+
+## Change Log
+
+### 2025-01-25: ChatClovaX Image Processing Compatibility Enhancement (v2.4.1)
+
+#### ✅ **ChatClovaX HCX-005 Image Compatibility**
+- **Image Constraint Compliance**: Automatic image adjustment for ChatClovaX HCX-005 requirements
+- **Intelligent Image Processing**: Dynamic resizing and padding to meet API constraints
+- **Error Prevention**: Proactive handling of 'Invalid image ratio' errors (code: 40063)
+- **Multi-Modal Robustness**: Enhanced reliability for both image and table processing
+
+#### 🔧 **Technical Improvements**  
+- **Precision-Safe Calculations**: `math.ceil()` usage prevents floating-point precision errors
+- **Conservative Ratio Limits**: 4.9:1 target ratio (vs 5.0:1) provides safety margin
+- **Emergency Adjustment Logic**: Triple-layer safety for extreme aspect ratios
+- **Forced Compliance**: Ultimate fallback ensures 100% ChatClovaX compatibility
+
+#### 📊 **Image Processing Pipeline Enhancement**
+- **Smart Cropping**: Enhanced `ImageCropper.crop_image()` with ChatClovaX compatibility
+- **Automatic Adjustment**: `_adjust_image_for_clovax()` method with precision safety
+- **Comprehensive Coverage**: Applied to both image elements and table elements
+- **Real-time Logging**: Detailed console output for all adjustment operations
+
+#### 🚀 **Constraint Specifications Met**
+- **✅ Maximum Dimension**: Long side ≤ 2240px (with proportional scaling)
+- **✅ Minimum Dimension**: Short side ≥ 4px (with proportional scaling)  
+- **✅ Aspect Ratio**: 1:4.9 to 4.9:1 range (with emergency fallback to 5:1)
+- **✅ Universal Application**: Both image and table processing covered
+
+#### 🛡️ **Safety Mechanisms**
+- **Primary Adjustment**: 4.9:1 ratio with `math.ceil()` precision
+- **Emergency Adjustment**: 4.95:1 ratio if primary fails
+- **Forced Compliance**: Exact 5:1 ratio with +1px safety margin
+- **Real-time Validation**: Immediate constraint verification at each step
+
+#### 📋 **Error Resolution**
+- **Fixed Error**: `BadRequestError: Invalid image ratio (code: 40063)`
+- **Root Cause**: Floating-point precision errors causing 5.0025:1 ratios
+- **Solution**: Multi-layer safety with conservative calculations
+- **Result**: 100% ChatClovaX HCX-005 compatibility guaranteed
+
+**Files Modified**:
+- `backend/rag/src/graphparser/layout_utils.py`: Precision-safe image adjustment logic
+- `backend/MULTI_AGENT_SYSTEM_DOCUMENTATION.md`: Architecture documentation updates
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
+
+### 2025-01-25: RAG Image/Table Analysis Model Unification (v2.3.0)
+
+#### ✅ **Major Model Unification**
+- **RAG Pipeline Model Standardization**: All AI processing now uses ChatClovaX HCX-005
+- **Complete ChatClovaX Integration**: Full system consistency with unified model architecture
+- **Multi-Modal Analysis Enhancement**: Image and table processing now powered by ChatClovaX
+- **Performance Optimization**: Consistent model parameters across all components
+
+#### 🔧 **Technical Improvements**  
+- **Model Replacement**: OpenAI GPT-4o-mini → ChatClovaX HCX-005 for RAG image/table analysis
+- **Unified Configuration**: Consistent max_tokens=4096, temperature=0 across all functions
+- **Enhanced Integration**: Seamless compatibility with existing MultiModal processing
+- **API Consistency**: Single API provider (CLOVA Studio) for all AI operations
+
+#### 📊 **Updated RAG Processing Components**
+- **Image Summary Generation**: `extract_image_summary()` now uses ChatClovaX HCX-005
+- **Table Summary Generation**: `extract_table_summary()` now uses ChatClovaX HCX-005
+- **Table Markdown Conversion**: `table_markdown_extractor()` now uses ChatClovaX HCX-005
+
+#### 🚀 **Complete System Unification**
+- **✅ Supervisor Agent**: ChatClovaX HCX-005
+- **✅ Stock Price Agent**: ChatClovaX HCX-005
+- **✅ Search Agent**: ChatClovaX HCX-005
+- **✅ DART Agent**: ChatClovaX HCX-005
+- **✅ RAG Image/Table Processing**: ChatClovaX HCX-005 ← **New Addition**
+
+#### 📋 **Benefits**
+- **Cost Efficiency**: Single API provider reduces complexity and cost
+- **Performance Consistency**: Uniform model behavior across all components
+- **Maintenance Simplification**: Single model configuration to manage
+- **Korean Language Optimization**: Enhanced Korean processing capabilities throughout
+
+**Files Modified**:
+- `backend/rag/src/graphparser/parser_chains.py`: Complete model replacement from OpenAI to ChatClovaX
+- `backend/MULTI_AGENT_SYSTEM_DOCUMENTATION.md`: Architecture documentation updates
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
+
+### 2025-01-25: RAG Pipeline Directory Structure Refactoring (v2.2.0)
+
+#### ✅ **Major Architectural Changes**
+- **Directory Structure Refactoring**: RAG pipeline now uses separated processing directories for better organization
+- **Processing UID System**: Each PDF processing session gets a unique identifier for isolated processing
+- **Clean Data Separation**: Original PDFs separate from processing artifacts
+- **Enhanced File Management**: Better organization of processing outputs and metadata
+
+#### 🔧 **Technical Improvements**  
+- **Unique Processing Sessions**: Each PDF processing gets a UUID-based processing_uid
+- **Isolated Processing Directories**: Processing artifacts stored in `data/logs/{uid}/` structure
+- **Enhanced GraphState**: Added `processing_uid` field for session tracking
+- **Improved File Organization**: Clear separation between input and output data
+
+#### 📊 **New Directory Structure**
+```
+backend/rag/data/
+├── pdf/                          # Original PDF files (input only)
+│   ├── document1.pdf
+│   ├── document2.pdf
+│   └── ...
+├── logs/{processing_uid}/        # Processing artifacts per session
+│   ├── split/                    # Split PDF files
+│   │   ├── document1_0000_0009.pdf
+│   │   ├── document1_0010_0019.pdf
+│   │   └── ...
+│   ├── images/                   # Cropped image chunks
+│   │   ├── img_001.png
+│   │   ├── img_002.png
+│   │   └── ...
+│   ├── tables/                   # Cropped table chunks
+│   │   ├── table_001.png
+│   │   ├── table_002.png
+│   │   └── ...
+│   └── metadata/                 # Processing metadata (future)
+└── vectordb/                     # Vector database & states
+    ├── processed_states.json
+    ├── chroma.sqlite3
+    └── ...
+```
+
+#### 🚀 **Benefits**
+- **Better Organization**: Clear separation of original files and processing outputs
+- **Parallel Processing**: Multiple PDFs can be processed simultaneously without conflicts
+- **Easier Cleanup**: Processing artifacts can be cleaned up per session
+- **Debugging Support**: Each processing session has isolated artifacts for troubleshooting
+- **Scalability**: Better handling of large numbers of processed documents
+
+#### 🔧 **Modified Components**
+- **GraphState Enhancement**: Added `processing_uid` field for session tracking
+- **ImageCropperNode**: Output path changed to `data/logs/{uid}/images/`
+- **TableCropperNode**: Output path changed to `data/logs/{uid}/tables/`
+- **SplitPDFFilesNode**: Output path changed to `data/logs/{uid}/split/`
+- **Parser Integration**: Enhanced `process_single_pdf()` with UID parameter
+- **Processing Pipeline**: UUID generation and propagation throughout workflow
+- **Upload API**: Updated to support new directory structure
+
+#### 📋 **API Changes**
+- **Enhanced State Tracking**: `processed_states.json` now includes `processing_uid` metadata
+- **Backward Compatibility**: Existing processed files continue to work
+- **Future-Ready**: Structure prepared for advanced processing features
+
+**Files Modified**:
+- `backend/rag/src/graphparser/state.py`: Added processing_uid field to GraphState
+- `backend/rag/src/graphparser/core.py`: Updated ImageCropperNode and TableCropperNode output paths
+- `backend/rag/src/graphparser/pdf.py`: Updated SplitPDFFilesNode output path
+- `backend/rag/src/parser.py`: Enhanced process_single_pdf with UID parameter
+- `backend/rag/scripts/process_pdfs.py`: Added UUID generation and propagation
+- `backend/upload_api.py`: Updated for new directory structure support
+- `backend/MULTI_AGENT_SYSTEM_DOCUMENTATION.md`: Architecture documentation updates
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
+
+### 2025-01-25: Context Injection & Citation System Enhancement (v2.1.0)
+
+#### ✅ **Major Features Added**
+- **Enhanced Context Injection**: Real-time document context integration into Supervisor prompts
+- **Dynamic Prompt Generation**: User-selected chunks automatically injected as `{context}` in agent prompts
+- **Multi-file Support**: Context extraction from multiple PDF files in `processed_states.json`
+- **Improved API Interface**: Extended `/query` endpoint with `pinned_chunks` and `pdf_filename` parameters
+- **Smart Context Processing**: Intelligent chunk type detection (text, image, table) with formatted output
+
+#### 🔧 **Technical Improvements**  
+- **Context Extraction Pipeline**: `get_chunk_context()` function for retrieving specific chunk content
+- **Enhanced State Management**: Added `context` field to `MessagesState` for chunk information
+- **Dynamic Supervisor Configuration**: Real-time prompt generation based on user selections
+- **API Parameter Expansion**: Extended QueryRequest with citation metadata
+- **Frontend-Backend Integration**: Seamless chunk information flow from UI to agents
+
+#### 📊 **Architecture Updates**
+- **Prompt Template Enhancement**: Added `{context}` placeholder with fallback handling
+- **State Flow Optimization**: Context information preserved throughout agent processing
+- **API Schema Evolution**: New fields for document citation and context injection
+- **Cross-Component Communication**: Improved data flow between PDF viewer and chat system
+
+#### 🚀 **Production Enhancements**
+- **Context-Aware Analysis**: Agents now prioritize user-cited document sections
+- **Improved Accuracy**: Supervisor responses based on specific document evidence
+- **Better User Experience**: Visual feedback for selected chunks and their impact on analysis
+- **Scalable Architecture**: Support for multiple documents and complex citation patterns
+
+**Files Modified**:
+- `backend/agents/supervisor/api.py`: Added context extraction and enhanced QueryRequest
+- `backend/agents/supervisor/prompt.py`: Integrated {context} placeholder for document injection
+- `backend/agents/supervisor/agent.py`: Dynamic prompt generation with context support
+- `backend/agents/shared/state.py`: Added context field to MessagesState
+- `backend/agents/shared/graph.py`: Context handling in initial state creation
+- `frontend/src/types/index.ts`: Extended QueryRequest interface
+- `frontend/src/api/chat.ts`: API request format adaptation for backend compatibility
+- `frontend/src/components/chat/ChatInput.tsx`: Context information inclusion in queries
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
+
+### 2025-01-25: DART Agent Integration (v2.0.0)
+
+#### ✅ **Major Features Added**
+- **DART Agent Implementation**: Complete corporate disclosure analysis system
+- **Enhanced Supervisor**: 3-agent coordination with `call_dart_agent` handoff tool
+- **Retry Logic**: Exponential backoff for all agent handoff tools
+- **Extended Routing**: Comprehensive routing policy covering DART, Search, and Stock domains
+- **Advanced RAG Pipeline**: LangGraph-based PDF processing with Upstage + OpenAI integration
+- **Interactive Chunk Citation**: Visual PDF viewer with precise bounding box selection
+- **Context Injection System**: Automated chunk content injection into agent prompts
+
+#### 🔧 **Technical Improvements**  
+- **Tool Registry**: 6 new DART-specific tools with autonomous reasoning
+- **Error Handling**: Graceful degradation and detailed error messages
+- **State Management**: Enhanced MessagesState with DART analysis metadata
+- **Testing Suite**: E2E integration tests and smoke tests
+- **Multi-Modal Processing**: Text, image, and table content analysis pipeline
+- **Vector Database Integration**: ChromaDB with CLOVA embeddings optimization
+- **Dual Storage Architecture**: processed_states.json + ChromaDB for complete coverage
+- **Layout Analysis**: Upstage API for precise document structure understanding
+
+#### 📊 **Architecture Updates**
+- **Multi-Agent Graph**: Stock + Search + DART agents fully integrated
+- **RAG Pipeline Integration**: Complete LangGraph-based document processing workflow
+- **Prompt Engineering**: Updated supervisor prompt with detailed routing examples + context injection
+- **Documentation**: Complete architecture diagrams and implementation guides
+- **Interactive UI Enhancement**: PDF viewer with chunk overlay and citation capabilities
+- **Cross-System Integration**: Seamless data flow between RAG, agents, and frontend
+
+#### 🚀 **Production Readiness**
+- **Performance**: <30s average response time for complex queries
+- **Reliability**: 80%+ success rate with automatic retry mechanisms  
+- **Scalability**: Modular design ready for additional agent integration
+- **Monitoring**: Structured logging and test coverage
+- **Document Processing**: Production-grade RAG pipeline with batch processing
+- **Multi-Modal Support**: Text, image, and table analysis with GPT-4 Vision
+- **Korean Optimization**: CLOVA embeddings and specialized language processing
+- **Interactive Citation**: Real-time chunk selection and context injection
+
+**Files Modified**:
+- `backend/agents/supervisor/agent.py`: Added DART handoff tool with retry logic
+- `backend/agents/supervisor/prompt.py`: Enhanced routing policy and examples + context injection
+- `backend/agents/dart_agent/`: Complete DART agent implementation
+- `backend/rag/src/parser.py`: LangGraph-based PDF processing workflow
+- `backend/rag/scripts/process_pdfs.py`: Main RAG pipeline orchestration
+- `backend/rag/scripts/import_to_chroma.py`: Vector database integration
+- `backend/upload_api.py`: RAG pipeline integration with chunk extraction
+- `frontend/components/pdf/`: Interactive PDF viewer with chunk overlay
+- `backend/test_integrated_mas.py`: E2E test suite
+- `backend/smoke_test.sh`: API smoke tests
+- `backend/MULTI_AGENT_SYSTEM_DOCUMENTATION.md`: Complete architecture documentation
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
+
+## Next Steps & Roadmap
+
+### Phase 3: Advanced Features (Future)
+- **Custom Analysis Agents**: Domain-specific analysis capabilities
+- **Risk Assessment Agent**: Market risk and compliance analysis
+- **Multi-language Support**: English/Korean hybrid analysis
+- **Real-time Streaming**: WebSocket-based live updates
+
+### Technical Debt & Optimizations
+- **Caching Layer**: Redis integration for frequent DART queries
+- **Batch Processing**: Multiple query optimization
+- **Model Fine-tuning**: ChatClovaX optimization for financial domain
+- **Monitoring Dashboard**: Real-time system health visualization
+
+This completes the comprehensive integration of DART Agent and advanced RAG pipeline into the production multi-agent system, establishing a robust foundation for intelligent Korean financial market analysis with interactive document processing capabilities. 

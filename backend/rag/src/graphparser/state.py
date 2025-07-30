@@ -5,6 +5,7 @@ from typing import TypedDict
 class GraphState(TypedDict):
     filepath: str  # path
     filetype: str  # pdf
+    processing_uid: str  # unique identifier for this processing session
     page_numbers: list[int]  # page numbers
     batch_size: int  # batch size
     split_filepaths: list[str]  # split files
@@ -12,9 +13,9 @@ class GraphState(TypedDict):
     page_elements: dict[int, dict[str, list[dict]]]  # page elements
     page_metadata: dict[int, dict]  # page metadata
     page_summary: dict[int, str]  # page summary
-    images: list[str]  # image paths
+    images: dict[int, str]  # image paths (element_id -> file_path)
     image_summary: dict[int, list[int, list[dict], str]]  # image summary
-    tables: list[str]  # table
+    tables: dict[int, str]  # table paths (element_id -> file_path)
     table_summary: dict[int, list[int, list[dict], str]]  # table summary
     table_markdown: dict[int, list[int, list[dict], str]]  # table markdown
     texts: list[str]  # text
