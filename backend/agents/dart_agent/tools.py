@@ -105,7 +105,11 @@ class ExtractReportThenTitleListTool(BaseTool):
 
     def _run(self, rcept_no: str) -> str:  # type: ignore[override]
         xml_text = get_dart_report_text(rcept_no) 
-        title_list = re.findall(r"<TITLE[^>]*>(.*?)</TITLE>", xml_text, flags=re.DOTALL) #json.dumps(tags, ensure_ascii=False)
+        title_list = re.findall(r"<TITLE[^>]*>(.*?)</TITLE>", xml_text, flags=re.DOTALL)
+                
+        if not title_list:
+                    return(f"[TITLE 없음] 해당 공시에서 <TITLE> 태그가 없으므로 for_not_title_list_export_xml 도구를 사용하세요.")
+        
         return title_list 
     
     
@@ -210,6 +214,20 @@ class ExtractReportThenSectionTextTool(BaseTool):
 
         return "\n\n".join(results)
 
+
+class ForNotTitleListXMLInput(BaseModel):
+    rcept_no: str
+    
+class ForNotTitleListExtractXMLTool(BaseTool):
+    name: str = "for_not_title_list_export_xml"
+    description: str = "TitleList가 없는 경우 공시 XML을 반환합니다."
+    args_schema: Type[BaseModel] = ForNotTitleListXMLInput
+    
+    def _run(self,rcept_no: str,) -> str:
+        xml_text = get_dart_report_text(rcept_no)
+        return xml_text
+    
+    
 def get_stock_tools():
     """Get list of stock-related tools"""
     dart_llm = get_dart_llm()
@@ -220,6 +238,7 @@ def get_stock_tools():
         ExtractReportThenTitleListTool(),
         RecommendSectionTool(llm  = dart_llm, prompt_template= DART_SECTION_PROMPT),
         ExtractReportThenSectionTextTool(),
+        ForNotTitleListExtractXMLTool(),
     ]
     
     
