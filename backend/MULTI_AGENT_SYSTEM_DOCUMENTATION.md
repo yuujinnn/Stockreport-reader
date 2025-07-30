@@ -949,7 +949,7 @@ graph TB
 
 ### Key Features:
 - **FastAPI-based Service**: Robust web framework with automatic OpenAPI documentation
-- **RAG Pipeline Integration**: Automatic background processing with `rag/scripts/process_pdfs.py`
+- **RAG Pipeline Integration**: Automatic background processing with `rag/process_pdfs.py`
 - **File Management**: UUID-based file identification with metadata persistence
 - **Background Processing**: Non-blocking uploads with 10-minute processing timeout
 - **Status Monitoring**: Real-time processing status with completion detection
@@ -1561,6 +1561,47 @@ chmod +x smoke_test.sh
 
 ## Change Log
 
+### 2025-01-26: RAG Scripts Structure Simplification (v2.4.2)
+
+#### 🗂️ **Scripts Directory Restructuring**
+- **Structure Simplification**: Removed unnecessary `scripts/` subdirectory from RAG pipeline
+- **Core File Consolidation**: Moved `process_pdfs.py` from `backend/rag/scripts/` to `backend/rag/`
+- **Cleanup Operation**: Removed redundant and unused script files
+- **Path Optimization**: Simplified execution paths for improved maintainability
+
+#### 🔧 **Files Removed**
+- **`check_states.py`**: Development/debugging utility (no longer needed in production)
+- **`import_to_chroma.py`**: Duplicate functionality (process_pdfs.py handles ChromaDB integration)
+- **`run_pipeline.sh`**: Development environment script (production uses direct API calls)
+- **`scripts/` directory**: Empty directory after consolidation
+
+#### 📝 **Configuration Updates**
+- **Upload API**: Updated subprocess call path from `scripts/process_pdfs.py` to `process_pdfs.py`
+- **Documentation**: Updated all references to reflect new structure
+- **Architecture Consistency**: Aligned with direct execution pattern used in production
+
+#### ✅ **Benefits Achieved**
+- **Simplified Maintenance**: Single essential script instead of multiple redundant files
+- **Cleaner Architecture**: Reduced directory nesting and complexity
+- **Improved Clarity**: Essential vs auxiliary components clearly separated
+- **Production Focus**: Removed development-only utilities from production codebase
+
+#### 🎯 **Impact Assessment**
+- **Functionality**: No impact on core RAG processing capabilities
+- **Performance**: Unchanged processing speed and quality
+- **Integration**: Upload API continues to work seamlessly
+- **Structure**: More intuitive and maintainable file organization
+
+**Files Modified**:
+- `backend/rag/process_pdfs.py`: Moved from scripts/ subdirectory
+- `backend/upload_api.py`: Updated subprocess execution path
+- `backend/MULTI_AGENT_SYSTEM_DOCUMENTATION.md`: Architecture documentation updates
+- `backend/UPLOAD_API.md`: File structure documentation updates
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
+
 ### 2025-01-25: ChatClovaX Image Processing Compatibility Enhancement (v2.4.1)
 
 #### ✅ **ChatClovaX HCX-005 Image Compatibility**
@@ -1714,7 +1755,7 @@ backend/rag/data/
 - `backend/rag/src/graphparser/core.py`: Updated ImageCropperNode and TableCropperNode output paths
 - `backend/rag/src/graphparser/pdf.py`: Updated SplitPDFFilesNode output path
 - `backend/rag/src/parser.py`: Enhanced process_single_pdf with UID parameter
-- `backend/rag/scripts/process_pdfs.py`: Added UUID generation and propagation
+- `backend/rag/process_pdfs.py`: Added UUID generation and propagation
 - `backend/upload_api.py`: Updated for new directory structure support
 - `backend/MULTI_AGENT_SYSTEM_DOCUMENTATION.md`: Architecture documentation updates
 
@@ -1808,8 +1849,7 @@ backend/rag/data/
 - `backend/agents/supervisor/prompt.py`: Enhanced routing policy and examples + context injection
 - `backend/agents/dart_agent/`: Complete DART agent implementation
 - `backend/rag/src/parser.py`: LangGraph-based PDF processing workflow
-- `backend/rag/scripts/process_pdfs.py`: Main RAG pipeline orchestration
-- `backend/rag/scripts/import_to_chroma.py`: Vector database integration
+- `backend/rag/process_pdfs.py`: Main RAG pipeline orchestration
 - `backend/upload_api.py`: RAG pipeline integration with chunk extraction
 - `frontend/components/pdf/`: Interactive PDF viewer with chunk overlay
 - `backend/test_integrated_mas.py`: E2E test suite

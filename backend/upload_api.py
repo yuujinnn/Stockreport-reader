@@ -309,7 +309,7 @@ async def process_pdf_with_rag(file_id: str, saved_filename: str):
         try:
             # Execute RAG processing with the specific file and processing UID
             result = subprocess.run(
-                ["python", "scripts/process_pdfs.py", "--limit", "1", "--processing-uid", processing_uid, "--filename", saved_filename],
+                ["python", "process_pdfs.py", "--limit", "1", "--processing-uid", processing_uid, "--filename", saved_filename],
                 capture_output=True,
                 text=True,
                 timeout=600  # 10 minutes timeout

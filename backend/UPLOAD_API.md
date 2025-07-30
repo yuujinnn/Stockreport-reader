@@ -22,7 +22,7 @@
 - **Related Directories**: 
   - `backend/rag/` - RAG processing pipeline integration
   - `backend/rag/data/pdf/` - PDF storage directory
-  - `backend/rag/scripts/` - RAG processing scripts
+  - `backend/rag/` - RAG processing scripts (process_pdfs.py)
   - `backend/secrets/` - Environment variables
 
 ### Core Purpose
@@ -204,7 +204,7 @@ async def process_pdf_with_rag(file_id: str, saved_filename: str):
 ```
 
 **Features**:
-- **Subprocess Execution**: Calls `rag/scripts/process_pdfs.py`
+- **Subprocess Execution**: Calls `rag/process_pdfs.py`
 - **Timeout Management**: 10-minute processing timeout
 - **Error Handling**: Comprehensive error logging
 - **Directory Management**: Proper working directory handling
@@ -340,7 +340,7 @@ backend/rag/data/pdf/
 ### 1. RAG System Integration
 
 **Directory Integration**: Uses `backend/rag/` as base directory
-**Script Execution**: Calls `backend/rag/scripts/process_pdfs.py`
+**Script Execution**: Calls `backend/rag/process_pdfs.py`
 **Result Detection**: Monitors for `*_0000_0000.json` result files
 
 ### 2. Frontend Integration
@@ -378,8 +378,7 @@ backend/
 │   ├── data/
 │   │   ├── pdf/          # Upload destination
 │   │   └── vectordb/     # RAG vector storage
-│   └── scripts/
-│       └── process_pdfs.py
+│   └── process_pdfs.py      # RAG pipeline script
 └── secrets/
     └── .env
 ```
