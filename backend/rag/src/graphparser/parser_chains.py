@@ -1,4 +1,4 @@
-from langchain_openai import ChatOpenAI
+from langchain_naver import ChatClovaX
 from langchain_core.runnables import chain
 from .models import MultiModal
 from .state import GraphState
@@ -7,9 +7,10 @@ from .state import GraphState
 @chain
 def extract_image_summary(data_batches):
     # 객체 생성
-    llm = ChatOpenAI(
-        temperature=0,  # 창의성 (0.0 ~ 2.0)
-        model_name="gpt-4o-mini",  # 모델명
+    llm = ChatClovaX(
+        model="HCX-005",  # ChatClovaX HCX-005 모델
+        max_tokens=4096,  # 충분한 토큰 수
+        temperature=0,    # 일관된 분석을 위한 낮은 창의성
     )
 
     system_prompt = """You are an expert in extracting useful information from IMAGE.
@@ -56,9 +57,10 @@ Output must be written in {language}.
 @chain
 def extract_table_summary(data_batches):
     # 객체 생성
-    llm = ChatOpenAI(
-        temperature=0,  # 창의성 (0.0 ~ 2.0)
-        model_name="gpt-4o-mini",  # 모델명
+    llm = ChatClovaX(
+        model="HCX-005",  # ChatClovaX HCX-005 모델
+        max_tokens=4096,  # 충분한 토큰 수
+        temperature=0,    # 일관된 분석을 위한 낮은 창의성
     )
 
     system_prompt = """You are an expert in extracting useful information from TABLE. 
@@ -106,9 +108,10 @@ Output must be written in {language}.
 @chain
 def table_markdown_extractor(data_batches):
     # 객체 생성
-    llm = ChatOpenAI(
-        temperature=0,  # 창의성 (0.0 ~ 2.0)
-        model_name="gpt-4o-mini",  # 모델명
+    llm = ChatClovaX(
+        model="HCX-005",  # ChatClovaX HCX-005 모델
+        max_tokens=4096,  # 충분한 토큰 수
+        temperature=0,    # 일관된 분석을 위한 낮은 창의성
     )
 
     system_prompt = "You are an expert in converting image of the TABLE into markdown format. Be sure to include all the information in the table. DO NOT narrate, just answer in markdown format."

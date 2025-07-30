@@ -4,6 +4,7 @@ import pickle
 import requests
 import pymupdf
 import tiktoken
+import math
 from PIL import Image
 
 
@@ -34,7 +35,7 @@ class LayoutAnalyzer:
 
         # API 요청 보내기
         response = requests.post(
-            "https://api.upstage.ai/v1/document-ai/layout-analysis",
+            "https://api.upstage.ai/v1/document-digitization",
             headers=headers,
             data=data,
             files=files,
@@ -103,7 +104,12 @@ class ImageCropper:
     @staticmethod
     def crop_image(img, coordinates, output_file):
         """
-        이미지를 주어진 좌표에 따라 자르고 저장하는 정적 메서드
+        이미지를 주어진 좌표에 따라 자르고 ChatClovaX HCX-005 제약사항에 맞게 조정하여 저장하는 정적 메서드
+        
+        ChatClovaX HCX-005 제약사항:
+        - 가로, 세로 중 긴 쪽: 2240px 이하
+        - 짧은 쪽: 4px 이상  
+        - 가로:세로 비율: 1:5 또는 5:1 이하
 
         :param img: 원본 이미지 객체
         :param coordinates: 정규화된 좌표 (x1, y1, x2, y2)
@@ -115,7 +121,161 @@ class ImageCropper:
             for coord, dim in zip(coordinates, [img_width, img_height] * 2)
         ]
         cropped_img = img.crop((x1, y1, x2, y2))
-        cropped_img.save(output_file)
+        
+        # ChatClovaX HCX-005 제약사항에 맞게 이미지 조정
+        adjusted_img = ImageCropper._adjust_image_for_clovax(cropped_img)
+        adjusted_img.save(output_file)
+
+    @staticmethod
+    def _adjust_image_for_clovax(img):
+        """
+        ChatClovaX HCX-005 제약사항에 맞게 이미지를 조정하는 메서드
+        
+        :param img: PIL Image 객체
+        :return: 조정된 PIL Image 객체
+        """
+        original_width, original_height = img.size
+        print(f"🖼️  Original image size: {original_width}x{original_height}")
+        print(f"🔢 Original aspect ratio: {max(original_width, original_height) / min(original_width, original_height):.2f}:1")
+        
+        width, height = original_width, original_height
+        
+        # 1. 비율 제한 먼저 처리: 1:5 또는 5:1을 넘으면 흰색 배경으로 패딩 추가
+        aspect_ratio = max(width, height) / min(width, height)
+        max_aspect_ratio = 4.9  # 5.0보다 여유있게 설정 (부동소수점 오차 방지)
+        
+        if aspect_ratio > max_aspect_ratio:
+            print(f"⚠️  Aspect ratio {aspect_ratio:.3f}:1 exceeds limit {max_aspect_ratio}:1")
+            
+            if width > height:
+                # 가로가 긴 경우: 세로에 패딩 추가 (올림 처리로 확실히 제약사항 만족)
+                target_height = math.ceil(width / max_aspect_ratio)
+                padding_height = target_height - height
+                
+                # 흰색 배경으로 새 이미지 생성
+                new_img = Image.new('RGB', (width, target_height), 'white')
+                # 기존 이미지를 중앙에 배치
+                paste_y = padding_height // 2
+                new_img.paste(img, (0, paste_y))
+                
+                img = new_img
+                width, height = width, target_height
+                new_ratio = width / height
+                print(f"📐 Aspect ratio adjusted: {original_width}x{original_height} → {width}x{height}")
+                print(f"🔢 New aspect ratio: {new_ratio:.3f}:1")
+                
+            else:
+                # 세로가 긴 경우: 가로에 패딩 추가 (올림 처리로 확실히 제약사항 만족)
+                target_width = math.ceil(height / max_aspect_ratio)
+                padding_width = target_width - width
+                
+                # 흰색 배경으로 새 이미지 생성
+                new_img = Image.new('RGB', (target_width, height), 'white')
+                # 기존 이미지를 중앙에 배치
+                paste_x = padding_width // 2
+                new_img.paste(img, (paste_x, 0))
+                
+                img = new_img
+                width, height = target_width, height
+                new_ratio = height / width
+                print(f"📐 Aspect ratio adjusted: {original_width}x{original_height} → {width}x{height}")
+                print(f"🔢 New aspect ratio: 1:{new_ratio:.3f}")
+        
+        # 2. 크기 제한: 긴 쪽이 2240px를 넘으면 비율 유지하며 축소
+        max_dimension = 2240
+        if max(width, height) > max_dimension:
+            print(f"⚠️  Max dimension {max(width, height)}px exceeds limit {max_dimension}px")
+            
+            if width > height:
+                new_width = max_dimension
+                new_height = int((height * max_dimension) / width)
+            else:
+                new_height = max_dimension
+                new_width = int((width * max_dimension) / height)
+            
+            img = img.resize((new_width, new_height), Image.LANCZOS)
+            width, height = new_width, new_height
+            print(f"📏 Image resized to {width}x{height} (max dimension: {max_dimension}px)")
+        
+        # 3. 최소 크기 확인: 짧은 쪽이 4px 미만이면 4px로 조정
+        min_dimension = 4
+        if min(width, height) < min_dimension:
+            print(f"⚠️  Min dimension {min(width, height)}px below limit {min_dimension}px")
+            
+            if width < height:
+                new_width = min_dimension
+                new_height = int((height * min_dimension) / width)
+            else:
+                new_height = min_dimension
+                new_width = int((width * min_dimension) / height)
+            
+            img = img.resize((new_width, new_height), Image.LANCZOS)
+            width, height = new_width, new_height
+            print(f"📏 Image resized to {width}x{height} (min dimension: {min_dimension}px)")
+        
+        # 4. 최종 검증 및 안전 조정
+        final_aspect_ratio = max(width, height) / min(width, height)
+        print(f"✅ Final image size: {width}x{height}")
+        print(f"✅ Final aspect ratio: {final_aspect_ratio:.3f}:1")
+        
+        # 안전 검증: 혹시 여전히 5.0을 넘는다면 한 번 더 조정
+        strict_max_ratio = 5.0
+        if final_aspect_ratio > strict_max_ratio:
+            print(f"🚨 CRITICAL: Final ratio {final_aspect_ratio:.3f}:1 still exceeds 5.0:1!")
+            print(f"🔧 Applying emergency adjustment...")
+            
+            if width > height:
+                # 가로가 긴 경우: 세로를 더 늘림
+                emergency_height = math.ceil(width / 4.95)  # 더 보수적으로
+                emergency_img = Image.new('RGB', (width, emergency_height), 'white')
+                paste_y = (emergency_height - height) // 2
+                emergency_img.paste(img, (0, paste_y))
+                img = emergency_img
+                width, height = width, emergency_height
+            else:
+                # 세로가 긴 경우: 가로를 더 늘림
+                emergency_width = math.ceil(height / 4.95)  # 더 보수적으로
+                emergency_img = Image.new('RGB', (emergency_width, height), 'white')
+                paste_x = (emergency_width - width) // 2
+                emergency_img.paste(img, (paste_x, 0))
+                img = emergency_img
+                width, height = emergency_width, height
+            
+            final_aspect_ratio = max(width, height) / min(width, height)
+            print(f"🔧 Emergency adjustment complete: {width}x{height}")
+            print(f"🔢 Emergency aspect ratio: {final_aspect_ratio:.3f}:1")
+        
+        # ChatClovaX 제약사항 최종 검증
+        max_check = max(width, height) <= 2240
+        min_check = min(width, height) >= 4
+        ratio_check = final_aspect_ratio <= 5.0
+        
+        if max_check and min_check and ratio_check:
+            print(f"🎉 Image meets all ChatClovaX HCX-005 constraints!")
+        else:
+            print(f"❌ CRITICAL ERROR: Image STILL does not meet constraints!")
+            print(f"   Max dimension: {max(width, height)} ≤ 2240? {max_check}")
+            print(f"   Min dimension: {min(width, height)} ≥ 4? {min_check}")
+            print(f"   Aspect ratio: {final_aspect_ratio:.3f} ≤ 5.0? {ratio_check}")
+            # 이 경우 강제로 5:1 비율로 맞춤
+            if not ratio_check:
+                print(f"🚨 FORCING 5:1 ratio...")
+                if width > height:
+                    force_height = math.ceil(width / 5.0) + 1  # +1 for safety
+                    force_img = Image.new('RGB', (width, force_height), 'white')
+                    paste_y = (force_height - height) // 2
+                    force_img.paste(img, (0, paste_y))
+                    img = force_img
+                    print(f"🔧 FORCED to {width}x{force_height}")
+                else:
+                    force_width = math.ceil(height / 5.0) + 1  # +1 for safety
+                    force_img = Image.new('RGB', (force_width, height), 'white')
+                    paste_x = (force_width - width) // 2
+                    force_img.paste(img, (paste_x, 0))
+                    img = force_img
+                    print(f"🔧 FORCED to {force_width}x{height}")
+        
+        return img
 
 
 def save_state(state, filepath):
