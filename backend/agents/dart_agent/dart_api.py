@@ -9,10 +9,7 @@ import pandas as pd
 import zipfile
 import io
 
-load_dotenv()
 load_dotenv("secrets/.env")
-load_dotenv("backend/secrets/.env")
-
 dart_api_key = os.getenv("DART_API_KEY")
 
 if not dart_api_key:

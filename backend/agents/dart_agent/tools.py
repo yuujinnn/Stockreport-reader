@@ -3,8 +3,6 @@ Simplified LangChain tools for ChatClovaX agent
 Returns pandas DataFrames with upgrade suggestions when needed
 """
 
-
-
 from __future__ import annotations
 from typing import List, Tuple
 
@@ -162,32 +160,34 @@ class ExtractReportThenSectionTextTool(BaseTool):
     name: str = "extract_report_then_section_text"
     description: str = "rcept_no와 목차 리스트, recommend_section을 기반으로 공시 XML을 추출 후 추천 섹션의 본문을 추출합니다."
     args_schema: Type[BaseModel] = ReportThenSectionTextInput
-
+    
     @staticmethod
-    def _build_patterns(titles: List[str]) -> List[Tuple[str, str]]:
-        """
-        TITLE 리스트를 (title, regex) 튜플 리스트로 변환
-        """
-        patterns: List[Tuple[str, str]] = []
-        for ttl in titles:
-            regex = r"\s*".join(map(re.escape, ttl.split()))
-            pattern = (
-                rf"<TITLE[^>]*>(?:\d+\.\s*)?(?:\([^)]*\))?\s*{regex}[^<]*</TITLE>"
-                r"(.*?)(?=<TITLE|</SECTION)"
-            )
-            patterns.append((ttl, pattern))
-        return patterns
+    def _extract_section_by_title(document_text: str, section_title: str) -> str:
+        matches = list(re.finditer(r'<TITLE[^>]*>(.*?)</TITLE>', document_text, re.DOTALL | re.IGNORECASE))
+
+        for i, match in enumerate(matches):
+            title = match.group(1).strip()
+            if section_title.lower() in title.lower():
+                start = match.end()
+                end = matches[i + 1].start() if i + 1 < len(matches) else len(document_text)
+                body_raw = document_text[start:end]
+                body_clean = re.sub(r'<[^>]+>', ' ', body_raw)
+                body_clean = re.sub(r'\s+', ' ', body_clean).strip()
+                return body_clean
+
+        return f"❌ '{section_title}' 섹션을 찾을 수 없습니다."
+
     # ------------------------------ core ------------------------------ #
     # pylint: disable=too-many-locals
     def _run(
         self,
-        recommend_section: List[str],     # ★ 타입 일치
+        recommend_section: List[str],
         title_list: List[str],
         rcept_no: str,
     ) -> str:
         xml_text = get_dart_report_text(rcept_no)
 
-        # 추천 섹션 정규화 (이미 리스트지만 안전망)
+        # 추천 섹션 정리
         sections: List[str] = []
         for item in recommend_section:
             if not isinstance(item, str):
@@ -195,56 +195,23 @@ class ExtractReportThenSectionTextTool(BaseTool):
             item = item.strip().strip('"').strip("'")
             parts = [p.strip().strip('"').strip("'") for p in item.split(",") if p.strip()]
             sections.extend(parts or [item])
- 
-        # 2TITLE ↔ 정규식 패턴 매핑
-        patterns = self._build_patterns(title_list)
-        print("패턴:", patterns)
+
         results: List[str] = []
 
         for sec in sections:
-            # a) 가장 유사한 TITLE 탐색
-            if sec in title_list:
-                ref_title = sec
-            else :
-                titles_only = [p[0] for p in patterns]
-                closest = difflib.get_close_matches(sec, titles_only, n=1)
-                ref_title = closest[0] if closest else sec
+            # title_list에서 가장 유사한 TITLE 찾기
+            closest = difflib.get_close_matches(sec, title_list, n=1)
+            ref_title = closest[0] if closest else sec
+            print(f"🔍 추천 섹션: '{sec}' → 가장 유사한 title: '{ref_title}'")
 
-            # b) TITLE에 해당하는 regex 찾기
-            pattern = next((pat for ttl, pat in patterns if ttl == ref_title), None)
-            if not pattern:
-                results.append(f"# {ref_title}\n패턴을 찾을 수 없습니다.")
-                continue
-            
-            # (1) 기본 패턴
-            match = re.search(pattern, xml_text, flags=re.DOTALL | re.IGNORECASE)
-            # (2) `<SECTION-숫자>` 변형 패턴
-            if not match:
-                alt_pattern = pattern.replace("</SECTION", "</SECTION(?:-\\d+)?")
-                match = re.search(alt_pattern, xml_text, flags=re.DOTALL | re.IGNORECASE)
-            # (3) TITLE 태그 직접 매칭 패턴
-            if not match:
-                escaped_title = re.escape(ref_title)
-                direct_pattern = (
-                    rf"<TITLE[^>]*>{escaped_title}</TITLE>"
-                    r"(.*?)(?=<TITLE|</SECTION(?:-\d+)?)"
-                )
-                match = re.search(direct_pattern, xml_text, flags=re.DOTALL | re.IGNORECASE)
-
-            if not match:
-                results.append(f"# {ref_title}\n본문을 찾을 수 없습니다.")
-                continue
-            
-            # 4️⃣ 태그 제거 및 공백 정리
-            body_raw = re.sub(r"<[^>]*>", " ", match.group(1))
-            body_clean = re.sub(r"\s+", " ", body_raw).strip()
-            print("바디:",body_clean)
-            results.append(f"# {ref_title}\n{body_clean}")
+            # 본문 추출
+            section_body = self._extract_section_by_title(xml_text, ref_title)
+            results.append(f"# {ref_title}\n{section_body}")
 
         return "\n\n".join(results)
 
-def get_dart_tools():
-    """Get list of DART-related tools"""
+def get_stock_tools():
+    """Get list of stock-related tools"""
     dart_llm = get_dart_llm()
     return [
         DartReportTypeTool(llm = dart_llm, prompt_template = DART_REPORT_TYPE_PROMPT),
