@@ -1561,6 +1561,88 @@ chmod +x smoke_test.sh
 
 ## Change Log
 
+### 2025-01-26: README Installation Guide Enhancement (v2.4.4)
+
+#### 📋 **Complete Installation Documentation**
+- **Comprehensive Setup Guide**: Added detailed installation and execution instructions
+- **Environment Prerequisites**: Python 3.11+, Node.js 18+, Conda, pnpm requirements
+- **Step-by-step Installation**: Conda environment creation, package installation, and service setup
+- **Multiple Execution Options**: Both automated (start-services.bat) and manual execution methods
+
+#### 🔧 **Environment Configuration Improvements**
+- **API Keys Documentation**: Detailed environment variable setup for all external services
+- **Kiwoom REST API Correction**: Fixed configuration instructions for separate text file management (`{id}_appkey.txt`, `{id}_secretkey.txt`)
+- **Frontend Environment Variables**: Added frontend/.env configuration for API endpoints (VITE_UPLOAD_API_URL, VITE_QUERY_API_URL)
+- **IP Whitelist Requirement**: Added critical Kiwoom API IP registration requirement
+- **Security Best Practices**: Proper secrets management with backend/secrets/.env structure
+
+#### 🚀 **User Experience Enhancements**
+- **Clear Service URLs**: Frontend (5173), Upload API (9000), Supervisor API (8000)
+- **Troubleshooting Section**: Port conflict resolution, package installation issues, and common fixes
+- **Windows-Optimized**: Commands and scripts tailored for Windows development environment
+- **Developer-Friendly**: Professional installation guide for technical users
+
+#### 📁 **Corrected File Structure Documentation**
+- **Environment Variables**: `.env` file for most API keys (DART, Naver, Tavily, CLOVA, Upstage)
+- **Kiwoom API Files**: Separate text files (`57295187_appkey.txt`, `57295187_secretkey.txt`)
+- **Token Management**: Automatic `access_token.json` generation
+- **IP Whitelist Setup**: Critical step for Kiwoom REST API access
+
+#### 🛡️ **Security and Compliance**
+- **API Registration Process**: Step-by-step Kiwoom API portal registration
+- **IP Address Management**: Whitelist registration requirement documentation
+- **Credentials Isolation**: Proper separation of different API credential types
+- **Access Control**: Clear guidance on API access requirements and limitations
+
+**Files Modified**:
+- `README.md`: Complete installation guide with corrected Kiwoom API setup
+- `backend/MULTI_AGENT_SYSTEM_DOCUMENTATION.md`: Updated documentation for installation changes
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
+
+### 2025-01-26: Stock Price Agent Response Enhancement (v2.4.3)
+
+#### 📊 **Enhanced Data Response Format**
+- **Data Period Display**: Stock price agent tools now provide natural language description of data collection period
+- **First-to-Last Date Range**: Shows complete date range from first to last record in collected dataset
+- **Latest Close Price**: Displays the most recent closing price with proper formatting
+- **Chart Type Aware**: Date format varies based on chart type (minute, day, week, month, year)
+
+#### 🔧 **Technical Improvements**  
+- **Method Enhancement**: Renamed `_get_latest_data_info()` to `_get_data_period_and_latest_info()`
+- **Comprehensive Date Range**: Both first and last row dates included in response
+- **Smart Period Detection**: Single-period vs date-range display logic
+- **Natural Language Format**: Korean-optimized date descriptions based on chart type
+
+#### 📈 **Response Format Examples**
+- **Day Chart**: "📅 수집 기간: 2024년 1월 1일 ~ 2024년 12월 31일"
+- **Week Chart**: "📅 수집 기간: 2024년 1월 1주차 ~ 2024년 12월 4주차"
+- **Month Chart**: "📅 수집 기간: 2024년 1월 ~ 2024년 12월"
+- **Year Chart**: "📅 수집 기간: 2020년 ~ 2024년"
+- **Close Price**: "📊 최신 종가: 75,200원"
+
+#### 🚀 **User Experience Improvements**
+- **Clear Data Coverage**: Users can immediately see the scope of analyzed data
+- **Period Validation**: Visual confirmation of requested vs actual data period
+- **Latest Market Information**: Most recent closing price for quick reference
+- **Professional Formatting**: Consistent Korean number formatting with comma separators
+
+#### ✅ **Benefits Achieved**
+- **Enhanced Transparency**: Clear visibility into data collection scope
+- **Better Analysis Context**: Users understand the timeframe of analysis
+- **Improved Accuracy**: Immediate feedback on data availability and coverage
+- **Professional Reporting**: Market-standard information display format
+
+**Files Modified**:
+- `backend/agents/stock_price_agent/data_manager.py`: Enhanced response formatting with period and latest price information
+- `backend/MULTI_AGENT_SYSTEM_DOCUMENTATION.md`: Documentation updates for new response format
+
+**Commit Hash**: `[Generated on deployment]`
+
+---
+
 ### 2025-01-26: RAG Scripts Structure Simplification (v2.4.2)
 
 #### 🗂️ **Scripts Directory Restructuring**

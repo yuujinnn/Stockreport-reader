@@ -135,7 +135,9 @@ def process_single_pdf(filepath="data/pdf/20241122_company_22650000.pdf", proces
     }
 
     try:
-        final_state = graph.invoke(initial_state)
+        # max_concurrency 설정으로 동시 실행 제한 (Rate Limit 방지)
+        config = {"max_concurrency": 2}  # 동시 실행 노드를 2개로 제한
+        final_state = graph.invoke(initial_state, config)
         print("PDF 처리가 완료되었습니다.")
         return final_state
     except Exception as e:

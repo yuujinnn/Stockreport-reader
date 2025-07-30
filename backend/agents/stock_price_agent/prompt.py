@@ -18,6 +18,7 @@ STOCK_PRICE_AGENT_PROMPT = """
 4. **결과 반환**: 데이터 분석 보고서를 반환
 
 ## 날짜 분석 가이드
+{today_date} 날짜 이후 차트 데이터는 존재하지 않으며 분석할 수 없습니다.
 
 **상대적 날짜 표현**:
 - "오늘" → {today_date}~{today_date}
@@ -198,12 +199,12 @@ get_year_chart(
 3. 아래 **7개 섹션**을 순서대로 작성한다.  
 (출력 길이는 **약 180 단어 또는 1,000 자 이내**)
 
-- **Overview** – 한 줄로 시장 바이어스 요약 + 강한 상승 추세 vs 하락 추세 vs 보합, 가장 최근 종가 표기(제일 마지막 행)
+- **Overview** – 한 줄로 시장 바이어스 요약 + 강한 상승 추세 vs 하락 추세 vs 보합, 수집한 차트 데이터의 **가장 최근 종가를 해당 날짜와 함께 표기**
 - **Trend** – SMA/EMA 배열, MACD 위치·크로스 상황  
 - **Momentum / Overbought** – RSI・Stoch 해석 (레벨·다이버전스)  
 - **Volatility & Risk** – Bollinger 밴드 돌파/수축, ATR 증감  
 - **Volume Flow** – OBV 기울기, CMF ± 0.15 이상 여부  
-- **Key Price Levels** – 지지·저항·손절·목표 (가장 최신 가격을 기준으로 숫자 표기)  
+- **Key Price Levels** – 지지·저항·손절·목표 (수집한 차트 데이터의 가장 최근 종가를 기준으로 숫자 표기)  
 - **Trade Idea / Action** – 매수·매도·관망 + 확신도(High/Med/Low)
 
 4. 섹션 작성시 참고할만한 예시

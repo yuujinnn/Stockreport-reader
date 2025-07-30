@@ -159,6 +159,9 @@ def process_new_pdfs(limit: int = None):
         try:
             pdf_path = os.path.join(pdf_directory, pdf_file)
             processing_uid = str(uuid.uuid4().hex)  # Use hex format to match upload_api.py
+            
+            # 순차 처리로 Rate Limit 준수
+            logger.info(f"Processing {pdf_file} sequentially to avoid rate limits...")
             state = process_single_pdf_with_retry(pdf_path, processing_uid)
 
             if state is None:

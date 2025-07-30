@@ -215,9 +215,13 @@ class StockDataManager:
         elif status == "success":
             df = result.get("data")
             if df is not None and not df.empty:
+                # Get data period and latest info (first and last row)
+                period_and_latest_info = self._get_data_period_and_latest_info(df, chart_type)
+                
                 response = f"🚫 STOP! 데이터 수집 완료! 더 이상 어떤 도구도 호출하지 마세요!\n\n"
                 response += f"상태: success\n"
                 response += f"레코드 수: {len(df)}개\n"
+                response += period_and_latest_info  # Add period and latest data info
                 response += f"분석 준비 완료: 아래 데이터로 분석 보고서를 작성하세요.\n\n"
                 response += f"**{chart_type} 차트 데이터** ({stock_code}):\n\n"
                 response += self._format_dataframe_table(df)
@@ -239,6 +243,121 @@ class StockDataManager:
         
         # Return complete DataFrame as table string
         return df.to_string(index=False, max_cols=None, max_rows=None)
+    
+    def _get_data_period_and_latest_info(self, df: pd.DataFrame, chart_type: str) -> str:
+        """
+        Extract data period (first to last date) and latest close price from DataFrame
+        
+        Args:
+            df: DataFrame with chart data
+            chart_type: Chart type (minute, day, week, month, year)
+            
+        Returns:
+            str: Natural language description of data period and latest close
+        """
+        if df.empty or 'date' not in df.columns or 'close' not in df.columns:
+            return ""
+        
+        try:
+            # Get first and last rows
+            first_row = df.iloc[0]
+            last_row = df.iloc[-1]
+            
+            first_date = first_row['date']
+            last_date = last_row['date']
+            last_close = last_row['close']
+            
+            # Check if close price is valid
+            if pd.isna(last_close):
+                return ""
+            
+            # Format close price with proper number formatting
+            close_formatted = f"{last_close:,.0f}원" if not pd.isna(last_close) else "N/A"
+            
+            # Format dates based on chart type
+            first_date_description = self._format_date_description(first_date, chart_type)
+            last_date_description = self._format_date_description(last_date, chart_type)
+            
+            # Create period description
+            if first_date_description and last_date_description:
+                if first_date_description == last_date_description:
+                    # Single period (e.g., same day, same month)
+                    period_info = f"📅 수집 기간: {first_date_description}\n"
+                else:
+                    # Date range
+                    period_info = f"📅 수집 기간: {first_date_description} ~ {last_date_description}\n"
+                
+                # Add latest close price
+                period_info += f"📊 최신 종가: {close_formatted}\n"
+                return period_info
+            else:
+                return f"📊 최신 종가: {close_formatted}\n"
+                
+        except Exception as e:
+            print(f"⚠️  Error extracting data period and latest info: {e}")
+            return ""
+    
+    def _format_date_description(self, date_value, chart_type: str) -> str:
+        """
+        Format date value into natural language description based on chart type
+        
+        Args:
+            date_value: Date value from DataFrame (can be datetime, date, or string)
+            chart_type: Chart type (minute, day, week, month, year)
+            
+        Returns:
+            str: Natural language date description
+        """
+        try:
+            if pd.isna(date_value):
+                return ""
+            
+            if chart_type == "minute":
+                # datetime object → "YYYY년 MM월 DD일 HH:MM"
+                if hasattr(date_value, 'strftime'):
+                    return date_value.strftime("%Y년 %m월 %d일 %H:%M")
+                else:
+                    return str(date_value)
+            
+            elif chart_type == "day":
+                # date object → "YYYY년 MM월 DD일"
+                if hasattr(date_value, 'strftime'):
+                    return date_value.strftime("%Y년 %m월 %d일")
+                else:
+                    return str(date_value)
+            
+            elif chart_type == "week":
+                # "YYYYMMWeekN" → "YYYY년 MM월 N주차"
+                date_str = str(date_value)
+                if "Week" in date_str and len(date_str) >= 11:  # YYYYMMWeekN
+                    year = date_str[:4]
+                    month = date_str[4:6]
+                    week_part = date_str[6:]  # WeekN
+                    week_num = week_part.replace("Week", "")
+                    return f"{year}년 {month}월 {week_num}주차"
+                else:
+                    return date_str
+            
+            elif chart_type == "month":
+                # "YYYYMM" → "YYYY년 MM월"
+                date_str = str(date_value)
+                if len(date_str) >= 6:
+                    year = date_str[:4]
+                    month = date_str[4:6]
+                    return f"{year}년 {month}월"
+                else:
+                    return date_str
+            
+            elif chart_type == "year":
+                # "YYYY" → "YYYY년"
+                return f"{str(date_value)}년"
+            
+            else:
+                return str(date_value)
+                
+        except Exception as e:
+            print(f"⚠️  Error formatting date description: {e}")
+            return str(date_value)
     
     def _save_raw_data(self, raw_data: Dict[str, Any], stock_code: str, 
                       chart_type: str, base_date: str = None) -> str:
